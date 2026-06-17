@@ -8,8 +8,42 @@ from __future__ import annotations
 
 import sqlite3
 import warnings
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+def _strip_repeated_boilerplate(pages: list[str]) -> str:
+    """Join page texts, dropping header/footer lines that repeat on every page.
+
+    The reports draw a banner and footer on every page, and pdfplumber extracts
+    that boilerplate once per page. Without this, identical lines appear several
+    times in raw_text and pollute the RAG chunks. We keep the first occurrence
+    of any line that shows up on all pages and drop the repeats.
+    """
+    if len(pages) <= 1:
+        return "\n".join(pages).strip()
+
+    page_lines = [[ln.rstrip() for ln in page.splitlines()] for page in pages]
+
+    presence: Counter[str] = Counter()
+    for lines in page_lines:
+        for ln in {line for line in lines if line.strip()}:
+            presence[ln] += 1
+
+    n_pages = len(page_lines)
+    boilerplate = {ln for ln, count in presence.items() if count == n_pages}
+
+    seen: set[str] = set()
+    kept: list[str] = []
+    for lines in page_lines:
+        for ln in lines:
+            if ln in boilerplate:
+                if ln in seen:
+                    continue
+                seen.add(ln)
+            kept.append(ln)
+    return "\n".join(kept).strip()
 
 
 def ingest_reports(
@@ -54,7 +88,7 @@ def ingest_reports(
                 for page in pdf.pages:
                     page_text = page.extract_text() or ""
                     pages.append(page_text)
-            raw_text = "\n".join(pages).strip()
+            raw_text = _strip_repeated_boilerplate(pages)
         except Exception as exc:
             warnings.warn(
                 f"Could not extract text from {pdf_path.name}: {exc!r} - skipping.",

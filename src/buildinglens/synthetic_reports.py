@@ -313,36 +313,30 @@ def _report_plan(
     return insp_date, inspector, sections
 
 
-def _draw_header(canvas: Any, doc: Any, building: dict, insp_date: date, ref: str) -> None:
-    """Draw a simple page header with building metadata."""
+def _draw_header(canvas: Any, doc: Any, ref: str) -> None:
+    """Draw the page banner and footer.
+
+    Only the product title and a footer are drawn on every page. The building
+    metadata lives once in the body cover table, not in the per-page header, so
+    it is not repeated on each page (which would otherwise flood the extracted
+    text and pollute the RAG chunks).
+    """
     from reportlab.lib import colors
     from reportlab.lib.units import mm
 
     canvas.saveState()
 
-    # Top bar
+    # Top bar with the product title.
     canvas.setFillColor(colors.HexColor("#1a3a5c"))
     canvas.rect(10 * mm, doc.height + doc.topMargin - 18 * mm, doc.width, 14 * mm, fill=1, stroke=0)
-
-    # Title in bar
     canvas.setFillColor(colors.white)
     canvas.setFont("Helvetica-Bold", 10)
     canvas.drawString(12 * mm, doc.height + doc.topMargin - 9 * mm, "RAPPORT D'INSPECTION TECHNIQUE - BUILDINGLENS")
 
-    # Building info below bar
-    canvas.setFillColor(colors.HexColor("#1a3a5c"))
-    canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(12 * mm, doc.height + doc.topMargin - 22 * mm, f"Batiment : {building['name']}")
-    canvas.setFont("Helvetica", 8)
-    canvas.drawString(12 * mm, doc.height + doc.topMargin - 27 * mm, f"Adresse  : {building['address']}")
-    canvas.drawString(12 * mm, doc.height + doc.topMargin - 32 * mm,
-                      f"Date d'inspection : {insp_date.strftime('%d/%m/%Y')}    "
-                      f"Reference : {ref}")
-
-    # Footer
+    # Footer with the report reference and page number.
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(colors.grey)
-    canvas.drawString(12 * mm, 8 * mm, f"BuildingLens - Rapport confidentiel - Page {canvas.getPageNumber()}")
+    canvas.drawString(12 * mm, 8 * mm, f"BuildingLens  -  {ref}  -  Page {canvas.getPageNumber()}")
 
     canvas.restoreState()
 
@@ -436,7 +430,7 @@ def generate_reports(
         )
 
         def make_header(canvas: Any, doc: Any) -> None:
-            _draw_header(canvas, doc, building, insp_date, ref)
+            _draw_header(canvas, doc, ref)
 
         frame = Frame(
             doc.leftMargin,
@@ -450,10 +444,8 @@ def generate_reports(
 
         story = []
 
-        # --- Cover section ---
-        story.append(Paragraph("Rapport d'inspection technique des batiments", style_h1))
-        story.append(Spacer(1, 3 * mm))
-
+        # --- Cover section: the meta table below is the building identity,
+        # shown once here instead of being repeated in every page header. ---
         # EUBUCCO has no construction year for Luxembourg, so year_built is often
         # None; height is well covered but stay defensive about both.
         year_built = building.get("year_built")
