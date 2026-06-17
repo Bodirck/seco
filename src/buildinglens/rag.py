@@ -232,8 +232,9 @@ def answer(
     q_vec: np.ndarray = model.encode([question], show_progress_bar=False, convert_to_numpy=True)
     faiss.normalize_L2(q_vec)
 
-    # Retrieve more candidates when filtering by building_id, so we have enough after filtering.
-    retrieve_k = k if building_id is None else min(index.ntotal, k * 10)
+    # When filtering to one building, search the whole index so that building's
+    # best chunks are guaranteed to be considered (the corpus is small).
+    retrieve_k = k if building_id is None else index.ntotal
     scores, indices = index.search(q_vec, retrieve_k)
 
     # Collect matching chunks.
