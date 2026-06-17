@@ -14,7 +14,7 @@ The product is built around three things:
 2. Risk scoring. Each defect is classified by severity, then a risk score is computed per building.
 3. Natural-language Q&A (RAG). You ask a question about the portfolio ("which buildings have unresolved structural defects?") and get an answer that quotes the passages it came from.
 
-The defect extraction, risk scoring, and RAG question-answering all work today (the commands are below). The Streamlit interface is the one remaining piece. The Status checklist is the honest, up-to-date picture.
+The defect extraction, risk scoring, RAG question-answering, and the Streamlit interface all work today (the commands are below). The Status checklist is the honest, up-to-date picture.
 
 ### Who it is for, and why
 
@@ -30,7 +30,7 @@ Roadmap:
 - [x] Defect extraction
 - [x] Severity classification and risk scoring
 - [x] Search and Q&A (RAG) with citations
-- [ ] Streamlit interface
+- [x] Streamlit interface
 - [x] Evaluation of extraction on a small reference (gold) set
 
 ### Planned stack
@@ -49,7 +49,7 @@ The buildings are real: footprints, heights, and coordinates from EUBUCCO Luxemb
 - `make data`: download EUBUCCO Luxembourg buildings and STATEC permits, generate the synthetic inspection reports, and populate the SQLite database.
 - `make extract`: extract defects with the LLM, score each building, and build the RAG index. Needs an API key in `.env` (copy `.env.example`); without one it runs in mock mode and extracts nothing.
 - `make eval`: score the extraction against the gold set (run `make extract` first).
-- `make run`: launch the Streamlit app (in progress).
+- `make run`: launch the Streamlit app (portfolio risk, per-building defects, and a RAG chat).
 
 ### Evaluation
 
@@ -69,7 +69,7 @@ Le produit s'articule autour de trois choses :
 2. Scoring de risque. Chaque défaut est classé par sévérité, puis un score de risque est calculé par bâtiment.
 3. Questions/réponses en langage naturel (RAG). On pose une question sur le parc ("quels bâtiments ont des défauts structurels non résolus ?") et on obtient une réponse qui cite les passages dont elle est tirée.
 
-L'extraction des défauts, le scoring de risque et les questions/réponses RAG fonctionnent aujourd'hui (les commandes sont plus bas). L'interface Streamlit est la dernière brique. La feuille de route ci-dessous reflète honnêtement l'état réel.
+L'extraction des défauts, le scoring de risque, les questions/réponses RAG et l'interface Streamlit fonctionnent aujourd'hui (les commandes sont plus bas). La feuille de route ci-dessous reflète honnêtement l'état réel.
 
 ### Pour qui, pour quoi
 
@@ -85,7 +85,7 @@ Feuille de route :
 - [x] Extraction des défauts
 - [x] Classification par sévérité et scoring de risque
 - [x] Recherche et questions/réponses (RAG) avec citations
-- [ ] Interface Streamlit
+- [x] Interface Streamlit
 - [x] Évaluation de l'extraction sur un petit jeu de référence (gold set)
 
 ### Stack envisagée
@@ -104,7 +104,7 @@ Les bâtiments sont réels : empreintes, hauteurs et coordonnées issues d'EUBUC
 - `make data` : télécharge les bâtiments EUBUCCO Luxembourg et les permis STATEC, génère les rapports d'inspection synthétiques, et peuple la base SQLite.
 - `make extract` : extrait les défauts avec le LLM, score chaque bâtiment et construit l'index RAG. Nécessite une clé API dans `.env` (copier `.env.example`) ; sans clé, le mode mock tourne et n'extrait rien.
 - `make eval` : évalue l'extraction contre le jeu de référence (lancer `make extract` d'abord).
-- `make run` : lance l'application Streamlit (en cours).
+- `make run` : lance l'application Streamlit (risque du portefeuille, défauts par bâtiment, et un chat RAG).
 
 ### Évaluation
 
