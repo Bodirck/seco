@@ -1,0 +1,63 @@
+{
+  "app": {
+    "name": "BuildingLens",
+    "tagline": "Rapports d'inspection et donnees publiques, transformes en vue de risque des batiments."
+  },
+  "nav": {
+    "search": "Recherche",
+    "portfolio": "Portefeuille"
+  },
+  "common": {
+    "language": "Langue",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue.",
+    "critical": "Critique",
+    "major": "Majeur",
+    "minor": "Mineur",
+    "riskScore": "Score de risque",
+    "defects": "Defauts",
+    "building": "Batiment",
+    "address": "Adresse",
+    "mockNotice": "Aucune cle API detectee : les reponses tournent en mode mock. Ajoutez une cle dans .env pour de vraies reponses."
+  },
+  "search": {
+    "title": "Interroger le portefeuille",
+    "subtitle": "Posez une question en langage courant. La reponse s'appuie sur les rapports d'inspection et cite ses sources.",
+    "placeholder": "Posez une question sur les batiments...",
+    "ask": "Demander",
+    "examples": "Essayez un exemple",
+    "sources": "Sources",
+    "noAnswer": "Pas encore de reponse. Saisissez une question ci-dessus ou choisissez un exemple.",
+    "exampleList": [
+      "Quels batiments ont des defauts critiques de securite incendie ?",
+      "Quels sont les defauts structurels du batiment le plus a risque ?",
+      "Resume les problemes de toiture sur l'ensemble du parc",
+      "Quels batiments necessitent une attention urgente ?"
+    ]
+  },
+  "portfolio": {
+    "title": "Portefeuille",
+    "subtitle": "Tous les batiments classes par score de risque, avec le nombre de defauts.",
+    "buildings": "Batiments",
+    "totalDefects": "Defauts",
+    "criticalDefects": "Defauts critiques",
+    "name": "Nom",
+    "viewDetail": "Voir"
+  },
+  "building": {
+    "subtitle": "Repartition du risque, indicateurs cles et liste complete des defauts.",
+    "byDiscipline": "Defauts par discipline",
+    "bySeverity": "Defauts par severite",
+    "defectList": "Liste des defauts",
+    "downloadExcel": "Telecharger Excel",
+    "downloadPdf": "Telecharger PDF",
+    "discipline": "Discipline",
+    "element": "Element",
+    "description": "Description",
+    "location": "Localisation",
+    "severity": "Severite",
+    "filterSeverity": "Filtrer par severite",
+    "askAbout": "Interroger ce batiment",
+    "notFound": "Batiment introuvable."
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "app": {
+    "name": "BuildingLens",
+    "tagline": "Inspection reports and public data, turned into a building risk view."
+  },
+  "nav": {
+    "search": "Search",
+    "portfolio": "Portfolio"
+  },
+  "common": {
+    "language": "Language",
+    "loading": "Loading...",
+    "error": "Something went wrong.",
+    "critical": "Critical",
+    "major": "Major",
+    "minor": "Minor",
+    "riskScore": "Risk score",
+    "defects": "Defects",
+    "building": "Building",
+    "address": "Address",
+    "mockNotice": "No API key detected: answers run in mock mode. Add a key to .env for real answers."
+  },
+  "search": {
+    "title": "Ask the portfolio",
+    "subtitle": "Ask a question in plain language. The answer is grounded in the inspection reports and cites its sources.",
+    "placeholder": "Ask a question about the buildings...",
+    "ask": "Ask",
+    "examples": "Try an example",
+    "sources": "Sources",
+    "noAnswer": "No answer yet. Type a question above or pick an example.",
+    "exampleList": [
+      "Which buildings have critical fire-safety defects?",
+      "What are the structural defects in the highest-risk building?",
+      "Summarise the roofing problems across the portfolio",
+      "Which buildings need urgent attention?"
+    ]
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "All buildings ranked by risk score, with defect counts.",
+    "buildings": "Buildings",
+    "totalDefects": "Defects",
+    "criticalDefects": "Critical defects",
+    "name": "Name",
+    "viewDetail": "View"
+  },
+  "building": {
+    "subtitle": "Risk breakdown, key indicators, and the full defect list.",
+    "byDiscipline": "Defects by discipline",
+    "bySeverity": "Defects by severity",
+    "defectList": "Defect list",
+    "downloadExcel": "Download Excel",
+    "downloadPdf": "Download PDF",
+    "discipline": "Discipline",
+    "element": "Element",
+    "description": "Description",
+    "location": "Location",
+    "severity": "Severity",
+    "filterSeverity": "Filter by severity",
+    "askAbout": "Ask about this building",
+    "notFound": "Building not found."
+  }
+}
