@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "buildinglens"
+version = "0.1.0"
+description = "Turn building inspection reports and public construction data into a usable risk view"
+requires-python = ">=3.11"
+# Runtime dependencies are pinned in requirements.txt so the data/ML stack stays
+# in one place. This file exists so the package is importable via `pip install -e .`.
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,0 +1,27 @@
+# Core
+python-dotenv>=1.0
+pandas>=2.0
+requests>=2.31
+
+# PDF reading and generation
+pdfplumber>=0.11
+reportlab>=4.0
+
+# Geospatial (EUBUCCO building footprints, parquet)
+pyarrow>=15.0
+geopandas>=1.0
+
+# LLM providers (online). Mock mode needs none of these.
+anthropic>=0.40
+openai>=1.40
+mistralai>=1.0
+
+# RAG: embeddings + vector search
+sentence-transformers>=3.0
+faiss-cpu>=1.8
+
+# UI
+streamlit>=1.38
+
+# Tests
+pytest>=8.0
