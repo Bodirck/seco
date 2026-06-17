@@ -26,7 +26,7 @@ Work in progress. I'm committing the pieces as I build them, so the checklist be
 
 Roadmap:
 
-- [ ] Data pipeline (public sources and a sample dataset)
+- [x] Data pipeline (public sources and a sample dataset)
 - [ ] Defect extraction
 - [ ] Severity classification and risk scoring
 - [ ] Search and Q&A (RAG) with citations
@@ -43,9 +43,13 @@ Public data only, reproducible from scratch. If public inspection reports are un
 
 ### Running the project
 
-These commands aren't wired up yet; they'll land in the next commits:
+Install once, then build the data:
 
-- `make data`: fetch or generate the public data and populate the database.
+- `make install`: install the dependencies and the package.
+- `make data`: download EUBUCCO Luxembourg buildings and STATEC permits, generate the synthetic inspection reports, and populate the SQLite database. This works now.
+
+These land in the next commits:
+
 - `make run`: launch the Streamlit app.
 - `make eval`: evaluate extraction against the reference set.
 
@@ -73,7 +77,7 @@ Projet en cours de construction. Je commite les briques au fur et à mesure que 
 
 Feuille de route :
 
-- [ ] Pipeline de données (sources publiques et jeu d'exemple)
+- [x] Pipeline de données (sources publiques et jeu d'exemple)
 - [ ] Extraction des défauts
 - [ ] Classification par sévérité et scoring de risque
 - [ ] Recherche et questions/réponses (RAG) avec citations
@@ -90,8 +94,12 @@ Données publiques uniquement, reproductible depuis zéro. Si les rapports d'ins
 
 ### Lancer le projet
 
-Ces commandes ne sont pas encore en place ; elles arriveront dans les prochains commits :
+Installer une fois, puis construire les données :
 
-- `make data` : télécharge ou génère les données publiques et peuple la base.
+- `make install` : installe les dépendances et le paquet.
+- `make data` : télécharge les bâtiments EUBUCCO Luxembourg et les permis STATEC, génère les rapports d'inspection synthétiques, et peuple la base SQLite. Fonctionne dès maintenant.
+
+Ces commandes arrivent dans les prochains commits :
+
 - `make run` : lance l'application Streamlit.
 - `make eval` : évalue l'extraction contre le jeu de référence.
