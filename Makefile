@@ -15,9 +15,10 @@ data:
 extract:
 	$(PYTHON) -m buildinglens.build_ai
 
-# Launch the Streamlit app.
+# Launch the Streamlit app. Invoke via `python -m streamlit` so it works even
+# when the streamlit launcher script is not on PATH (common on Windows).
 run:
-	streamlit run app/streamlit_app.py
+	$(PYTHON) -m streamlit run app/streamlit_app.py
 
 # Evaluate the extraction against the reference (gold) set.
 eval:
