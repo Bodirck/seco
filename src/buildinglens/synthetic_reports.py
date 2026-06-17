@@ -295,6 +295,24 @@ def _format_ref(building_id: int, insp_date: date) -> str:
     return f"BL-LU-{building_id:04d}-{insp_date.strftime('%Y%m%d')}"
 
 
+def _report_plan(
+    building_id: int, seed: int
+) -> tuple[date, str, list[tuple[str, list[dict[str, str]]]]]:
+    """Build the deterministic plan (inspection date, inspector, discipline sections).
+
+    Shared by generate_reports and report_ground_truth so the evaluation gold set
+    matches the defects actually written into each PDF.
+    """
+    rng = random.Random(seed + building_id)
+    insp_date = _build_inspection_date(rng)
+    inspector = rng.choice(_INSPECTORS)
+    sections = [
+        (discipline, _sample_defects(rng, discipline, rng.randint(2, 4)))
+        for discipline in _DISCIPLINES
+    ]
+    return insp_date, inspector, sections
+
+
 def _draw_header(canvas: Any, doc: Any, building: dict, insp_date: date, ref: str) -> None:
     """Draw a simple page header with building metadata."""
     from reportlab.lib import colors
@@ -402,11 +420,8 @@ def generate_reports(
 
     for building in buildings:
         bid = building["id"]
-        rng = random.Random(seed + bid)
-
-        insp_date = _build_inspection_date(rng)
+        insp_date, inspector, sections = _report_plan(bid, seed)
         ref = _format_ref(bid, insp_date)
-        inspector = rng.choice(_INSPECTORS)
 
         pdf_path = out_dir / f"report_{bid}.pdf"
 
@@ -491,14 +506,8 @@ def generate_reports(
         )
         story.append(Spacer(1, 5 * mm))
 
-        # Sample every discipline's defects up front so the conclusion count
-        # stays consistent with the tables, and so output is fully deterministic.
-        sections = [
-            (discipline, _sample_defects(rng, discipline, rng.randint(2, 4)))
-            for discipline in _DISCIPLINES
-        ]
-
-        # --- Discipline sections ---
+        # --- Discipline sections (sampled once in _report_plan so the tables,
+        # the conclusion count, and the evaluation gold set all agree) ---
         for discipline, defects in sections:
             story.append(Paragraph(discipline, style_h2))
 
@@ -585,6 +594,33 @@ def generate_reports(
         results.append((bid, pdf_path))
 
     return results
+
+
+def report_ground_truth(buildings: list[dict], seed: int = 0) -> dict[int, list[dict[str, str]]]:
+    """Return the exact defects embedded in each building's generated report.
+
+    This is the ground truth for evaluation: the LLM extraction is scored against it.
+    Keys are building ids; values are lists of
+    {discipline, element, description, location, severity}.
+    """
+    truth: dict[int, list[dict[str, str]]] = {}
+    for building in buildings:
+        bid = building["id"]
+        _insp_date, _inspector, sections = _report_plan(bid, seed)
+        defects: list[dict[str, str]] = []
+        for discipline, items in sections:
+            for d in items:
+                defects.append(
+                    {
+                        "discipline": discipline,
+                        "element": d["element"],
+                        "description": d["description"],
+                        "location": d["location"],
+                        "severity": d["severity"],
+                    }
+                )
+        truth[bid] = defects
+    return truth
 
 
 # ---------------------------------------------------------------------------
