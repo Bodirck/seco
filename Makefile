@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: install data run eval test fmt clean
+.PHONY: install data extract eval run test fmt clean
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -9,6 +9,11 @@ install:
 # Download or generate the public data and populate the database.
 data:
 	$(PYTHON) -m buildinglens.pipeline
+
+# Extract defects with the LLM, score buildings, and build the RAG index.
+# Needs an API key in .env for real defects (mock mode inserts none).
+extract:
+	$(PYTHON) -m buildinglens.build_ai
 
 # Launch the Streamlit app.
 run:
