@@ -129,11 +129,8 @@ def build_excel_report(
 
     ws2 = wb.create_sheet("Defects")
     headers = ["Discipline", "Element", "Description", "Location", "Severity", "Citation"]
-    fill = PatternFill("solid", fgColor="DCE8F5")
     for c, h in enumerate(headers, start=1):
-        head = ws2.cell(row=1, column=c, value=h)
-        head.font = Font(bold=True)
-        head.fill = fill
+        ws2.cell(row=1, column=c, value=h)
     for i, d in enumerate(defects, start=2):
         ws2.cell(row=i, column=1, value=d["discipline"])
         ws2.cell(row=i, column=2, value=d["element"])
@@ -143,6 +140,31 @@ def build_excel_report(
         ws2.cell(row=i, column=6, value=d["citation"])
     for c, w in enumerate([18, 22, 50, 24, 12, 40], start=1):
         ws2.column_dimensions[chr(64 + c)].width = w
+
+    # Real Excel table over the defects, plus conditional formatting on the
+    # severity column: minor = green, major = amber, critical = red.
+    last_row = len(defects) + 1
+    if last_row >= 2:
+        from openpyxl.formatting.rule import CellIsRule
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+
+        table = Table(displayName="Defects", ref=f"A1:F{last_row}")
+        table.tableStyleInfo = TableStyleInfo(
+            name="TableStyleMedium2", showRowStripes=True, showColumnStripes=False
+        )
+        ws2.add_table(table)
+
+        sev_range = f"E2:E{last_row}"
+        rules = {
+            "minor": PatternFill("solid", fgColor="D1FAE5"),
+            "major": PatternFill("solid", fgColor="FEF3C7"),
+            "critical": PatternFill("solid", fgColor="FEE2E2"),
+        }
+        for value, fill in rules.items():
+            ws2.conditional_formatting.add(
+                sev_range,
+                CellIsRule(operator="equal", formula=[f'"{value}"'], fill=fill),
+            )
 
     bio = io.BytesIO()
     wb.save(bio)
@@ -210,13 +232,24 @@ def build_pdf_report(
             Paragraph(d["severity"] or "", small),
         ])
     dt = Table(data, colWidths=[26 * mm, 28 * mm, 70 * mm, 26 * mm, 16 * mm], repeatRows=1)
-    dt.setStyle(TableStyle([
+    style_cmds = [
         ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#cccccc")),
         ("FONTSIZE", (0, 0), (-1, 0), 8),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dce8f5")),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
+    ]
+    # Colour the severity cell per row: minor = green, major = amber, critical = red.
+    sev_bg = {
+        "minor": colors.HexColor("#d1fae5"),
+        "major": colors.HexColor("#fef3c7"),
+        "critical": colors.HexColor("#fee2e2"),
+    }
+    for ridx, d in enumerate(defects, start=1):
+        bg = sev_bg.get(d["severity"])
+        if bg is not None:
+            style_cmds.append(("BACKGROUND", (4, ridx), (4, ridx), bg))
+    dt.setStyle(TableStyle(style_cmds))
     story.append(dt)
 
     doc.build(story)
