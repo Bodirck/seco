@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Documents de travail internes (gardés en local, non publiés)
+CLAUDE.md
+00_annonce_challenge_FR.md
+00_challenge_original_EN.md
+01_SPEC.md
+02_KICKOFF_PROMPT.md
+03_CR_SECO.md
+04_DONNEES_PUBLIQUES.md
