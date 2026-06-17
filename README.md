@@ -57,6 +57,17 @@ The generator records the exact defects it writes into each report, so the gold 
 
 Read that as a check on the pipeline mechanics, not a real-world accuracy: the model recovers every defect from the report text and maps each RICS rating to the right severity. Because the reports are synthetic and the matching is element-level, a near-perfect score is expected here. On real, heterogeneous reports with OCR noise and varied wording, expect lower numbers and the need for a hand-labelled gold set.
 
+### Web app (React)
+
+Alongside the Streamlit app there is a polished React web app (Vite, TypeScript, Tailwind) served by a FastAPI backend that reuses the same Python core. It has three views: a RAG search landing page with example queries, a portfolio ranked by risk, and a per-building BI view with KPI charts and Excel or PDF report export. It is bilingual, English by default with a French toggle.
+
+Run it in two terminals, after `make data` and `make extract`:
+
+- Backend: `python -m uvicorn api.main:app --port 8000`
+- Frontend: `cd web && npm install && npm run dev` (opens on http://localhost:5173 and proxies `/api` to the backend)
+
+See `docs/architecture.md` and `docs/api.md` for the architecture and endpoints.
+
 ---
 
 ## Français
@@ -111,3 +122,14 @@ Les bâtiments sont réels : empreintes, hauteurs et coordonnées issues d'EUBUC
 Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport, donc le jeu de référence est connu sans annotation manuelle (`eval/gold.jsonl`, 743 défauts sur 40 bâtiments). Sur ce jeu, l'extraction avec Claude atteint une précision de 1.00, un rappel de 1.00, un F1 de 1.00 et une exactitude de sévérité de 1.00 (`make eval`).
 
 À lire comme une validation de la mécanique du pipeline, pas comme une précision en conditions réelles : le modèle retrouve chaque défaut du texte et associe chaque note RICS à la bonne sévérité. Comme les rapports sont synthétiques et que l'appariement se fait au niveau de l'élément, un score quasi parfait est attendu ici. Sur de vrais rapports hétérogènes (bruit OCR, formulations variées), attendre des chiffres plus bas et un jeu de référence annoté à la main.
+
+### Application web (React)
+
+À côté de l'app Streamlit, une application web React soignée (Vite, TypeScript, Tailwind) est servie par un backend FastAPI qui réutilise le même cœur Python. Trois vues : une page d'accueil de recherche RAG avec des exemples de requêtes, un portefeuille classé par risque, et une vue BI par bâtiment avec graphes KPI et export de rapport Excel ou PDF. Elle est bilingue, anglais par défaut avec une bascule français.
+
+À lancer dans deux terminaux, après `make data` et `make extract` :
+
+- Backend : `python -m uvicorn api.main:app --port 8000`
+- Frontend : `cd web && npm install && npm run dev` (s'ouvre sur http://localhost:5173 et proxifie `/api` vers le backend)
+
+Voir `docs/architecture.md` et `docs/api.md` pour l'architecture et les endpoints.
