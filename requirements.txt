@@ -7,9 +7,10 @@ requests>=2.31
 pdfplumber>=0.11
 reportlab>=4.0
 
-# Geospatial (EUBUCCO building footprints, parquet)
+# Geospatial (EUBUCCO building footprints, read parquet + reproject WKB centroids)
 pyarrow>=15.0
-geopandas>=1.0
+shapely>=2.0
+pyproj>=3.6
 
 # LLM providers (online). Mock mode needs none of these.
 anthropic>=0.40
