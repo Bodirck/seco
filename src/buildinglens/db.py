@@ -54,6 +54,14 @@ CREATE TABLE IF NOT EXISTS defects (
 CREATE INDEX IF NOT EXISTS idx_documents_building ON documents(building_id);
 CREATE INDEX IF NOT EXISTS idx_defects_building ON defects(building_id);
 CREATE INDEX IF NOT EXISTS idx_defects_document ON defects(document_id);
+
+-- Runtime configuration overlay. Lets the API change the LLM provider and keys
+-- at runtime (persisted across restarts) without editing .env or restarting.
+-- Kept separate from the buildings/documents/defects data contract.
+CREATE TABLE IF NOT EXISTS app_settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 """
 
 
@@ -74,8 +82,38 @@ def init_schema(conn: sqlite3.Connection) -> None:
 
 
 def reset(conn: sqlite3.Connection) -> None:
-    """Drop and recreate every table. Used by the pipeline for a clean rebuild."""
+    """Drop and recreate the data tables. Used by the pipeline for a clean rebuild.
+
+    The app_settings overlay is deliberately preserved: rebuilding the data set
+    should not wipe the operator's configured provider and keys.
+    """
     for table in ("defects", "documents", "buildings"):
         conn.execute(f"DROP TABLE IF EXISTS {table}")
     conn.commit()
     init_schema(conn)
+
+
+def read_settings(conn: sqlite3.Connection) -> dict[str, str]:
+    """Return every persisted runtime override as a plain key -> value dict.
+
+    Returns an empty dict if the table does not exist yet (e.g. an old database),
+    so callers can treat "no overrides" and "fresh database" the same way.
+    """
+    try:
+        rows = conn.execute("SELECT key, value FROM app_settings").fetchall()
+    except sqlite3.OperationalError:
+        return {}
+    return {row["key"]: row["value"] for row in rows}
+
+
+def write_settings(conn: sqlite3.Connection, values: dict[str, str]) -> None:
+    """Upsert the given key/value overrides into app_settings (idempotent)."""
+    init_schema(conn)
+    conn.executemany(
+        """
+        INSERT INTO app_settings (key, value) VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        """,
+        [(str(k), str(v)) for k, v in values.items()],
+    )
+    conn.commit()

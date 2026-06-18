@@ -9,10 +9,11 @@ from __future__ import annotations
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from buildinglens import config, db
 from buildinglens.llm import get_llm
 
 from .deps import get_conn
-from .routers import ask, buildings, reports
+from .routers import ask, buildings, reports, settings
 
 app = FastAPI(title="BuildingLens API", version="0.1.0")
 
@@ -27,6 +28,22 @@ app.add_middleware(
 app.include_router(buildings.router, prefix="/api")
 app.include_router(ask.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
+app.include_router(settings.router, prefix="/api")
+
+
+@app.on_event("startup")
+def _load_persisted_settings() -> None:
+    """Apply any runtime overrides saved in the database so they survive restarts.
+
+    Ensures the app_settings table exists first, then rebuilds the effective
+    configuration (and llm.default_settings) from .env defaults + persisted values.
+    """
+    conn = db.connect(config.get_settings().db_path)
+    try:
+        db.init_schema(conn)
+        config.load_persisted(conn)
+    finally:
+        conn.close()
 
 
 @app.get("/api/meta")

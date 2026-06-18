@@ -132,10 +132,19 @@ class OllamaClient:
 def get_llm(provider: str | None = None, cfg: Settings | None = None) -> LLMClient:
     """Build the client for the configured (or requested) provider.
 
+    Defaults to the *live* effective settings (config.get_settings()) so a runtime
+    change made via the settings API takes effect immediately, with no restart.
     Falls back to mock when an online provider is selected but its key is missing,
-    so the pipeline never hard-fails for lack of a key.
+    so the pipeline never hard-fails for lack of a key. The returned client's type
+    name (e.g. AnthropicClient, MockClient) reflects the ACTUALLY active backend,
+    which lets callers detect a silent mock fallback.
     """
-    cfg = cfg or default_settings
+    if cfg is None:
+        # Imported lazily to keep using the rebound effective settings and to
+        # avoid any import-order surprises (config imports nothing from llm at top level).
+        from . import config
+
+        cfg = config.get_settings()
     provider = (provider or cfg.llm_provider).lower()
 
     if provider == "mock":

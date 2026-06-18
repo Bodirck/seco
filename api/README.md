@@ -57,6 +57,7 @@ api/
     buildings.py  # GET /api/buildings, GET /api/buildings/{id}
     ask.py        # POST /api/ask
     reports.py    # GET /api/buildings/{id}/report
+    settings.py   # GET/PUT /api/settings, POST /api/settings/test
 ```
 
 ## CORS
@@ -65,7 +66,7 @@ The server accepts requests from `http://localhost:5173` and `http://127.0.0.1:5
 
 ## Environment variables
 
-Controlled by the `buildinglens` core via pydantic-settings. Copy `.env.example` to `.env`:
+Controlled by the `buildinglens` core through a plain frozen `Settings` dataclass loaded from `.env` with `python-dotenv`, plus a SQLite `app_settings` overlay that holds any runtime changes made through the settings API. Copy `.env.example` to `.env`:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...   # or OPENAI_API_KEY depending on provider
@@ -73,3 +74,13 @@ DB_PATH=data/buildinglens.db   # default, usually no need to change
 ```
 
 All `.env` files are git-ignored.
+
+## Runtime settings
+
+The LLM provider, models and API keys can be changed at runtime from the UI, with no server restart. Updates are persisted in the SQLite `app_settings` table and re-applied on startup, so they survive a restart. The raw API key is never returned: endpoints only report whether a key is set (`has_key`) and its last four characters (`key_tail`).
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/settings` | Current provider, models, key presence/tail, and the actually active client (`effective`, which reveals a silent mock fallback). |
+| PUT | `/api/settings` | Apply and persist overrides; returns the recomputed settings object. An empty-string key means "leave unchanged". |
+| POST | `/api/settings/test` | Run a real liveness check against the chosen (or current) provider; returns `{ ok, provider, effective, message }` with any key scrubbed from the message. |
