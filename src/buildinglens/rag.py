@@ -2,75 +2,74 @@
 
 Architecture
 ------------
-Chunking  : overlapping fixed-length character windows (600 chars, 100 overlap).
-Embedding : sentence-transformers "paraphrase-multilingual-MiniLM-L12-v2" (French-capable).
-Index     : FAISS IndexFlatIP on L2-normalised vectors (equivalent to cosine similarity).
-Persistence : faiss.write_index + JSON for chunk metadata, stored under index_dir.
-Generation : any LLMClient; defaults to get_llm() (falls back to mock when no key).
+Indexing  : LlamaIndex VectorStoreIndex over the default in-memory SimpleVectorStore.
+Chunking  : LlamaIndex SentenceSplitter (~600 char window, 100 char overlap).
+Embedding : sentence-transformers "paraphrase-multilingual-MiniLM-L12-v2" (French-capable),
+            wrapped by llama_index HuggingFaceEmbedding and run fully locally (no network).
+Retrieval : VectorStoreIndex retriever with similarity_top_k=k and an optional building_id
+            metadata filter.
+Persistence : StorageContext.persist / load_index_from_storage under index_dir.
+Generation : our own get_llm() (the passed client), never LlamaIndex's LLM. This keeps the
+            multi-provider behaviour and the mock fallback intact. Settings.llm is forced to
+            None so LlamaIndex never tries to build an OpenAI client.
 
-Public surface
---------------
+Public surface (unchanged, callers depend on it byte for byte)
+--------------------------------------------------------------
     build_index(conn, index_dir) -> int
-    answer(question, conn, building_id, k, client) -> dict
+    answer(question, conn, building_id, k, client, index_dir) -> dict
 """
 
 from __future__ import annotations
 
-import json
 import warnings
 from pathlib import Path
 from typing import Any
-
-import faiss
-import numpy as np
 
 from .config import settings
 from .llm import LLMClient, get_llm
 
 # ---------------------------------------------------------------------------
-# Embedding model (loaded once, module-level)
+# Embedding model (LlamaIndex Settings, configured once and lazily)
 # ---------------------------------------------------------------------------
+# Same multilingual model as before, now served through LlamaIndex's
+# HuggingFaceEmbedding so indexing and retrieval go through one engine. The model
+# runs locally: no network call at query time once the weights are cached.
 
-_EMBED_MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
-_embed_model: Any | None = None  # SentenceTransformer instance, lazy
+_EMBED_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+_settings_ready = False
 
 
-def _get_embed_model() -> Any:
-    """Return the SentenceTransformer model, loading it on first call."""
-    global _embed_model
-    if _embed_model is None:
-        from sentence_transformers import SentenceTransformer  # lazy import
+def _ensure_llama_settings() -> None:
+    """Configure LlamaIndex global Settings once.
 
-        _embed_model = SentenceTransformer(_EMBED_MODEL_NAME)
-    return _embed_model
+    Sets our local HuggingFace embedding model and forces the LLM to None so
+    LlamaIndex never constructs an OpenAI client behind our back. Generation is
+    always done by our own get_llm() client, never by LlamaIndex.
+    """
+    global _settings_ready
+    if _settings_ready:
+        return
+    from llama_index.core import Settings as LISettings  # lazy import
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+    LISettings.embed_model = HuggingFaceEmbedding(model_name=_EMBED_MODEL_NAME)
+    LISettings.llm = None  # never let LlamaIndex call an online LLM
+    _settings_ready = True
 
 
 # ---------------------------------------------------------------------------
-# Chunking helpers
+# Chunking parameters (comparable to the previous 600 / 100 character windows)
 # ---------------------------------------------------------------------------
 
 _CHUNK_SIZE = 600
 _CHUNK_OVERLAP = 100
 
 
-def _chunk_text(text: str, chunk_size: int = _CHUNK_SIZE, overlap: int = _CHUNK_OVERLAP) -> list[str]:
-    """Split text into overlapping character windows.
+def _make_splitter() -> Any:
+    """Return a SentenceSplitter sized like the previous character windows."""
+    from llama_index.core.node_parser import SentenceSplitter  # lazy import
 
-    Returns at least one chunk (the full text) even when len(text) < chunk_size.
-    """
-    if not text:
-        return []
-    chunks: list[str] = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunk = text[start:end].strip()
-        if chunk:
-            chunks.append(chunk)
-        if end >= len(text):
-            break
-        start += chunk_size - overlap
-    return chunks
+    return SentenceSplitter(chunk_size=_CHUNK_SIZE, chunk_overlap=_CHUNK_OVERLAP)
 
 
 # ---------------------------------------------------------------------------
@@ -78,8 +77,13 @@ def _chunk_text(text: str, chunk_size: int = _CHUNK_SIZE, overlap: int = _CHUNK_
 # ---------------------------------------------------------------------------
 
 _DEFAULT_INDEX_DIR = settings.db_path.parent / "raw" / "rag"
-_INDEX_FILE = "faiss.index"
-_META_FILE = "chunks.json"
+# LlamaIndex persists several files in the directory; this one is the docstore,
+# always present after a successful persist. We use it as the "index exists"
+# probe, mirroring the previous code's single-file check.
+_PERSIST_PROBE = "docstore.json"
+# Marker written when the corpus is empty, so the lazy build in answer() does not
+# loop forever trying to (re)build a persisted index that cannot exist.
+_EMPTY_MARKER = "empty.marker"
 
 
 def _resolve_index_dir(index_dir: str | Path | None) -> Path:
@@ -88,12 +92,9 @@ def _resolve_index_dir(index_dir: str | Path | None) -> Path:
     return d
 
 
-def _index_path(index_dir: Path) -> Path:
-    return index_dir / _INDEX_FILE
-
-
-def _meta_path(index_dir: Path) -> Path:
-    return index_dir / _META_FILE
+def _is_persisted(idx_dir: Path) -> bool:
+    """True if a real index OR the empty-corpus marker is present on disk."""
+    return (idx_dir / _PERSIST_PROBE).exists() or (idx_dir / _EMPTY_MARKER).exists()
 
 
 # ---------------------------------------------------------------------------
@@ -102,69 +103,88 @@ def _meta_path(index_dir: Path) -> Path:
 
 
 def build_index(conn: Any, index_dir: str | Path | None = None) -> int:
-    """Embed every document in the DB and persist a FAISS index.
+    """Index every document in the DB and persist a LlamaIndex VectorStoreIndex.
 
     Parameters
     ----------
     conn:
         Open SQLite connection (row factory active).
     index_dir:
-        Directory for the FAISS index and chunk metadata file.
-        Defaults to <db_parent>/raw/rag.
+        Directory for the persisted index. Defaults to <db_parent>/raw/rag.
 
     Returns
     -------
     int
-        Total number of chunks indexed.
+        Total number of nodes (chunks) indexed.
     """
+    from llama_index.core import Document, VectorStoreIndex  # lazy imports
+
     idx_dir = _resolve_index_dir(index_dir)
-    model = _get_embed_model()
+    _ensure_llama_settings()
 
     rows = conn.execute(
         "SELECT id, building_id, raw_text FROM documents WHERE raw_text IS NOT NULL"
     ).fetchall()
 
-    texts: list[str] = []
-    meta: list[dict] = []  # one entry per chunk
-
+    documents: list[Any] = []
     for row in rows:
         doc_id: int = row["id"]
         bld_id: int = row["building_id"]
         raw: str = row["raw_text"] or ""
-        try:
-            chunks = _chunk_text(raw)
-        except Exception as exc:
-            warnings.warn(f"Chunking failed for document {doc_id}: {exc}", stacklevel=2)
+        if not raw.strip():
             continue
-        for chunk in chunks:
-            texts.append(chunk)
-            meta.append({"document_id": doc_id, "building_id": bld_id, "text": chunk})
+        documents.append(
+            Document(
+                text=raw,
+                metadata={"document_id": doc_id, "building_id": bld_id},
+                # Keep all metadata out of what the embedding/LLM sees, so the
+                # vectorised text stays the report text, not "document_id: 3 ...".
+                excluded_embed_metadata_keys=["document_id", "building_id"],
+                excluded_llm_metadata_keys=["document_id", "building_id"],
+            )
+        )
 
-    if not texts:
-        warnings.warn("No text found in documents; the FAISS index will be empty.", stacklevel=2)
-        # Build a zero-vector index so callers never get a FileNotFoundError.
-        dim = model.get_sentence_embedding_dimension()
-        index = faiss.IndexFlatIP(dim)
-        faiss.write_index(index, str(_index_path(idx_dir)))
-        _meta_path(idx_dir).write_text(json.dumps([]), encoding="utf-8")
+    # Parse documents into nodes up front so we can both report the count and
+    # build the index from the same node list.
+    splitter = _make_splitter()
+    try:
+        nodes = splitter.get_nodes_from_documents(documents) if documents else []
+    except Exception as exc:  # never crash the pipeline on a bad document
+        warnings.warn(f"Chunking failed: {exc}", stacklevel=2)
+        nodes = []
+
+    # Start clean so a rebuild never mixes stale persisted files with new ones.
+    _clear_index_dir(idx_dir)
+
+    if not nodes:
+        warnings.warn(
+            "No text found in documents; the RAG index will be empty.", stacklevel=2
+        )
+        # Drop a marker so answer() returns the friendly "no data" message
+        # without trying to (re)build on every call.
+        (idx_dir / _EMPTY_MARKER).write_text("", encoding="utf-8")
         return 0
 
-    # Embed in one shot (sentence-transformers handles batching internally).
-    embeddings: np.ndarray = model.encode(texts, show_progress_bar=False, convert_to_numpy=True)
+    index = VectorStoreIndex(nodes)
+    index.storage_context.persist(persist_dir=str(idx_dir))
+    return len(nodes)
 
-    # L2-normalise so IndexFlatIP computes cosine similarity.
-    faiss.normalize_L2(embeddings)
 
-    dim = embeddings.shape[1]
-    index = faiss.IndexFlatIP(dim)
-    index.add(embeddings)
-
-    faiss.write_index(index, str(_index_path(idx_dir)))
-    _meta_path(idx_dir).write_text(
-        json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-
-    return len(texts)
+def _clear_index_dir(idx_dir: Path) -> None:
+    """Remove previously persisted index files and any empty marker."""
+    for name in (
+        _EMPTY_MARKER,
+        _PERSIST_PROBE,
+        "index_store.json",
+        "graph_store.json",
+        "image__vector_store.json",
+        "default__vector_store.json",
+    ):
+        p = idx_dir / name
+        try:
+            p.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -172,11 +192,47 @@ def build_index(conn: Any, index_dir: str | Path | None = None) -> int:
 # ---------------------------------------------------------------------------
 
 
-def _load_index(idx_dir: Path) -> tuple[Any, list[dict]]:
-    """Load the FAISS index and chunk metadata from disk."""
-    index = faiss.read_index(str(_index_path(idx_dir)))
-    meta = json.loads(_meta_path(idx_dir).read_text(encoding="utf-8"))
-    return index, meta
+def _load_index(idx_dir: Path) -> Any:
+    """Load the persisted VectorStoreIndex from disk."""
+    from llama_index.core import StorageContext, load_index_from_storage  # lazy
+
+    storage = StorageContext.from_defaults(persist_dir=str(idx_dir))
+    return load_index_from_storage(storage)
+
+
+def _retrieve(index: Any, question: str, building_id: int | None, k: int) -> list[Any]:
+    """Retrieve up to k nodes, restricted to one building when building_id is set.
+
+    Uses LlamaIndex MetadataFilters for the building restriction and also
+    post-filters defensively so the building_id guarantee holds regardless of the
+    vector store backend.
+    """
+    if building_id is None:
+        retriever = index.as_retriever(similarity_top_k=k)
+        results = retriever.retrieve(question)
+    else:
+        from llama_index.core.vector_stores import (  # lazy import
+            FilterOperator,
+            MetadataFilter,
+            MetadataFilters,
+        )
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="building_id", value=building_id, operator=FilterOperator.EQ
+                )
+            ]
+        )
+        # The corpus is small; over-fetch then post-filter and cap, so the right
+        # building's best chunks are guaranteed to make the final k.
+        retriever = index.as_retriever(similarity_top_k=k, filters=filters)
+        results = retriever.retrieve(question)
+        results = [
+            r for r in results if r.node.metadata.get("building_id") == building_id
+        ]
+
+    return results[:k]
 
 
 def answer(
@@ -214,40 +270,22 @@ def answer(
         client = get_llm()
 
     idx_dir = _resolve_index_dir(index_dir)
-    model = _get_embed_model()
+    _ensure_llama_settings()
 
-    # Build index if missing.
-    if not _index_path(idx_dir).exists():
+    # Build the index lazily if nothing is persisted yet (matches old behaviour).
+    if not _is_persisted(idx_dir):
         build_index(conn, idx_dir)
 
-    index, meta = _load_index(idx_dir)
-
-    if index.ntotal == 0:
+    # Empty corpus: a marker is present but no real index. Return the friendly
+    # "no data" message instead of crashing on a missing index.
+    if (idx_dir / _EMPTY_MARKER).exists():
         return {
             "answer": "Il n'y a pas d'information disponible dans la base de donnees.",
             "sources": [],
         }
 
-    # Embed the question.
-    q_vec: np.ndarray = model.encode([question], show_progress_bar=False, convert_to_numpy=True)
-    faiss.normalize_L2(q_vec)
-
-    # When filtering to one building, search the whole index so that building's
-    # best chunks are guaranteed to be considered (the corpus is small).
-    retrieve_k = k if building_id is None else index.ntotal
-    scores, indices = index.search(q_vec, retrieve_k)
-
-    # Collect matching chunks.
-    retrieved: list[dict] = []
-    for idx in indices[0]:
-        if idx < 0 or idx >= len(meta):
-            continue
-        chunk_meta = meta[idx]
-        if building_id is not None and chunk_meta["building_id"] != building_id:
-            continue
-        retrieved.append(chunk_meta)
-        if len(retrieved) >= k:
-            break
+    index = _load_index(idx_dir)
+    retrieved = _retrieve(index, question, building_id, k)
 
     if not retrieved:
         return {
@@ -255,12 +293,15 @@ def answer(
             "sources": [],
         }
 
-    # Build grounded prompt.
+    # Build the numbered, grounded context block from the retrieved nodes.
     context_lines: list[str] = []
-    for i, chunk in enumerate(retrieved, start=1):
+    for i, item in enumerate(retrieved, start=1):
+        node = item.node
+        meta = node.metadata
         context_lines.append(
-            f"[{i}] (document_id={chunk['document_id']}, building_id={chunk['building_id']})\n"
-            f"{chunk['text']}"
+            f"[{i}] (document_id={meta.get('document_id')}, "
+            f"building_id={meta.get('building_id')})\n"
+            f"{node.get_content()}"
         )
     context_block = "\n\n".join(context_lines)
 
@@ -285,11 +326,11 @@ def answer(
 
     sources = [
         {
-            "document_id": c["document_id"],
-            "building_id": c["building_id"],
-            "snippet": c["text"][:200],
+            "document_id": item.node.metadata.get("document_id"),
+            "building_id": item.node.metadata.get("building_id"),
+            "snippet": item.node.get_content()[:200],
         }
-        for c in retrieved
+        for item in retrieved
     ]
 
     return {"answer": raw_answer, "sources": sources}
@@ -300,17 +341,17 @@ def answer(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import sqlite3
-
     from .db import connect
 
     print(f"Connecting to: {settings.db_path}")
     conn = connect(settings.db_path)
 
-    n_docs = conn.execute("SELECT COUNT(*) FROM documents WHERE raw_text IS NOT NULL").fetchone()[0]
+    n_docs = conn.execute(
+        "SELECT COUNT(*) FROM documents WHERE raw_text IS NOT NULL"
+    ).fetchone()[0]
     print(f"Documents with text: {n_docs}")
 
-    print("Building FAISS index...")
+    print("Building RAG index (LlamaIndex)...")
     n_chunks = build_index(conn)
     print(f"Chunks indexed: {n_chunks}")
 

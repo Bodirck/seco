@@ -17,9 +17,12 @@ anthropic>=0.40
 openai>=1.40
 mistralai>=1.0
 
-# RAG: embeddings + vector search
+# RAG: LlamaIndex for indexing + retrieval, local HuggingFace embeddings.
+# Generation stays on our own get_llm() wrapper; Settings.llm is forced to None
+# so LlamaIndex never calls an online LLM. The embedding model runs locally.
+llama-index-core>=0.14,<0.15
+llama-index-embeddings-huggingface>=0.6,<0.8
 sentence-transformers>=3.0
-faiss-cpu>=1.8
 
 # UI (Streamlit MVP on main)
 streamlit>=1.38
