@@ -32,6 +32,7 @@ Roadmap:
 - [x] Search and Q&A (RAG) with citations
 - [x] Streamlit interface
 - [x] Evaluation of extraction on a small reference (gold) set
+- [x] React web app (dark theme, landing page, settings, RAG ingestion)
 
 ### Planned stack
 
@@ -59,7 +60,16 @@ Read that as a check on the pipeline mechanics, not a real-world accuracy: the m
 
 ### Web app (React)
 
-Alongside the Streamlit app there is a polished React web app (Vite, TypeScript, Tailwind) served by a FastAPI backend that reuses the same Python core. It has three views: a RAG search landing page with example queries, a portfolio ranked by risk, and a per-building BI view with KPI charts, a small locator map that places the building in Luxembourg from its public coordinates, and Excel or PDF report export. Explanatory tooltips across the building page describe each indicator, and the severity colors are consistent everywhere (critical red, major amber, minor green). It is bilingual, English by default with a French toggle.
+Alongside the Streamlit app there is a polished React web app (Vite, TypeScript, Tailwind) served by a FastAPI backend that reuses the same Python core. The interface is a refined dark theme ("First Light") and covers the whole workflow:
+
+- a landing page that explains what the product does and shows live data counts;
+- a RAG search that answers questions in plain language and cites its sources;
+- a portfolio ranked by risk, with a risk chart and defect counts;
+- a per-building view with KPI charts, a locator map placing the building in Luxembourg from its public coordinates, explanatory tooltips on every indicator, and Excel or PDF report export;
+- a Settings page to choose the AI provider (Anthropic, OpenAI, Mistral, or a local Ollama model) and set its key from the UI, with a connection test (the key is stored server-side and never sent back to the browser);
+- a RAG ingestion page to upload a new inspection PDF and have it extracted, scored and indexed on the spot.
+
+Severity colors are consistent everywhere (critical red, major amber, minor green). It is bilingual, English by default with a French toggle. This is a single-user local tool: there is no authentication yet (see "With three more months").
 
 Run it in two terminals, after `make data` and `make extract`:
 
@@ -67,6 +77,12 @@ Run it in two terminals, after `make data` and `make extract`:
 - Frontend: `cd web && npm install && npm run dev` (opens on http://localhost:5173 and proxies `/api` to the backend)
 
 See `docs/architecture.md` and `docs/api.md` for the architecture and endpoints.
+
+### With three more months
+
+- B2B access with Azure Entra ID single sign-on: multi-tenant login, per-organisation portfolios, and roles, so the tool can be shared safely beyond a local machine. The Settings page already shows a placeholder for it.
+- Incremental RAG indexing (add only the new document's chunks instead of rebuilding the whole FAISS index) and a background job queue for ingestion, so large uploads and reindexing never block a request.
+- A portfolio cockpit at scale: a geographic map of the parc and a machine-readable risk signal (API) that asset managers and insurers can plug into their own systems.
 
 ---
 
@@ -98,6 +114,7 @@ Feuille de route :
 - [x] Recherche et questions/réponses (RAG) avec citations
 - [x] Interface Streamlit
 - [x] Évaluation de l'extraction sur un petit jeu de référence (gold set)
+- [x] Application web React (thème sombre, page d'accueil, réglages, ingestion RAG)
 
 ### Stack envisagée
 
@@ -125,7 +142,16 @@ Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport,
 
 ### Application web (React)
 
-À côté de l'app Streamlit, une application web React soignée (Vite, TypeScript, Tailwind) est servie par un backend FastAPI qui réutilise le même cœur Python. Trois vues : une page d'accueil de recherche RAG avec des exemples de requêtes, un portefeuille classé par risque, et une vue BI par bâtiment avec graphes KPI, une petite carte de localisation qui situe le bâtiment au Luxembourg à partir de ses coordonnées publiques, et un export de rapport Excel ou PDF. Des infobulles explicatives sur toute la page bâtiment décrivent chaque indicateur, et les couleurs de sévérité sont cohérentes partout (critique rouge, majeur orange, mineur vert). Elle est bilingue, anglais par défaut avec une bascule français.
+À côté de l'app Streamlit, une application web React soignée (Vite, TypeScript, Tailwind) est servie par un backend FastAPI qui réutilise le même cœur Python. L'interface est un thème sombre soigné ("First Light") et couvre tout le parcours :
+
+- une page d'accueil qui explique le produit et affiche les compteurs de données en direct ;
+- une recherche RAG qui répond en langage courant et cite ses sources ;
+- un portefeuille classé par risque, avec un graphe de risque et le nombre de défauts ;
+- une vue par bâtiment avec graphes KPI, une carte de localisation qui situe le bâtiment au Luxembourg à partir de ses coordonnées publiques, des infobulles sur chaque indicateur, et un export de rapport Excel ou PDF ;
+- une page Réglages pour choisir le fournisseur IA (Anthropic, OpenAI, Mistral, ou un modèle local Ollama) et saisir sa clé depuis l'interface, avec un test de connexion (la clé est stockée côté serveur et jamais renvoyée au navigateur) ;
+- une page d'ingestion RAG pour charger un nouveau rapport PDF et le faire extraire, scorer et indexer immédiatement.
+
+Les couleurs de sévérité sont cohérentes partout (critique rouge, majeur orange, mineur vert). Elle est bilingue, anglais par défaut avec une bascule français. C'est un outil local mono-utilisateur : il n'y a pas encore d'authentification (voir "Avec trois mois de plus").
 
 À lancer dans deux terminaux, après `make data` et `make extract` :
 
@@ -133,3 +159,9 @@ Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport,
 - Frontend : `cd web && npm install && npm run dev` (s'ouvre sur http://localhost:5173 et proxifie `/api` vers le backend)
 
 Voir `docs/architecture.md` et `docs/api.md` pour l'architecture et les endpoints.
+
+### Avec trois mois de plus
+
+- Accès B2B avec l'authentification unique Azure Entra ID : connexion multi-tenant, portefeuilles par organisation et rôles, pour partager l'outil au-delà d'une machine locale en toute sécurité. La page Réglages prévoit déjà un emplacement pour cela.
+- Indexation RAG incrémentale (ajouter seulement les passages du nouveau document au lieu de reconstruire tout l'index FAISS) et une file de tâches en arrière-plan pour l'ingestion, afin que les gros chargements et la réindexation ne bloquent jamais une requête.
+- Un cockpit de portefeuille à l'échelle : une carte géographique du parc et un signal de risque exploitable par machine (API) que les asset managers et les assureurs branchent sur leurs propres systèmes.
