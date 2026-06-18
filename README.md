@@ -40,7 +40,7 @@ Roadmap:
 
 ### Planned stack
 
-Python 3.11; SQLite for storage; pdfplumber for PDF reading; sentence-transformers and FAISS for semantic search; an LLM via API with an offline (mock) mode so it runs without a key; Streamlit for the UI.
+Python 3.11; SQLite for storage; pdfplumber for PDF reading; LlamaIndex with local sentence-transformers embeddings for retrieval (RAG); an LLM via API with an offline (mock) mode so it runs without a key; Streamlit for the UI.
 
 ### Data
 
@@ -66,7 +66,7 @@ Read that as a check on the pipeline mechanics, not a real-world accuracy: the m
 
 - SQLite, not a database server: one file, zero setup, reproducible from zero. The trade-off is single-writer concurrency, which is fine for a single-user tool and named as a limit.
 - pdfplumber for text, not OCR: the reports are digital PDFs, so text extraction is enough; OCR (pytesseract) is the obvious add for scanned reports.
-- Local embeddings (sentence-transformers) and FAISS, not a hosted vector store: no external dependency, fully reproducible, and a multilingual model so French reports work. The trade-off is a full-corpus reindex on each ingest, acceptable at this size.
+- LlamaIndex for retrieval with local sentence-transformers embeddings, not a hosted vector store: no external dependency, fully reproducible, and a multilingual model so French reports work. The trade-off is a full-corpus reindex on each ingest, acceptable at this size.
 - An LLM via API with a mock fallback: real extraction needs a key, but the whole app and the evaluation still run without one, so an evaluator can reproduce everything offline.
 - Streamlit first, then a React and FastAPI app: Streamlit bought speed for the core; the React app matches SECO's stack and was added only once the core was done. Both share the same Python core.
 - Synthetic inspection reports: no public corpus of real reports exists at volume, so a generator produces realistic ones against a real taxonomy (RICS C1/C2/C3). This is documented honestly and is swapped for real reports in production without touching the rest of the pipeline.
@@ -100,7 +100,7 @@ See `docs/architecture.md` and `docs/api.md` for the architecture and endpoints.
 ### With three more months
 
 - B2B access with Azure Entra ID single sign-on: multi-tenant login, per-organisation portfolios, and roles, so the tool can be shared safely beyond a local machine. The Settings page already shows a placeholder for it.
-- Incremental RAG indexing (add only the new document's chunks instead of rebuilding the whole FAISS index) and a background job queue for ingestion, so large uploads and reindexing never block a request.
+- Incremental RAG indexing (add only the new document's nodes instead of rebuilding the whole vector index) and a background job queue for ingestion, so large uploads and reindexing never block a request.
 - A portfolio cockpit at scale: a geographic map of the parc and a machine-readable risk signal (API) that asset managers and insurers can plug into their own systems.
 
 ---
@@ -141,7 +141,7 @@ Feuille de route :
 
 ### Stack envisagée
 
-Python 3.11 ; SQLite pour le stockage ; pdfplumber pour la lecture des PDF ; sentence-transformers et FAISS pour la recherche sémantique ; un LLM via API avec un mode hors ligne (mock) pour fonctionner sans clé ; Streamlit pour l'interface.
+Python 3.11 ; SQLite pour le stockage ; pdfplumber pour la lecture des PDF ; LlamaIndex avec des embeddings locaux sentence-transformers pour la recherche (RAG) ; un LLM via API avec un mode hors ligne (mock) pour fonctionner sans clé ; Streamlit pour l'interface.
 
 ### Données
 
@@ -167,7 +167,7 @@ Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport,
 
 - SQLite, pas un serveur de base de données : un seul fichier, zéro installation, reproductible depuis zéro. Le compromis est l'écriture concurrente limitée, ce qui convient à un outil mono-utilisateur et est annoncé comme une limite.
 - pdfplumber pour le texte, pas d'OCR : les rapports sont des PDF numériques, l'extraction de texte suffit ; l'OCR (pytesseract) est l'ajout évident pour des rapports scannés.
-- Embeddings locaux (sentence-transformers) et FAISS, pas de base vectorielle hébergée : aucune dépendance externe, entièrement reproductible, et un modèle multilingue pour les rapports en français. Le compromis est une réindexation complète à chaque ingestion, acceptable à cette taille.
+- LlamaIndex pour la recherche avec des embeddings locaux sentence-transformers, pas de base vectorielle hébergée : aucune dépendance externe, entièrement reproductible, et un modèle multilingue pour les rapports en français. Le compromis est une réindexation complète à chaque ingestion, acceptable à cette taille.
 - Un LLM via API avec un repli mock : l'extraction réelle demande une clé, mais toute l'application et l'évaluation tournent sans clé, donc un évaluateur peut tout reproduire hors ligne.
 - Streamlit d'abord, puis une app React et FastAPI : Streamlit a fait gagner du temps pour le cœur ; l'app React correspond à la stack de SECO et n'a été ajoutée qu'une fois le cœur terminé. Les deux partagent le même cœur Python.
 - Rapports d'inspection synthétiques : il n'existe pas de corpus public de vrais rapports en volume, un générateur en produit donc de réalistes sur une vraie taxonomie (RICS C1/C2/C3). C'est documenté honnêtement et remplacé par de vrais rapports en production sans toucher au reste du pipeline.
@@ -201,5 +201,5 @@ Voir `docs/architecture.md` et `docs/api.md` pour l'architecture et les endpoint
 ### Avec trois mois de plus
 
 - Accès B2B avec l'authentification unique Azure Entra ID : connexion multi-tenant, portefeuilles par organisation et rôles, pour partager l'outil au-delà d'une machine locale en toute sécurité. La page Réglages prévoit déjà un emplacement pour cela.
-- Indexation RAG incrémentale (ajouter seulement les passages du nouveau document au lieu de reconstruire tout l'index FAISS) et une file de tâches en arrière-plan pour l'ingestion, afin que les gros chargements et la réindexation ne bloquent jamais une requête.
+- Indexation RAG incrémentale (ajouter seulement les passages du nouveau document au lieu de reconstruire tout l'index vectoriel) et une file de tâches en arrière-plan pour l'ingestion, afin que les gros chargements et la réindexation ne bloquent jamais une requête.
 - Un cockpit de portefeuille à l'échelle : une carte géographique du parc et un signal de risque exploitable par machine (API) que les asset managers et les assureurs branchent sur leurs propres systèmes.
