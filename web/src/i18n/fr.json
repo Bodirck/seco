@@ -23,6 +23,7 @@
     "address": "Adresse",
     "source": "Source",
     "info": "Plus d'informations",
+    "theme": "Basculer le theme clair ou sombre",
     "mockNotice": "Aucune cle API detectee : les reponses tournent en mode mock. Ajoutez une cle dans .env pour de vraies reponses."
   },
   "provider": {

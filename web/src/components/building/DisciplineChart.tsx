@@ -9,6 +9,8 @@ import {
   YAxis,
 } from "recharts";
 import { Card, InfoTip } from "../ui";
+import { useTheme } from "../../theme/ThemeProvider";
+import { chartColors } from "../../lib/chartTheme";
 
 interface Props {
   data: { discipline: string; count: number }[];
@@ -16,6 +18,9 @@ interface Props {
 
 export default function DisciplineChart({ data }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const c = chartColors(theme);
+  const barFill = theme === "light" ? "#0891B2" : "#22D3EE";
 
   if (data.length === 0) {
     return null;
@@ -29,31 +34,33 @@ export default function DisciplineChart({ data }: Props) {
       </h3>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1B2433" />
+          <CartesianGrid strokeDasharray="3 3" stroke={c.grid} />
           <XAxis
             dataKey="discipline"
-            tick={{ fontSize: 11, fill: "#61708A" }}
+            tick={{ fontSize: 11, fill: c.tick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             allowDecimals={false}
-            tick={{ fontSize: 11, fill: "#61708A" }}
+            tick={{ fontSize: 11, fill: c.tick }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip
-            cursor={{ fill: "rgba(34,211,238,0.06)" }}
+            cursor={{ fill: c.cursor }}
             contentStyle={{
               fontSize: 12,
               borderRadius: 8,
-              background: "#0D131F",
-              border: "1px solid #2A3650",
-              color: "#E7EEF8",
+              background: c.tooltipBg,
+              border: `1px solid ${c.tooltipBorder}`,
+              color: c.tooltipText,
               boxShadow: "none",
             }}
+            labelStyle={{ color: c.tooltipLabel }}
+            itemStyle={{ color: c.tooltipText }}
           />
-          <Bar dataKey="count" fill="#22D3EE" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="count" fill={barFill} radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </Card>

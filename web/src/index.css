@@ -4,8 +4,56 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/*
+ * Two palettes as CSS variables (space-separated RGB triplets so Tailwind can apply
+ * opacity). The dark "First Light" theme is the default; .light is the clear theme.
+ * Toggling the class on <html> re-themes the whole app.
+ */
+:root,
+.dark {
   color-scheme: dark;
+  --ink-950: 5 7 13;
+  --ink-900: 9 13 23;
+  --ink-850: 13 19 31;
+  --ink-800: 17 24 39;
+  --ink-700: 24 32 47;
+  --line: 27 36 51;
+  --line-strong: 42 54 80;
+  --fg: 231 238 248;
+  --fg-muted: 154 167 189;
+  --fg-faint: 97 112 138;
+  --signal-300: 103 232 249;
+  --signal-400: 34 211 238;
+  --signal-500: 6 182 212;
+  --signal-600: 8 145 178;
+  --signal-700: 14 116 144;
+  --onaccent: 5 7 13;
+  --critical: 251 94 107;
+  --major: 245 181 68;
+  --minor: 52 211 153;
+}
+
+.light {
+  color-scheme: light;
+  --ink-950: 248 250 252;
+  --ink-900: 248 250 252;
+  --ink-850: 255 255 255;
+  --ink-800: 241 245 249;
+  --ink-700: 226 232 240;
+  --line: 226 232 240;
+  --line-strong: 203 213 225;
+  --fg: 15 23 42;
+  --fg-muted: 71 85 105;
+  --fg-faint: 100 116 139;
+  --signal-300: 14 116 144;
+  --signal-400: 8 145 178;
+  --signal-500: 14 116 144;
+  --signal-600: 21 94 117;
+  --signal-700: 22 78 99;
+  --onaccent: 255 255 255;
+  --critical: 220 38 38;
+  --major: 217 119 6;
+  --minor: 5 150 105;
 }
 
 body {
@@ -20,32 +68,31 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(60rem 60rem at 75% -10%, rgba(34, 211, 238, 0.06), transparent 60%),
-    radial-gradient(50rem 50rem at 0% 100%, rgba(34, 211, 238, 0.04), transparent 55%);
+    radial-gradient(60rem 60rem at 75% -10%, rgb(var(--signal-400) / 0.06), transparent 60%),
+    radial-gradient(50rem 50rem at 0% 100%, rgb(var(--signal-400) / 0.04), transparent 55%);
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.25);
-  color: #ffffff;
+  background: rgb(var(--signal-400) / 0.25);
 }
 
-/* Thin dark scrollbars for the instrument feel. */
+/* Thin scrollbars for the instrument feel. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2a3650 transparent;
+  scrollbar-color: rgb(var(--line-strong)) transparent;
 }
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #1b2433;
+  background: rgb(var(--line));
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: #2a3650;
+  background: rgb(var(--line-strong));
   background-clip: padding-box;
 }
 

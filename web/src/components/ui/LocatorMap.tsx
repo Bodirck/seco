@@ -5,6 +5,7 @@ import {
   TileLayer,
   Tooltip as LeafletTooltip,
 } from "react-leaflet";
+import { useTheme } from "../../theme/ThemeProvider";
 
 interface Props {
   lat: number | null;
@@ -15,11 +16,13 @@ interface Props {
 
 /**
  * A small read-only locator map placing the building in Luxembourg from its public
- * coordinates. Dark CARTO basemap to fit the First Light theme, and a CircleMarker
- * (no image assets) to avoid the Leaflet marker-icon bundling issue with Vite.
- * Scroll-zoom is off so the map never traps the page scroll.
+ * coordinates. The CARTO basemap and marker follow the active theme (dark or light),
+ * and a CircleMarker (no image assets) avoids the Leaflet marker-icon bundling issue
+ * with Vite. Scroll-zoom is off so the map never traps the page scroll.
  */
 export default function LocatorMap({ lat, lon, name, emptyLabel }: Props) {
+  const { theme } = useTheme();
+
   if (lat == null || lon == null) {
     return (
       <div className="flex h-[220px] items-center justify-center rounded-lg border border-line bg-ink-800 px-4 text-center text-sm text-fg-faint">
@@ -29,26 +32,33 @@ export default function LocatorMap({ lat, lon, name, emptyLabel }: Props) {
   }
 
   const pos: [number, number] = [lat, lon];
+  const isLight = theme === "light";
+  const tileUrl = isLight
+    ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  const markerColor = isLight ? "#0891B2" : "#22D3EE";
+  const mapBg = isLight ? "#FFFFFF" : "#090D17";
 
   return (
     <div className="h-[220px] overflow-hidden rounded-lg border border-line">
       <MapContainer
+        key={theme}
         center={pos}
         zoom={13}
         scrollWheelZoom={false}
-        style={{ height: "100%", width: "100%", background: "#090D17" }}
+        style={{ height: "100%", width: "100%", background: mapBg }}
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url={tileUrl}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
         <CircleMarker
           center={pos}
           radius={9}
           pathOptions={{
-            color: "#22D3EE",
+            color: markerColor,
             weight: 2,
-            fillColor: "#22D3EE",
+            fillColor: markerColor,
             fillOpacity: 0.35,
           }}
         >

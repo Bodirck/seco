@@ -1,41 +1,42 @@
-import colors from "tailwindcss/colors";
-
 /** @type {import('tailwindcss').Config} */
+// Colors resolve to CSS variables (space-separated RGB triplets) so the whole app
+// can switch between the dark ("First Light") and light themes by toggling a class
+// on <html>, with no component changes. See web/src/index.css for the two palettes.
+const v = (name) => `rgb(var(${name}) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // First Light v2 dark system (see design-system/buildinglens/V2-FIRST-LIGHT.md)
         ink: {
-          950: "#05070D",
-          900: "#090D17",
-          850: "#0D131F",
-          800: "#111827",
-          700: "#18202F",
+          950: v("--ink-950"),
+          900: v("--ink-900"),
+          850: v("--ink-850"),
+          800: v("--ink-800"),
+          700: v("--ink-700"),
         },
         line: {
-          DEFAULT: "#1B2433",
-          strong: "#2A3650",
+          DEFAULT: v("--line"),
+          strong: v("--line-strong"),
         },
         fg: {
-          DEFAULT: "#E7EEF8",
-          muted: "#9AA7BD",
-          faint: "#61708A",
+          DEFAULT: v("--fg"),
+          muted: v("--fg-muted"),
+          faint: v("--fg-faint"),
         },
         signal: {
-          300: "#67E8F9",
-          400: "#22D3EE",
-          500: "#06B6D4",
-          600: "#0891B2",
-          700: "#0E7490",
+          300: v("--signal-300"),
+          400: v("--signal-400"),
+          500: v("--signal-500"),
+          600: v("--signal-600"),
+          700: v("--signal-700"),
         },
-        critical: "#FB5E6B",
-        major: "#F5B544",
-        minor: "#34D399",
-        // v1 tokens kept available during the dark conversion; not used by v2 components
-        brand: colors.blue,
-        accent: colors.emerald,
+        // Text/icon color to place on a signal fill (always readable per theme).
+        onaccent: v("--onaccent"),
+        critical: v("--critical"),
+        major: v("--major"),
+        minor: v("--minor"),
       },
       fontFamily: {
         display: ['"Space Grotesk"', "ui-sans-serif", "system-ui", "sans-serif"],
@@ -44,7 +45,7 @@ export default {
       },
       boxShadow: {
         signal:
-          "0 0 0 1px rgba(34,211,238,0.15), 0 8px 30px -12px rgba(34,211,238,0.25)",
+          "0 0 0 1px rgb(var(--signal-400) / 0.18), 0 8px 30px -12px rgb(var(--signal-400) / 0.30)",
       },
     },
   },

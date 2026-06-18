@@ -23,6 +23,7 @@
     "address": "Address",
     "source": "Source",
     "info": "More information",
+    "theme": "Toggle light or dark theme",
     "mockNotice": "No API key detected: answers run in mock mode. Add a key to .env for real answers."
   },
   "provider": {

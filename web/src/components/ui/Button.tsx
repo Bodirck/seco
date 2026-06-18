@@ -44,7 +44,7 @@ const base =
   "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-signal-500 text-ink-950 hover:bg-signal-400 hover:shadow-signal",
+  primary: "bg-signal-500 text-onaccent hover:bg-signal-400 hover:shadow-signal",
   secondary:
     "border border-line text-fg hover:border-signal-400/60 hover:text-signal-300",
   ghost: "text-fg-muted hover:text-fg",

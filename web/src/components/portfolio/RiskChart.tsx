@@ -11,6 +11,8 @@ import {
 import type { BuildingSummary } from "../../api/types";
 import { useTranslation } from "react-i18next";
 import { riskHex } from "../../lib/risk";
+import { useTheme } from "../../theme/ThemeProvider";
+import { chartColors } from "../../lib/chartTheme";
 
 interface Props {
   buildings: BuildingSummary[];
@@ -22,6 +24,8 @@ function truncate(name: string, max = 16): string {
 
 export default function RiskChart({ buildings }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const c = chartColors(theme);
 
   const data = buildings
     .slice(0, 12)
@@ -30,10 +34,10 @@ export default function RiskChart({ buildings }: Props) {
   return (
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 48 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1B2433" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={c.grid} vertical={false} />
         <XAxis
           dataKey="name"
-          tick={{ fontSize: 11, fill: "#61708A" }}
+          tick={{ fontSize: 11, fill: c.tick }}
           tickLine={false}
           axisLine={false}
           interval={0}
@@ -42,26 +46,26 @@ export default function RiskChart({ buildings }: Props) {
         />
         <YAxis
           domain={[0, 100]}
-          tick={{ fontSize: 11, fill: "#61708A" }}
+          tick={{ fontSize: 11, fill: c.tick }}
           tickLine={false}
           axisLine={false}
           width={32}
         />
         <Tooltip
-          cursor={{ fill: "rgba(34,211,238,0.06)" }}
+          cursor={{ fill: c.cursor }}
           formatter={(value: number) => [value, t("common.riskScore")]}
           labelFormatter={(_label, payload) =>
             payload?.[0]?.payload?.fullName ?? _label
           }
           contentStyle={{
-            background: "#0D131F",
-            border: "1px solid #2A3650",
-            borderRadius: 8,
-            color: "#E7EEF8",
             fontSize: 12,
+            borderRadius: 8,
+            background: c.tooltipBg,
+            border: `1px solid ${c.tooltipBorder}`,
+            color: c.tooltipText,
           }}
-          labelStyle={{ color: "#9AA7BD" }}
-          itemStyle={{ color: "#E7EEF8" }}
+          labelStyle={{ color: c.tooltipLabel }}
+          itemStyle={{ color: c.tooltipText }}
         />
         <Bar dataKey="score" radius={[3, 3, 0, 0]}>
           {data.map((entry, index) => (
