@@ -7,6 +7,7 @@
     "home": "Home",
     "search": "Search",
     "portfolio": "Portfolio",
+    "ingest": "Ingest",
     "settings": "Settings"
   },
   "common": {
@@ -90,6 +91,29 @@
       "criticalDefects": "Defects rated critical: an immediate safety or structural concern.",
       "riskChart": "Risk score per building, highest first. The score combines how many defects a building has with how severe they are."
     }
+  },
+  "ingest": {
+    "title": "Ingest a report",
+    "subtitle": "Upload an inspection PDF. BuildingLens extracts the defects, recomputes the risk score, and indexes the text for search.",
+    "targetExisting": "Existing building",
+    "targetNew": "New building",
+    "selectBuilding": "Building",
+    "newName": "Building name",
+    "newAddress": "Address (optional)",
+    "file": "Inspection PDF",
+    "chooseFile": "Choose a PDF",
+    "noFile": "No file selected",
+    "submit": "Ingest",
+    "submitting": "Ingesting...",
+    "processingNote": "Extraction can take a moment.",
+    "resultTitle": "Ingestion complete",
+    "defectsExtracted": "Defects extracted",
+    "newRiskScore": "New risk score",
+    "viewBuilding": "View building",
+    "mockNote": "No defects were extracted: the app is running in mock mode without an API key. Configure a key in",
+    "emptyTitle": "No buildings yet",
+    "emptyBody": "Ingest your first inspection report to extract its defects, score the building and make it searchable.",
+    "cta": "Ingest a report"
   },
   "building": {
     "overview": "Overview",

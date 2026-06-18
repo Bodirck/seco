@@ -15,6 +15,7 @@ const NAV_ITEMS: { to: string; key: string }[] = [
   { to: "/", key: "nav.home" },
   { to: "/search", key: "nav.search" },
   { to: "/portfolio", key: "nav.portfolio" },
+  { to: "/ingest", key: "nav.ingest" },
   { to: "/settings", key: "nav.settings" },
 ];
 

@@ -7,6 +7,7 @@
     "home": "Accueil",
     "search": "Recherche",
     "portfolio": "Portefeuille",
+    "ingest": "Ingestion",
     "settings": "Parametres"
   },
   "common": {
@@ -90,6 +91,29 @@
       "criticalDefects": "Defauts juges critiques : un risque immediat pour la securite ou la structure.",
       "riskChart": "Score de risque par batiment, du plus eleve au plus faible. Le score combine le nombre de defauts et leur gravite."
     }
+  },
+  "ingest": {
+    "title": "Ingerer un rapport",
+    "subtitle": "Chargez un PDF d'inspection. BuildingLens en extrait les defauts, recalcule le score de risque et indexe le texte pour la recherche.",
+    "targetExisting": "Batiment existant",
+    "targetNew": "Nouveau batiment",
+    "selectBuilding": "Batiment",
+    "newName": "Nom du batiment",
+    "newAddress": "Adresse (optionnel)",
+    "file": "PDF d'inspection",
+    "chooseFile": "Choisir un PDF",
+    "noFile": "Aucun fichier selectionne",
+    "submit": "Ingerer",
+    "submitting": "Ingestion...",
+    "processingNote": "L'extraction peut prendre un moment.",
+    "resultTitle": "Ingestion terminee",
+    "defectsExtracted": "Defauts extraits",
+    "newRiskScore": "Nouveau score de risque",
+    "viewBuilding": "Voir le batiment",
+    "mockNote": "Aucun defaut n'a ete extrait : l'application tourne en mode mock sans cle API. Configurez une cle dans",
+    "emptyTitle": "Aucun batiment pour l'instant",
+    "emptyBody": "Ingerez votre premier rapport d'inspection pour en extraire les defauts, noter le batiment et le rendre interrogeable.",
+    "cta": "Ingerer un rapport"
   },
   "building": {
     "overview": "Apercu",

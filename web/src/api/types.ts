@@ -61,6 +61,23 @@ export interface Meta {
   defects: number;
 }
 
+/**
+ * Result of POST /api/ingest. A PDF is attached either to an existing building
+ * (building_id supplied) or to a freshly created one (name supplied). `mock` is
+ * true when the active client is the MockClient, in which case no defects are
+ * extracted and `message` says so.
+ */
+export interface IngestResult {
+  document_id: number;
+  building_id: number;
+  building_name: string;
+  defects_extracted: number;
+  new_risk_score: number;
+  chunks_indexed: number;
+  mock: boolean;
+  message: string;
+}
+
 export type SettingsProvider =
   | "anthropic"
   | "openai"

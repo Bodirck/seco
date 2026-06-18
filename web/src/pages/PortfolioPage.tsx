@@ -7,6 +7,7 @@ import RiskChart from "../components/portfolio/RiskChart";
 import SeverityCell from "../components/portfolio/SeverityCell";
 import {
   Badge,
+  Button,
   Card,
   EmptyState,
   InfoTip,
@@ -161,8 +162,9 @@ export default function PortfolioPage() {
       {buildings.length === 0 ? (
         <Card className="px-5 py-4">
           <EmptyState
-            title={t("portfolio.title")}
-            description={t("portfolio.subtitle")}
+            title={t("ingest.emptyTitle")}
+            description={t("ingest.emptyBody")}
+            action={<Button to="/ingest">{t("ingest.cta")}</Button>}
           />
         </Card>
       ) : (
