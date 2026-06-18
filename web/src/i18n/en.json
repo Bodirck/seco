@@ -4,6 +4,7 @@
     "tagline": "Inspection reports and public data, turned into a building risk view."
   },
   "nav": {
+    "home": "Home",
     "search": "Search",
     "portfolio": "Portfolio"
   },
@@ -26,6 +27,32 @@
     "label": "AI provider",
     "tooltip": "Effective AI provider for answers: {{provider}}.",
     "mockTooltip": "Running in mock mode: answers are generated locally without an API key."
+  },
+  "landing": {
+    "kicker": "Building intelligence",
+    "title": "Turn inspection reports into a clear building risk view",
+    "subtitle": "BuildingLens reads technical inspection reports and public construction data, then surfaces the defects and risk that matter to asset managers and insurers.",
+    "ctaSearch": "Ask the portfolio",
+    "ctaPortfolio": "Browse the portfolio",
+    "problemTitle": "The problem",
+    "problemBody": "Asset managers and insurers sit on stacks of long, heterogeneous inspection reports. Each one is written differently, the important defects are buried in dense prose, and there is no quick way to compare risk across a portfolio. Reading them all by hand does not scale.",
+    "featureExtractTitle": "Extract defects",
+    "featureExtractBody": "Pull every defect out of a PDF report, with its discipline, location and severity.",
+    "featureScoreTitle": "Score risk",
+    "featureScoreBody": "Roll the defects up into a single risk score per building, weighted by severity.",
+    "featureAskTitle": "Ask in plain language",
+    "featureAskBody": "Question the portfolio in everyday words and get answers grounded in the reports, with citations.",
+    "statBuildings": "Buildings",
+    "statDocuments": "Documents",
+    "statDefects": "Defects",
+    "noData": "No data ingested yet",
+    "ctaIngest": "Feed a report",
+    "howItWorks": "BuildingLens runs on public data: EUBUCCO Luxembourg buildings, STATEC construction permits, and synthetic inspection reports. Everything is reproducible from the"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you are looking for does not exist or has moved.",
+    "cta": "Back to home"
   },
   "footer": {
     "tagline": "BuildingLens turns public construction data into a building risk view.",

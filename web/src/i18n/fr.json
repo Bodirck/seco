@@ -4,6 +4,7 @@
     "tagline": "Rapports d'inspection et donnees publiques, transformes en vue de risque des batiments."
   },
   "nav": {
+    "home": "Accueil",
     "search": "Recherche",
     "portfolio": "Portefeuille"
   },
@@ -26,6 +27,32 @@
     "label": "Fournisseur IA",
     "tooltip": "Fournisseur IA effectif pour les reponses : {{provider}}.",
     "mockTooltip": "Mode mock : les reponses sont generees localement sans cle API."
+  },
+  "landing": {
+    "kicker": "Intelligence batimentaire",
+    "title": "Transformez les rapports d'inspection en une vue de risque claire",
+    "subtitle": "BuildingLens lit les rapports d'inspection technique et les donnees publiques de la construction, puis fait ressortir les defauts et le risque qui comptent pour les asset managers et les assureurs.",
+    "ctaSearch": "Interroger le portefeuille",
+    "ctaPortfolio": "Parcourir le portefeuille",
+    "problemTitle": "Le probleme",
+    "problemBody": "Les asset managers et les assureurs croulent sous des piles de rapports d'inspection longs et heterogenes. Chacun est redige differemment, les defauts importants sont noyes dans une prose dense, et il n'existe aucun moyen rapide de comparer le risque sur un parc entier. Tout lire a la main ne passe pas a l'echelle.",
+    "featureExtractTitle": "Extraire les defauts",
+    "featureExtractBody": "Sortez chaque defaut d'un rapport PDF, avec sa discipline, sa localisation et sa severite.",
+    "featureScoreTitle": "Noter le risque",
+    "featureScoreBody": "Agregez les defauts en un seul score de risque par batiment, pondere par la severite.",
+    "featureAskTitle": "Interroger en langage courant",
+    "featureAskBody": "Questionnez le parc avec des mots de tous les jours et obtenez des reponses ancrees dans les rapports, avec citations.",
+    "statBuildings": "Batiments",
+    "statDocuments": "Documents",
+    "statDefects": "Defauts",
+    "noData": "Aucune donnee ingeree pour l'instant",
+    "ctaIngest": "Charger un rapport",
+    "howItWorks": "BuildingLens fonctionne sur des donnees publiques : batiments EUBUCCO Luxembourg, permis de construire STATEC, et rapports d'inspection synthetiques. Tout est reproductible depuis le"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "body": "La page que vous cherchez n'existe pas ou a ete deplacee.",
+    "cta": "Retour a l'accueil"
   },
   "footer": {
     "tagline": "BuildingLens transforme les donnees publiques de la construction en vue de risque des batiments.",

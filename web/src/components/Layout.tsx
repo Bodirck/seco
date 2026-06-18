@@ -12,7 +12,8 @@ function setLang(lng: string) {
 
 /** Primary navigation, data driven so active state works for nested routes. */
 const NAV_ITEMS: { to: string; key: string }[] = [
-  { to: "/", key: "nav.search" },
+  { to: "/", key: "nav.home" },
+  { to: "/search", key: "nav.search" },
   { to: "/portfolio", key: "nav.portfolio" },
 ];
 
@@ -141,7 +142,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-5 text-xs text-fg-faint sm:flex-row sm:items-center">
-          <span>{t("footer.tagline")}</span>
+          <span className="text-fg-muted">{t("footer.tagline")}</span>
           <a
             href="https://github.com/mmilanesi/buildinglens"
             target="_blank"
