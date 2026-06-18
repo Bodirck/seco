@@ -5,6 +5,7 @@ import LandingPage from "./pages/LandingPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import SearchPage from "./pages/SearchPage";
+import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/building/:id" element={<BuildingPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Layout>

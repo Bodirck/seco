@@ -6,7 +6,8 @@
   "nav": {
     "home": "Home",
     "search": "Search",
-    "portfolio": "Portfolio"
+    "portfolio": "Portfolio",
+    "settings": "Settings"
   },
   "common": {
     "language": "Language",
@@ -121,6 +122,40 @@
       "downloads": "Generate a client-ready report with the executive summary and the full defect table. Excel keeps the table interactive; PDF is print-ready.",
       "askAbout": "Ask in plain language. The answer is grounded only in this building's report and cites the passages it used.",
       "map": "Approximate position of the building in Luxembourg, from its public coordinates."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Choose the AI provider used for answers, set its key and model, and check the connection.",
+    "provider": "AI provider",
+    "effective": "Active client:",
+    "apiKey": "API key",
+    "apiKeyPlaceholder": "Paste an API key",
+    "apiKeyHint": "Stored on the server and never shown again. Leave blank to keep the current key.",
+    "keySet": "Key set, ...{{tail}}",
+    "model": "Model",
+    "ollamaUrl": "Ollama base URL",
+    "ollamaModel": "Ollama model",
+    "test": "Test connection",
+    "testing": "Testing...",
+    "testOk": "Connection works. Active client: {{effective}}.",
+    "testFail": "Connection failed: {{message}}",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Settings saved.",
+    "mockWarning": "An online provider is selected but no valid key was found, so answers are running in mock mode. Add a key and save to use the real provider.",
+    "authTitle": "Authentication (Azure Entra ID)",
+    "authBody": "Single sign-on with Azure Entra ID is planned, so the portfolio can be shared with named users behind your organisation's identity. This panel is documentation only for now.",
+    "tenantId": "Tenant ID",
+    "clientId": "Client ID",
+    "connectSso": "Connect single sign-on",
+    "comingSoon": "Coming soon",
+    "providerOptions": {
+      "anthropic": "Anthropic (Claude)",
+      "openai": "OpenAI",
+      "mistral": "Mistral",
+      "local": "Local (Ollama)",
+      "mock": "Mock (no key)"
     }
   }
 }

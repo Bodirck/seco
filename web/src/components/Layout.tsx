@@ -15,6 +15,7 @@ const NAV_ITEMS: { to: string; key: string }[] = [
   { to: "/", key: "nav.home" },
   { to: "/search", key: "nav.search" },
   { to: "/portfolio", key: "nav.portfolio" },
+  { to: "/settings", key: "nav.settings" },
 ];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -55,7 +56,11 @@ function ProviderChip() {
 
   return (
     <Tooltip label={tooltip}>
-      <span aria-label={`${t("provider.label")}: ${provider}`}>
+      <Link
+        to="/settings"
+        aria-label={`${t("provider.label")}: ${provider}`}
+        className="rounded-full transition-opacity duration-150 hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+      >
         <Badge tone={isMock ? "major" : "signal"}>
           <span className="flex items-center gap-1.5">
             {isMock ? (
@@ -67,7 +72,7 @@ function ProviderChip() {
             {provider}
           </span>
         </Badge>
-      </span>
+      </Link>
     </Tooltip>
   );
 }

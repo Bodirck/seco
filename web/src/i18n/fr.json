@@ -6,7 +6,8 @@
   "nav": {
     "home": "Accueil",
     "search": "Recherche",
-    "portfolio": "Portefeuille"
+    "portfolio": "Portefeuille",
+    "settings": "Parametres"
   },
   "common": {
     "language": "Langue",
@@ -121,6 +122,40 @@
       "downloads": "Generez un rapport pret pour le client avec la synthese et le tableau complet des defauts. Excel garde le tableau interactif ; le PDF est pret a imprimer.",
       "askAbout": "Posez votre question en langage courant. La reponse s'appuie uniquement sur le rapport de ce batiment et cite les passages utilises.",
       "map": "Position approximative du batiment au Luxembourg, d'apres ses coordonnees publiques."
+    }
+  },
+  "settings": {
+    "title": "Parametres",
+    "subtitle": "Choisissez le fournisseur IA utilise pour les reponses, definissez sa cle et son modele, et verifiez la connexion.",
+    "provider": "Fournisseur IA",
+    "effective": "Client actif :",
+    "apiKey": "Cle API",
+    "apiKeyPlaceholder": "Collez une cle API",
+    "apiKeyHint": "Stockee sur le serveur et jamais reaffichee. Laissez vide pour conserver la cle actuelle.",
+    "keySet": "Cle definie, ...{{tail}}",
+    "model": "Modele",
+    "ollamaUrl": "URL de base Ollama",
+    "ollamaModel": "Modele Ollama",
+    "test": "Tester la connexion",
+    "testing": "Test en cours...",
+    "testOk": "La connexion fonctionne. Client actif : {{effective}}.",
+    "testFail": "Echec de la connexion : {{message}}",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "saved": "Parametres enregistres.",
+    "mockWarning": "Un fournisseur en ligne est selectionne mais aucune cle valide n'a ete trouvee : les reponses tournent en mode mock. Ajoutez une cle et enregistrez pour utiliser le vrai fournisseur.",
+    "authTitle": "Authentification (Azure Entra ID)",
+    "authBody": "L'authentification unique avec Azure Entra ID est prevue, afin de partager le portefeuille avec des utilisateurs nommes derriere l'identite de votre organisation. Ce panneau est purement documentaire pour l'instant.",
+    "tenantId": "Identifiant de locataire",
+    "clientId": "Identifiant client",
+    "connectSso": "Activer l'authentification unique",
+    "comingSoon": "Bientot disponible",
+    "providerOptions": {
+      "anthropic": "Anthropic (Claude)",
+      "openai": "OpenAI",
+      "mistral": "Mistral",
+      "local": "Local (Ollama)",
+      "mock": "Mock (sans cle)"
     }
   }
 }

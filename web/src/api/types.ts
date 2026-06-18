@@ -60,3 +60,56 @@ export interface Meta {
   documents: number;
   defects: number;
 }
+
+export type SettingsProvider =
+  | "anthropic"
+  | "openai"
+  | "mistral"
+  | "local"
+  | "mock";
+
+/**
+ * Current AI provider configuration as reported by GET/PUT /api/settings.
+ * The raw API key is never returned: only whether one is set (`has_key`) and
+ * its last 4 characters (`key_tail`). `effective` is the client actually in
+ * use, so it reveals a silent fallback to mock when a key is missing.
+ */
+export interface SettingsState {
+  provider: SettingsProvider;
+  effective: string;
+  anthropic_model: string;
+  openai_model: string;
+  mistral_model: string;
+  ollama_base_url: string;
+  ollama_model: string;
+  has_key: { anthropic: boolean; openai: boolean; mistral: boolean };
+  key_tail: {
+    anthropic: string | null;
+    openai: string | null;
+    mistral: string | null;
+  };
+}
+
+/**
+ * Body for PUT /api/settings. Every field is optional; only sent fields are
+ * applied. An empty-string key means "leave unchanged"; a non-empty key sets it.
+ */
+export interface SettingsUpdate {
+  provider?: SettingsProvider;
+  anthropic_api_key?: string;
+  openai_api_key?: string;
+  mistral_api_key?: string;
+  anthropic_model?: string;
+  openai_model?: string;
+  mistral_model?: string;
+  ollama_base_url?: string;
+  ollama_model?: string;
+}
+
+/** Result of a real liveness check from POST /api/settings/test. */
+export interface SettingsTestResult {
+  ok: boolean;
+  provider: string;
+  effective: string;
+  message: string;
+}
