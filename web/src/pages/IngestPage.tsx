@@ -3,13 +3,16 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import type { BuildingSummary, IngestResult } from "../api/types";
 import {
-  Badge,
   Button,
-  Card,
+  CodeLabel,
+  DecodeText,
+  DossierNumber,
   Input,
-  PageHeader,
+  Panel,
   Spinner,
+  StatusTag,
 } from "../components/ui";
+import { caseId, CODES, sector } from "../lib/dossier";
 import { riskTone } from "../lib/risk";
 
 type Target = "existing" | "new";
@@ -19,7 +22,8 @@ type Target = "existing" | "new";
  * building or to a new one. Mirrors POST /api/ingest: when a building is picked
  * we send its id; otherwise a non-empty name creates a new building. On success
  * we surface the extracted defect count and the recomputed risk score, with a
- * mock-mode note when the active client extracted nothing.
+ * mock-mode note when the active client extracted nothing. Reskinned as the
+ * "INTAKE // INGEST" dossier panel; codes are chrome, labels stay in i18n.
  */
 export default function IngestPage() {
   const { t } = useTranslation();
@@ -105,17 +109,33 @@ export default function IngestPage() {
   const hasBuildings = (buildings?.length ?? 0) > 0;
 
   const radioClass = (active: boolean) =>
-    "flex-1 cursor-pointer rounded-lg border px-4 py-3 text-left transition duration-150 ease-out " +
+    "flex-1 cursor-pointer rounded-sm border px-4 py-3 text-left transition duration-150 ease-out " +
     "focus-within:outline-none focus-within:ring-2 focus-within:ring-signal-400/70 " +
     (active
       ? "border-signal-400/60 bg-ink-800 text-fg"
       : "border-line bg-ink-850 text-fg-muted hover:border-line-strong hover:text-fg");
 
-  return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader title={t("ingest.title")} meta={t("ingest.subtitle")} />
+  const resultScore = result ? Math.round(result.new_risk_score) : 0;
 
-      <Card className="p-6">
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <Panel
+        code={CODES.intake}
+        title={t("ingest.title")}
+        accent="orange"
+        windowButtons
+        footer="REF 0x2B // SECTOR 04 // INTAKE QUEUE"
+        className="animate-panel-in"
+      >
+        <DecodeText
+          as="h1"
+          text={t("ingest.title")}
+          className="block font-display text-2xl font-bold uppercase tracking-wide text-fg"
+        />
+        <p className="mt-2 mb-6 text-sm leading-relaxed text-fg-muted">
+          {t("ingest.subtitle")}
+        </p>
+
         {buildingsLoading ? (
           <div className="flex items-center justify-center gap-3 py-12 text-sm text-fg-muted">
             <Spinner size="sm" />
@@ -135,7 +155,7 @@ export default function IngestPage() {
                     onChange={() => onTargetChange("existing")}
                     className="sr-only"
                   />
-                  <span className="block font-display text-sm font-semibold">
+                  <span className="block font-display text-sm font-semibold uppercase tracking-wide">
                     {t("ingest.targetExisting")}
                   </span>
                 </label>
@@ -149,7 +169,7 @@ export default function IngestPage() {
                   onChange={() => onTargetChange("new")}
                   className="sr-only"
                 />
-                <span className="block font-display text-sm font-semibold">
+                <span className="block font-display text-sm font-semibold uppercase tracking-wide">
                   {t("ingest.targetNew")}
                 </span>
               </label>
@@ -172,10 +192,14 @@ export default function IngestPage() {
                     setResult(null);
                     setError(null);
                   }}
-                  className="w-full cursor-pointer rounded-lg border border-line bg-ink-800 px-3 py-2 text-sm text-fg transition duration-150 ease-out focus-visible:border-signal-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                  className="w-full cursor-pointer rounded-sm border border-line bg-ink-800 px-3 py-2 text-sm text-fg transition duration-150 ease-out focus-visible:border-signal-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
                 >
                   {(buildings ?? []).map((b) => (
-                    <option key={b.id} value={b.id} className="bg-ink-800 text-fg">
+                    <option
+                      key={b.id}
+                      value={b.id}
+                      className="bg-ink-800 text-fg"
+                    >
                       {b.name}
                     </option>
                   ))}
@@ -217,7 +241,7 @@ export default function IngestPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <label
                   htmlFor={fileInputId}
-                  className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-line px-4 font-display text-sm font-semibold text-fg transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-signal-400/70"
+                  className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-sm border border-line px-4 font-display text-sm font-semibold uppercase tracking-wide text-fg transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-signal-400/70"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -250,7 +274,11 @@ export default function IngestPage() {
 
             {/* Submit. */}
             <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={handleSubmit} disabled={!canSubmit}>
+              <Button
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                className="rounded-sm uppercase tracking-wide"
+              >
                 {submitting ? t("ingest.submitting") : t("ingest.submit")}
               </Button>
               {submitting && (
@@ -262,13 +290,13 @@ export default function IngestPage() {
             </div>
           </div>
         )}
-      </Card>
+      </Panel>
 
       {/* Error alert. */}
       {error && (
         <div
           role="alert"
-          className="mt-6 rounded-lg border border-critical/40 bg-critical/10 px-4 py-3 text-sm text-critical"
+          className="rounded-sm border border-critical/40 bg-critical/10 px-4 py-3 text-sm text-critical"
         >
           {error}
         </div>
@@ -276,33 +304,40 @@ export default function IngestPage() {
 
       {/* Success result panel. */}
       {result && (
-        <Card className="mt-6 p-6">
+        <Panel
+          code={`${CODES.casefile} ${caseId(result.building_id)}`}
+          title={t("ingest.resultTitle")}
+          accent="orange"
+          windowButtons
+          footer={`${caseId(result.building_id)} // ${sector(result.building_id)} // INGESTED`}
+          className="animate-panel-in"
+        >
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-fg-muted">
-              {t("ingest.resultTitle")}
-            </h2>
-            <Badge tone={riskTone(Math.round(result.new_risk_score))}>
-              {Math.round(result.new_risk_score)}
-            </Badge>
+            <p className="min-w-0 truncate font-sans text-sm text-fg">
+              {result.building_name}
+            </p>
+            <StatusTag label={resultScore} tone={riskTone(resultScore)} />
           </div>
 
-          <p className="mt-2 text-sm text-fg-muted">{result.building_name}</p>
-
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-line bg-ink-850 px-4 py-3">
-              <p className="font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
+            <div className="rounded-sm border border-line bg-ink-800 px-4 py-3">
+              <CodeLabel accent="amber">
                 {t("ingest.defectsExtracted")}
-              </p>
-              <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums text-fg">
-                {result.defects_extracted}
+              </CodeLabel>
+              <p className="mt-1.5">
+                <DossierNumber
+                  value={result.defects_extracted}
+                  className="text-3xl text-fg sm:text-4xl"
+                />
               </p>
             </div>
-            <div className="rounded-lg border border-line bg-ink-850 px-4 py-3">
-              <p className="font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
-                {t("ingest.newRiskScore")}
-              </p>
-              <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums text-fg">
-                {Math.round(result.new_risk_score)}
+            <div className="rounded-sm border border-line bg-ink-800 px-4 py-3">
+              <CodeLabel accent="amber">{t("ingest.newRiskScore")}</CodeLabel>
+              <p className="mt-1.5">
+                <DossierNumber
+                  value={resultScore}
+                  className="text-3xl sm:text-4xl"
+                />
               </p>
             </div>
           </div>
@@ -310,7 +345,7 @@ export default function IngestPage() {
           {result.mock && (
             <div
               role="note"
-              className="mt-5 rounded-lg border border-major/30 bg-major/10 px-4 py-3 text-sm text-major"
+              className="mt-5 rounded-sm border border-major/40 bg-major/10 px-4 py-3 text-sm text-major"
             >
               {t("ingest.mockNote")}{" "}
               <Button variant="ghost" size="sm" to="/settings" className="px-0">
@@ -320,11 +355,14 @@ export default function IngestPage() {
           )}
 
           <div className="mt-6">
-            <Button to={`/building/${result.building_id}`}>
+            <Button
+              to={`/building/${result.building_id}`}
+              className="rounded-sm uppercase tracking-wide"
+            >
               {t("ingest.viewBuilding")}
             </Button>
           </div>
-        </Card>
+        </Panel>
       )}
     </div>
   );

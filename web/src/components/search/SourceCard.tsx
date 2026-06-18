@@ -1,32 +1,42 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Source } from "../../api/types";
-import { Card } from "../../components/ui";
+import { Panel } from "../../components/ui";
+import { caseId, sector } from "../../lib/dossier";
 
 interface SourceCardProps {
   source: Source;
   index: number;
 }
 
+/**
+ * One cited passage rendered as a small dossier tile: a "SOURCE //" coded title
+ * bar carrying the source index, the building case id and the document id in mono,
+ * a View link back to the building dossier, and the quoted snippet as the body.
+ * The codes (SOURCE //, DOC, the case id) are chrome and stay in English.
+ */
 export default function SourceCard({ source, index }: SourceCardProps) {
   const { t } = useTranslation();
 
+  const code = `SOURCE // ${String(index + 1).padStart(2, "0")}`;
+
   return (
-    <Card className="p-4">
-      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-signal-500/15 font-mono text-xs font-semibold tabular-nums text-signal-300">
-          {index + 1}
-        </span>
-        <span className="text-sm font-medium text-fg">
-          {t("common.building")}{" "}
-          <span className="font-mono tabular-nums">{source.building_id}</span>
+    <Panel
+      code={code}
+      windowButtons={false}
+      footer={`${caseId(source.building_id)} // ${sector(source.building_id)}`}
+    >
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <span className="font-mono text-sm font-semibold tabular-nums text-signal-300">
+          {caseId(source.building_id)}
         </span>
         <span className="font-mono text-xs tabular-nums text-fg-faint">
-          #{source.document_id}
+          DOC #{source.document_id}
         </span>
         <Link
           to={`/building/${source.building_id}`}
-          className="ml-auto inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-line px-3 font-display text-xs font-semibold text-fg transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+          aria-label={`${t("portfolio.viewDetail")} ${caseId(source.building_id)}`}
+          className="ml-auto inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-sm border border-line px-3 font-display text-xs font-semibold uppercase tracking-wide text-fg transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
         >
           {t("portfolio.viewDetail")}
           <svg
@@ -46,6 +56,6 @@ export default function SourceCard({ source, index }: SourceCardProps) {
       <p className="text-sm italic leading-relaxed text-fg-muted">
         &ldquo;{source.snippet}&rdquo;
       </p>
-    </Card>
+    </Panel>
   );
 }

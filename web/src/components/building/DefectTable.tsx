@@ -13,7 +13,8 @@ const SEVERITIES: Severity[] = ["critical", "major", "minor"];
 
 /**
  * Filter chip styling. Active chips use the severity wash and color; idle chips
- * are a quiet hairline outline that warms to the severity color on hover.
+ * are a quiet hairline outline that warms to the severity color on hover. Square
+ * corners (rounded-sm) for the HUD feel.
  */
 function chipClasses(severity: Severity, active: boolean): string {
   if (active) {
@@ -72,7 +73,7 @@ export default function DefectTable({ defects }: Props) {
               onClick={() => toggleFilter(s)}
               aria-pressed={active}
               className={cn(
-                "cursor-pointer rounded-full border px-2.5 py-1 font-mono text-xs font-medium transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70",
+                "cursor-pointer rounded-sm border px-2.5 py-1 font-mono text-xs font-medium uppercase tabular-nums transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70",
                 chipClasses(s, active),
               )}
             >
@@ -83,10 +84,10 @@ export default function DefectTable({ defects }: Props) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-line">
+      <div className="overflow-x-auto rounded-sm border border-line">
         <table className="min-w-full divide-y divide-line text-sm">
           <thead className="bg-ink-800">
-            <tr>
+            <tr className="font-display text-[11px] font-medium uppercase tracking-[0.18em] text-fg-faint">
               {(
                 [
                   "building.discipline",
@@ -96,10 +97,7 @@ export default function DefectTable({ defects }: Props) {
                   "building.severity",
                 ] as const
               ).map((key) => (
-                <th
-                  key={key}
-                  className="px-3 py-2.5 text-left font-display text-xs font-medium uppercase tracking-wide text-fg-faint"
-                >
+                <th key={key} className="px-3 py-2.5 text-left font-medium">
                   {t(key)}
                 </th>
               ))}
@@ -110,7 +108,7 @@ export default function DefectTable({ defects }: Props) {
               <tr>
                 <td
                   colSpan={5}
-                  className="px-3 py-6 text-center text-fg-muted"
+                  className="px-3 py-6 text-center font-mono text-xs uppercase tracking-wide text-fg-muted"
                 >
                   {t("common.defects")}: 0
                 </td>
@@ -119,9 +117,9 @@ export default function DefectTable({ defects }: Props) {
               visible.map((defect, idx) => (
                 <tr
                   key={idx}
-                  className="transition-colors duration-150 hover:bg-ink-800"
+                  className="transition-colors duration-150 hover:bg-ink-800/60"
                 >
-                  <td className="whitespace-nowrap px-3 py-2.5 text-fg">
+                  <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-fg">
                     {defect.discipline}
                   </td>
                   <td className="px-3 py-2.5 text-fg">{defect.element}</td>

@@ -4,7 +4,15 @@ import { api } from "../api/client";
 import type { AskResponse, Meta } from "../api/types";
 import AnswerPanel from "../components/search/AnswerPanel";
 import MockNoticeBanner from "../components/search/MockNoticeBanner";
-import { Button, Input, Spinner } from "../components/ui";
+import {
+  Button,
+  CodeLabel,
+  DecodeText,
+  Input,
+  Panel,
+  Spinner,
+} from "../components/ui";
+import { CODES } from "../lib/dossier";
 
 type QueryState =
   | { status: "idle" }
@@ -64,73 +72,95 @@ export default function SearchPage() {
     <div className="mx-auto max-w-2xl">
       {/* Mock notice banner */}
       {meta?.provider === "mock" && (
-        <div className="mb-8">
+        <div className="mb-8 animate-panel-in">
           <MockNoticeBanner />
         </div>
       )}
 
-      {/* Hero heading */}
-      <div className="mb-10 text-center">
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-          {t("search.title")}
-        </h1>
-        <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-fg-muted">
+      {/* Query terminal: the search form lives inside a "QUERY //" dossier panel. */}
+      <Panel
+        code={CODES.query}
+        title={t("search.title")}
+        accent="orange"
+        windowButtons
+        footer="REF 0x1F // SECTOR 03 // INTEL TERMINAL"
+        className="animate-panel-in"
+      >
+        {/* Hero heading with a decode reveal. */}
+        <DecodeText
+          as="h1"
+          text={t("search.title")}
+          className="block font-display text-2xl font-bold uppercase tracking-wide text-fg sm:text-3xl"
+        />
+        <p className="mt-2 text-sm leading-relaxed text-fg-muted">
           {t("search.subtitle")}
         </p>
-      </div>
 
-      {/* Search form */}
-      <form onSubmit={handleSubmit} className="mb-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-          <div className="min-w-0 flex-1">
-            <Input
-              ref={inputRef}
-              type="text"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder={t("search.placeholder")}
-              disabled={isLoading}
-              aria-label={t("search.placeholder")}
-              className="h-11 px-4 text-sm"
-            />
-          </div>
-          <Button
-            type="submit"
-            disabled={isLoading || !question.trim()}
-            className="h-11 shrink-0 px-5"
-          >
-            {t("search.ask")}
-          </Button>
-        </div>
-      </form>
-
-      {/* Example chips */}
-      <div className="mb-3">
-        <p className="mb-2 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
-          {t("search.examples")}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {examples.map((ex, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => handleExampleClick(ex)}
-              disabled={isLoading}
-              className="cursor-pointer rounded-full border border-line bg-ink-850 px-3 py-1.5 text-xs text-fg-muted transition duration-150 ease-out hover:border-signal-400/40 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70 disabled:cursor-not-allowed disabled:opacity-50"
+        {/* Search form: prompt input + orange Ask button. */}
+        <form onSubmit={handleSubmit} className="mt-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-sm border border-line bg-ink-800 pl-3 transition duration-150 ease-out focus-within:border-signal-400/60 focus-within:ring-2 focus-within:ring-signal-400/70">
+              <span
+                aria-hidden="true"
+                className="select-none font-mono text-sm font-semibold text-signal-400"
+              >
+                &gt;_
+              </span>
+              <Input
+                ref={inputRef}
+                type="text"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder={t("search.placeholder")}
+                disabled={isLoading}
+                aria-label={t("search.placeholder")}
+                className="h-11 border-0 bg-transparent px-0 focus-visible:ring-0"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={isLoading || !question.trim()}
+              className="h-11 shrink-0 rounded-sm px-5 uppercase tracking-wide"
             >
-              {ex}
-            </button>
-          ))}
-        </div>
-      </div>
+              {t("search.ask")}
+            </Button>
+          </div>
+        </form>
 
-      {/* Grounding note */}
-      <p className="mb-10 text-xs leading-relaxed text-fg-muted">
-        {t("search.groundedNote")}
-      </p>
+        {/* Example chips as terminal options. */}
+        <div className="mt-5">
+          <p className="mb-2">
+            <CodeLabel accent="amber">{t("search.examples")}</CodeLabel>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {examples.map((ex, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleExampleClick(ex)}
+                disabled={isLoading}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-line bg-ink-800 px-3 py-1.5 text-xs text-fg-muted transition duration-150 ease-out hover:border-signal-400/40 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span
+                  aria-hidden="true"
+                  className="font-mono text-[10px] font-semibold text-signal-400"
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {ex}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Grounding note. */}
+        <p className="mt-5 text-xs leading-relaxed text-fg-faint">
+          {t("search.groundedNote")}
+        </p>
+      </Panel>
 
       {/* Result area */}
-      <div>
+      <div className="mt-8">
         {queryState.status === "idle" && (
           <p className="text-center text-sm text-fg-faint">
             {t("search.noAnswer")}
@@ -147,7 +177,7 @@ export default function SearchPage() {
         {queryState.status === "error" && (
           <div
             role="alert"
-            className="rounded-lg border border-critical/30 bg-critical/10 px-4 py-3 text-sm text-critical"
+            className="rounded-sm border border-critical/40 bg-critical/10 px-4 py-3 text-sm text-critical"
           >
             {t("common.error")}
             {queryState.message && (

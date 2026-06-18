@@ -67,7 +67,7 @@ export default function RiskChart({ buildings }: Props) {
           labelStyle={{ color: c.tooltipLabel }}
           itemStyle={{ color: c.tooltipText }}
         />
-        <Bar dataKey="score" radius={[3, 3, 0, 0]}>
+        <Bar dataKey="score" radius={[2, 2, 0, 0]}>
           {data.map((entry, index) => (
             <Cell key={index} fill={riskHex(entry.score)} />
           ))}

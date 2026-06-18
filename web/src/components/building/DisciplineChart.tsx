@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Card, InfoTip } from "../ui";
+import { InfoTip, Panel } from "../ui";
 import { useTheme } from "../../theme/ThemeProvider";
 import { chartColors } from "../../lib/chartTheme";
 
@@ -20,18 +20,18 @@ export default function DisciplineChart({ data }: Props) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const c = chartColors(theme);
-  const barFill = theme === "light" ? "#0891B2" : "#22D3EE";
+  // Orange bars, slightly darkened in light mode for contrast.
+  const barFill = theme === "light" ? "#E66E00" : "#FF7A00";
 
   if (data.length === 0) {
     return null;
   }
 
   return (
-    <Card className="p-5">
-      <h3 className="mb-4 flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
-        {t("building.byDiscipline")}
+    <Panel code="DEFECTS // DISCIPLINE" title={t("building.byDiscipline")}>
+      <div className="mb-2 flex items-center justify-end">
         <InfoTip text={t("building.tips.byDiscipline")} />
-      </h3>
+      </div>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={c.grid} />
@@ -63,6 +63,6 @@ export default function DisciplineChart({ data }: Props) {
           <Bar dataKey="count" fill={barFill} radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
-    </Card>
+    </Panel>
   );
 }

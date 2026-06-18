@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Card, InfoTip } from "../ui";
+import { InfoTip, Panel } from "../ui";
 import { SEVERITY_HEX } from "../../lib/risk";
 import { useTheme } from "../../theme/ThemeProvider";
 import { chartColors } from "../../lib/chartTheme";
@@ -25,11 +25,10 @@ export default function SeverityChart({ bySeverity }: Props) {
   }
 
   return (
-    <Card className="p-5">
-      <h3 className="mb-4 flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
-        {t("building.bySeverity")}
+    <Panel code="DEFECTS // SEVERITY" title={t("building.bySeverity")}>
+      <div className="mb-2 flex items-center justify-end">
         <InfoTip text={t("building.tips.bySeverity")} />
-      </h3>
+      </div>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
           <Pie
@@ -66,6 +65,6 @@ export default function SeverityChart({ bySeverity }: Props) {
           />
         </PieChart>
       </ResponsiveContainer>
-    </Card>
+    </Panel>
   );
 }

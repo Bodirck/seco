@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { api } from "../api/client";
@@ -11,14 +16,19 @@ import SeverityChart from "../components/building/SeverityChart";
 import {
   Badge,
   Button,
-  Card,
+  CodeLabel,
+  DecodeText,
+  DossierNumber,
   EmptyState,
   InfoTip,
   LocatorMap,
-  PageHeader,
-  Section,
+  Panel,
+  ScanFrame,
   Spinner,
+  StatusTag,
 } from "../components/ui";
+import { caseId, sector, CODES } from "../lib/dossier";
+import { cn } from "../lib/cn";
 import { riskHex, riskTone } from "../lib/risk";
 
 function DownloadIcon() {
@@ -39,14 +49,41 @@ function DownloadIcon() {
   );
 }
 
-/** One quiet row inside the Overview card: a faint label and a mono value. */
-function InfoRow({ label, value }: { label: string; value: string }) {
+// ---------------------------------------------------------------------------
+// Sequential panel entrance: a thin wrapper that staggers the panel-in
+// animation by index. Reduced-motion is handled by the keyframe itself.
+// ---------------------------------------------------------------------------
+
+function Reveal({
+  index,
+  className,
+  children,
+}: {
+  index: number;
+  className?: string;
+  children: ReactNode;
+}) {
+  const style: CSSProperties = { animationDelay: `${index * 50}ms` };
   return (
-    <div className="flex items-start justify-between gap-3 py-2.5">
-      <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">
+    <div className={cn("animate-panel-in", className)} style={style}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * One data field inside the GEO INTEL dossier: an Oswald amber key label and a
+ * mono value, on a single hairline-separated row.
+ */
+function DataField({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-2">
+      <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
         {label}
-      </dt>
-      <dd className="text-right font-mono text-sm tabular-nums text-fg">{value}</dd>
+      </span>
+      <span className="text-right font-mono text-sm tabular-nums text-fg">
+        {value}
+      </span>
     </div>
   );
 }
@@ -118,123 +155,198 @@ export default function BuildingPage() {
 
   if (!building) return null;
 
+  const case_ = caseId(building.id);
+  const sector_ = sector(building.id);
+
   const yearBuilt =
-    building.year_built != null ? String(building.year_built) : "-";
-  const height = building.height_m != null ? `${building.height_m} m` : "-";
+    building.year_built != null ? String(building.year_built) : "N/A";
+  const height = building.height_m != null ? `${building.height_m} m` : "N/A";
   const hasCoordinates =
     building.latitude != null && building.longitude != null;
   const coordinates = hasCoordinates
     ? `${building.latitude?.toFixed(4)}, ${building.longitude?.toFixed(4)}`
-    : "-";
+    : "N/A";
 
   const score = building.breakdown.risk_score;
   const scoreColor = riskHex(score);
   const scoreTone = riskTone(score);
+  const statusLabel =
+    scoreTone === "critical"
+      ? t("common.critical")
+      : scoreTone === "major"
+        ? t("common.major")
+        : t("common.minor");
 
   return (
     <div className="space-y-8">
-      {/* Single home of identity: name, one meta line (address + source), and
-          the risk score promoted as the headline metric. */}
-      <PageHeader
-        title={building.name}
-        meta={
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span>{building.address}</span>
-            {building.source && (
-              <Badge tone="neutral">{building.source}</Badge>
-            )}
-          </span>
-        }
-        actions={
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="flex items-center justify-end gap-1.5 font-display text-xs font-medium uppercase tracking-widest text-fg-faint">
-                {t("common.riskScore")}
+      {/* Dossier head: case number + name + risk index, the single home of
+          identity for this building. */}
+      <Reveal index={0}>
+        <Panel
+          code={
+            <>
+              {CODES.casefile} {case_}
+            </>
+          }
+          footer={`REF 0xA7 // ${sector_} // VERIFIED`}
+        >
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            {/* Identity block */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-3">
+                <DossierNumber value={case_} />
+                <CodeLabel accent="amber" className="text-[11px]">
+                  {sector_}
+                </CodeLabel>
+              </div>
+              <DecodeText
+                as="h1"
+                text={building.name}
+                className="mt-3 block font-display text-2xl font-semibold uppercase tracking-wide text-fg sm:text-3xl"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-fg-muted">
+                <span>{building.address}</span>
+                {building.source && (
+                  <StatusTag label={building.source} tone="signal" />
+                )}
+              </div>
+            </div>
+
+            {/* Risk index headline metric */}
+            <div className="shrink-0 border-line lg:border-l lg:pl-6">
+              <p className="flex items-center justify-start gap-1.5 font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-faint lg:justify-end">
+                {CODES.risk}
                 <InfoTip text={t("building.tips.riskScore")} />
               </p>
-              <p
-                className="font-mono text-4xl font-bold leading-none tabular-nums sm:text-5xl"
-                style={{ color: scoreColor }}
-              >
-                {score.toFixed(1)}
-              </p>
+              <div className="mt-1 flex items-center gap-3 lg:justify-end">
+                <span
+                  className="font-mono text-5xl font-bold leading-none tabular-nums sm:text-6xl"
+                  style={{ color: scoreColor }}
+                >
+                  {score.toFixed(1)}
+                </span>
+                <Badge tone={scoreTone}>{statusLabel}</Badge>
+              </div>
             </div>
-            <Badge tone={scoreTone} className="self-start">
-              {scoreTone === "critical"
-                ? t("common.critical")
-                : scoreTone === "major"
-                  ? t("common.major")
-                  : t("common.minor")}
-            </Badge>
           </div>
-        }
-      />
+        </Panel>
+      </Reveal>
 
-      {/* Severity KPI cards (risk score now lives in the header). */}
-      <KpiCards breakdown={building.breakdown} />
+      {/* Scan visual + geo intel side by side. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Reveal index={1}>
+          <Panel
+            code="SCAN // VOLUME"
+            title={t("building.overview")}
+            footer={`REF 0xB4 // ${case_} // POINT CLOUD`}
+          >
+            <ScanFrame label={case_} className="h-[260px]">
+              <div className="absolute right-3 top-3">
+                <CodeLabel className="text-[10px]">{sector_}</CodeLabel>
+              </div>
+            </ScanFrame>
+          </Panel>
+        </Reveal>
 
-      {/* Overview: info card + locator map. Identity rows removed to avoid
-          duplicating the header. */}
-      <Section title={t("building.overview")}>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Card className="p-5">
-            <dl className="divide-y divide-line">
-              <InfoRow label={t("building.yearBuilt")} value={yearBuilt} />
-              <InfoRow label={t("building.height")} value={height} />
-              <InfoRow label={t("building.map")} value={coordinates} />
-            </dl>
-          </Card>
-          <Card className="p-5">
-            <h3 className="mb-3 flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
-              {t("building.map")}
-              <InfoTip text={t("building.tips.map")} />
-            </h3>
+        <Reveal index={2}>
+          <Panel
+            code={CODES.geo}
+            title={t("building.map")}
+            footer={`REF 0xC2 // ${coordinates}`}
+          >
             <LocatorMap
               lat={building.latitude}
               lon={building.longitude}
               name={building.name}
               emptyLabel={t("building.noCoordinates")}
             />
-          </Card>
-        </div>
-      </Section>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <DisciplineChart data={building.kpis.by_discipline} />
-        <SeverityChart bySeverity={building.kpis.by_severity} />
+            <dl className="mt-4 divide-y divide-line border-t border-line pt-1">
+              <div className="flex items-center justify-between gap-2 py-2">
+                <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
+                  COORD
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="font-mono text-sm tabular-nums text-fg">
+                    {coordinates}
+                  </span>
+                  <InfoTip text={t("building.tips.map")} />
+                </span>
+              </div>
+              <DataField label="YEAR" value={yearBuilt} />
+              <DataField label="ARCHITECT" value="N/A" />
+              <DataField label="HEIGHT" value={height} />
+              <div className="flex items-center justify-between gap-3 py-2">
+                <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
+                  STATUS
+                </span>
+                <StatusTag label={statusLabel} tone={scoreTone} />
+              </div>
+            </dl>
+          </Panel>
+        </Reveal>
       </div>
 
-      {/* Client report downloads */}
-      <Section title={t("building.downloads")} tip={t("building.tips.downloads")}>
-        <div className="flex flex-wrap gap-3">
-          <Button
-            href={api.reportUrl(numericId, "xlsx")}
-            variant="primary"
-            leftIcon={<DownloadIcon />}
-          >
-            {t("building.downloadExcel")}
-          </Button>
-          <Button
-            href={api.reportUrl(numericId, "pdf")}
-            variant="secondary"
-            leftIcon={<DownloadIcon />}
-          >
-            {t("building.downloadPdf")}
-          </Button>
-        </div>
-      </Section>
+      {/* Severity KPI tiles (risk index lives in the dossier head). */}
+      <Reveal index={3}>
+        <KpiCards breakdown={building.breakdown} buildingId={building.id} />
+      </Reveal>
 
-      {/* Defect list */}
-      <Section
-        title={t("building.defectList")}
-        tip={t("building.tips.defectList")}
-      >
-        <DefectTable defects={building.defects} />
-      </Section>
+      {/* Defect charts */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Reveal index={4}>
+          <DisciplineChart data={building.kpis.by_discipline} />
+        </Reveal>
+        <Reveal index={5}>
+          <SeverityChart bySeverity={building.kpis.by_severity} />
+        </Reveal>
+      </div>
 
-      {/* Ask about this building */}
-      <AskSection buildingId={numericId} />
+      {/* Client report export */}
+      <Reveal index={6}>
+        <Panel
+          code="REPORT // EXPORT"
+          title={t("building.downloads")}
+          footer={`REF 0xE1 // ${case_} // CLIENT-READY`}
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              href={api.reportUrl(numericId, "xlsx")}
+              variant="primary"
+              leftIcon={<DownloadIcon />}
+            >
+              {t("building.downloadExcel")}
+            </Button>
+            <Button
+              href={api.reportUrl(numericId, "pdf")}
+              variant="secondary"
+              leftIcon={<DownloadIcon />}
+            >
+              {t("building.downloadPdf")}
+            </Button>
+            <InfoTip text={t("building.tips.downloads")} />
+          </div>
+        </Panel>
+      </Reveal>
+
+      {/* Defect log */}
+      <Reveal index={7}>
+        <Panel
+          code={CODES.defects}
+          title={t("building.defectList")}
+          footer={`REF 0xF3 // ${building.defects.length} ENTRIES // ${sector_}`}
+        >
+          <div className="mb-3 flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
+            {t("building.defectList")}
+            <InfoTip text={t("building.tips.defectList")} />
+          </div>
+          <DefectTable defects={building.defects} />
+        </Panel>
+      </Reveal>
+
+      {/* Natural-language query */}
+      <Reveal index={8}>
+        <AskSection buildingId={numericId} caseId={case_} />
+      </Reveal>
     </div>
   );
 }

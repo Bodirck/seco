@@ -20,10 +20,18 @@ const NAV_ITEMS: { to: string; key: string }[] = [
   { to: "/settings", key: "nav.settings" },
 ];
 
+/**
+ * Terminal-tab nav item: Oswald uppercase, strongly tracked. Active gets the
+ * signal accent with a boxed ink-800 highlight and an underline rule; idle stays
+ * muted and warms to fg on hover.
+ */
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  "rounded-md px-1 py-0.5 cursor-pointer transition-colors duration-150 " +
+  "relative rounded-sm px-2 py-1 font-display text-xs font-medium uppercase tracking-[0.18em] " +
+  "cursor-pointer transition-colors duration-150 " +
   "focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70 " +
-  (isActive ? "text-signal-300" : "text-fg-muted hover:text-fg");
+  (isActive
+    ? "bg-ink-800 text-signal-300 ring-1 ring-inset ring-signal-500/40 border-b-2 border-signal-500"
+    : "border-b-2 border-transparent text-fg-muted hover:text-fg");
 
 /**
  * Small header chip showing the effective AI provider. When the backend reports
@@ -149,39 +157,69 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-20 border-b border-line bg-ink-900/80 backdrop-blur">
+      {/* HUD command bar: wordmark, status strip, terminal-tab nav. */}
+      <header className="sticky top-0 z-20 border-b border-line-strong bg-ink-900/85 backdrop-blur">
+        {/* Thin accent rule along the very top edge, pure chrome. */}
+        <span aria-hidden="true" className="block h-px w-full bg-signal-500/60" />
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-4">
             <Link
               to="/"
-              className="rounded-md font-display text-lg font-semibold tracking-tight text-fg transition-colors duration-150 hover:text-signal-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+              className="group flex items-center gap-2 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
             >
-              {t("app.name")}
+              {/* Decorative dossier glyph next to the wordmark. */}
+              <span
+                aria-hidden="true"
+                className="flex h-6 w-6 items-center justify-center rounded-sm border border-signal-500/50 bg-signal-500/10 text-signal-300"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0">
+                  <rect x="2.5" y="1.5" width="9" height="11" rx="0.6" stroke="currentColor" strokeWidth="1.1" />
+                  <line x1="4.6" y1="4.4" x2="9.4" y2="4.4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+                  <line x1="4.6" y1="7" x2="9.4" y2="7" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+                  <line x1="4.6" y1="9.6" x2="7.4" y2="9.6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-fg transition-colors duration-150 group-hover:text-signal-300">
+                Building<span className="text-signal-500">Lens</span>
+              </span>
             </Link>
             <ProviderChip />
           </div>
-          <nav className="flex items-center gap-6 font-display text-sm">
+          <nav className="flex items-center gap-1.5">
             {NAV_ITEMS.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.to === "/"} className={navLinkClass}>
                 {t(item.key)}
               </NavLink>
             ))}
+            <span aria-hidden="true" className="mx-1 h-4 w-px bg-line-strong" />
             <ThemeToggle />
             <LangSwitcher />
           </nav>
+        </div>
+        {/* Faint technical sub-bar: decorative codes, chrome only. */}
+        <div className="mx-auto hidden max-w-6xl items-center gap-3 border-t border-line px-4 py-1 sm:flex">
+          <span className="font-display text-[10px] font-medium uppercase tracking-[0.18em] text-signal-300/80">
+            SECURE TERMINAL
+          </span>
+          <span aria-hidden="true" className="font-mono text-[10px] tracking-[0.18em] text-fg-faint">
+            // SESSION 0x1F // SECTOR 03 // ENCRYPTED
+          </span>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
 
+      {/* Faint technical micro-text footer. */}
       <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-5 text-xs text-fg-faint sm:flex-row sm:items-center">
-          <span className="text-fg-muted">{t("footer.tagline")}</span>
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-4 sm:flex-row sm:items-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-faint">
+            REF 0xA7 // {t("footer.tagline")}
+          </p>
           <a
             href="https://github.com/mmilanesi/buildinglens"
             target="_blank"
             rel="noreferrer"
-            className="rounded-md font-display cursor-pointer transition-colors duration-150 hover:text-signal-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+            className="rounded-sm font-display text-[10px] font-medium uppercase tracking-[0.18em] text-fg-faint cursor-pointer transition-colors duration-150 hover:text-signal-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
           >
             {t("footer.repo")}
           </a>

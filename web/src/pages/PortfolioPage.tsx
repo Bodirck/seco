@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
@@ -6,59 +6,73 @@ import type { BuildingSummary } from "../api/types";
 import RiskChart from "../components/portfolio/RiskChart";
 import SeverityCell from "../components/portfolio/SeverityCell";
 import {
-  Badge,
   Button,
   Card,
+  DecodeText,
+  DossierNumber,
   EmptyState,
   InfoTip,
-  PageHeader,
-  Section,
+  Panel,
   Spinner,
+  StatusTag,
 } from "../components/ui";
+import { caseId, sector, CODES } from "../lib/dossier";
 import { cn } from "../lib/cn";
 import { riskTone } from "../lib/risk";
 
 // ---------------------------------------------------------------------------
-// KPI card
+// Sequential panel entrance: a thin wrapper that staggers the panel-in
+// animation by index. Reduced-motion is handled by the keyframe itself.
 // ---------------------------------------------------------------------------
 
-interface KpiCardProps {
-  label: string;
-  value: number | string;
-  tip: string;
-  accent?: "default" | "critical";
-}
-
-function KpiCard({ label, value, tip, accent = "default" }: KpiCardProps) {
+function Reveal({
+  index,
+  className,
+  children,
+}: {
+  index: number;
+  className?: string;
+  children: ReactNode;
+}) {
+  const style: CSSProperties = { animationDelay: `${index * 50}ms` };
   return (
-    <Card className="px-5 py-4">
-      <p className="flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
-        {label}
-        <InfoTip text={tip} />
-      </p>
-      <p
-        className={cn(
-          "mt-1.5 font-mono text-3xl font-semibold tabular-nums",
-          accent === "critical" ? "text-critical" : "text-fg",
-        )}
-      >
-        {value}
-      </p>
-    </Card>
+    <div className={cn("animate-panel-in", className)} style={style}>
+      {children}
+    </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Risk score pill
+// KPI panel: a compact dossier module with a code label and a big mono figure.
 // ---------------------------------------------------------------------------
 
-function RiskPill({ score }: { score: number }) {
-  const rounded = Math.round(score);
-  return <Badge tone={riskTone(rounded)}>{rounded}</Badge>;
+interface KpiPanelProps {
+  code: ReactNode;
+  label: string;
+  value: number | string;
+  tip: string;
+  ref_: string;
+  accent?: "orange" | "amber";
+  critical?: boolean;
+}
+
+function KpiPanel({ code, label, value, tip, ref_, accent = "orange", critical }: KpiPanelProps) {
+  return (
+    <Panel code={code} accent={accent} footer={ref_}>
+      <p className="flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
+        {label}
+        <InfoTip text={tip} />
+      </p>
+      <DossierNumber
+        value={value}
+        className={cn("mt-2 block", critical ? "text-critical" : "text-fg")}
+      />
+    </Panel>
+  );
 }
 
 // ---------------------------------------------------------------------------
-// PortfolioPage
+// PortfolioPage: the "CASE LOG" view.
 // ---------------------------------------------------------------------------
 
 export default function PortfolioPage() {
@@ -126,102 +140,204 @@ export default function PortfolioPage() {
   // ---------------------------------------------------------------------------
   return (
     <div>
-      <PageHeader title={t("portfolio.title")} meta={t("portfolio.subtitle")} />
+      {/* Header dossier */}
+      <Reveal index={0} className="mb-8">
+        <Panel code="CASE LOG // PORTFOLIO" footer="REF 0xC1 // CLEARANCE: OPEN // VERIFIED">
+          <DecodeText
+            as="h1"
+            text={t("portfolio.title")}
+            className="font-display text-2xl font-semibold uppercase tracking-wide text-fg sm:text-3xl"
+          />
+          <p className="mt-2 text-sm text-fg-muted">{t("portfolio.subtitle")}</p>
+        </Panel>
+      </Reveal>
 
-      {/* KPI cards */}
+      {/* KPI panels */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard
-          label={t("portfolio.buildings")}
-          value={buildings.length}
-          tip={t("portfolio.tips.buildings")}
-        />
-        <KpiCard
-          label={t("portfolio.totalDefects")}
-          value={totalDefects}
-          tip={t("portfolio.tips.totalDefects")}
-        />
-        <KpiCard
-          label={t("portfolio.criticalDefects")}
-          value={totalCritical}
-          tip={t("portfolio.tips.criticalDefects")}
-          accent="critical"
-        />
+        <Reveal index={1}>
+          <KpiPanel
+            code={<>{CODES.casefile} COUNT</>}
+            label={t("portfolio.buildings")}
+            value={buildings.length}
+            tip={t("portfolio.tips.buildings")}
+            ref_="REF 0xB0 // SECTOR 01"
+          />
+        </Reveal>
+        <Reveal index={2}>
+          <KpiPanel
+            code={<>{CODES.defects} TOTAL</>}
+            label={t("portfolio.totalDefects")}
+            value={totalDefects}
+            tip={t("portfolio.tips.totalDefects")}
+            ref_="REF 0xB1 // SECTOR 02"
+          />
+        </Reveal>
+        <Reveal index={3}>
+          <KpiPanel
+            code={<>{CODES.defects} CRITICAL</>}
+            label={t("portfolio.criticalDefects")}
+            value={totalCritical}
+            tip={t("portfolio.tips.criticalDefects")}
+            ref_="REF 0xB2 // PRIORITY: HIGH"
+            accent="amber"
+            critical
+          />
+        </Reveal>
       </div>
 
-      {/* Risk score bar chart */}
+      {/* Risk index chart */}
       {buildings.length > 0 && (
-        <Section title={t("common.riskScore")} tip={t("portfolio.tips.riskChart")}>
-          <Card className="p-4">
-            <RiskChart buildings={buildings} />
+        <Reveal index={4} className="mb-8">
+          <Panel
+            code={CODES.risk}
+            title={t("common.riskScore")}
+            footer="REF 0xD3 // TOP 12 // DESC"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
+                {t("common.riskScore")}
+              </span>
+              <InfoTip text={t("portfolio.tips.riskChart")} />
+            </div>
+            <div className="mt-3">
+              <RiskChart buildings={buildings} />
+            </div>
             <p className="mt-3 text-xs text-fg-faint">{t("portfolio.chartNote")}</p>
-          </Card>
-        </Section>
+          </Panel>
+        </Reveal>
       )}
 
-      {/* Buildings table */}
+      {/* Case log */}
       {buildings.length === 0 ? (
-        <Card className="px-5 py-4">
-          <EmptyState
-            title={t("ingest.emptyTitle")}
-            description={t("ingest.emptyBody")}
-            action={<Button to="/ingest">{t("ingest.cta")}</Button>}
-          />
-        </Card>
+        <Reveal index={5}>
+          <Panel code={CODES.casefile} title={t("portfolio.title")}>
+            <EmptyState
+              title={t("ingest.emptyTitle")}
+              description={t("ingest.emptyBody")}
+              action={<Button to="/ingest">{t("ingest.cta")}</Button>}
+            />
+          </Panel>
+        </Reveal>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-line text-xs font-medium uppercase tracking-wide text-fg-faint">
-                <th className="px-4 py-3 font-display font-medium">{t("portfolio.name")}</th>
-                <th className="hidden px-4 py-3 font-display font-medium md:table-cell">
-                  {t("common.address")}
-                </th>
-                <th className="px-4 py-3 font-display font-medium">{t("common.riskScore")}</th>
-                <th className="px-4 py-3 font-display font-medium">{t("common.defects")}</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {buildings.map((b) => (
-                <tr
-                  key={b.id}
-                  className="group border-b border-line transition-colors last:border-b-0 hover:bg-ink-800/60"
-                >
-                  {/* Name cell links to detail */}
-                  <td className="px-4 py-3 font-medium">
-                    <Link
-                      to={`/building/${b.id}`}
-                      className="rounded-sm text-fg transition-colors hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
-                    >
-                      {b.name}
-                    </Link>
-                  </td>
-                  <td className="hidden px-4 py-3 text-fg-muted md:table-cell">
-                    {b.address}
-                  </td>
-                  <td className="px-4 py-3">
-                    <RiskPill score={b.risk_score} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <SeverityCell
-                      critical={b.critical}
-                      major={b.major}
-                      minor={b.minor}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      to={`/building/${b.id}`}
-                      className="inline-flex items-center rounded-lg border border-line px-3 py-1 font-display text-xs font-medium text-fg-muted transition-colors hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
-                    >
-                      {t("portfolio.viewDetail")}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+        <Reveal index={5}>
+          <Panel
+            code="CASE LOG // INDEX"
+            title={t("nav.portfolio")}
+            footer={`REF 0xE7 // ${buildings.length} FILES // VERIFIED`}
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-line-strong font-display text-[11px] font-medium uppercase tracking-[0.18em] text-fg-faint">
+                    <th className="px-3 py-2.5 font-medium">CASE</th>
+                    <th className="px-3 py-2.5 font-medium">{t("portfolio.name")}</th>
+                    <th className="hidden px-3 py-2.5 font-medium md:table-cell">
+                      {t("common.address")}
+                    </th>
+                    <th className="px-3 py-2.5 font-medium">{CODES.risk}</th>
+                    <th className="px-3 py-2.5 font-medium">STATUS</th>
+                    <th className="px-3 py-2.5 font-medium">{t("common.defects")}</th>
+                    <th className="px-3 py-2.5" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {buildings.map((b) => {
+                    const tone = riskTone(Math.round(b.risk_score));
+                    const statusLabel = t(`common.${tone}`);
+                    return (
+                      <tr
+                        key={b.id}
+                        className="group border-b border-line transition-colors last:border-b-0 hover:bg-ink-800/60"
+                      >
+                        {/* Case id */}
+                        <td className="px-3 py-3 align-middle">
+                          <span className="font-mono text-xs font-medium tabular-nums text-signal-300">
+                            {caseId(b.id)}
+                          </span>
+                          <span className="mt-0.5 block font-display text-[10px] uppercase tracking-[0.18em] text-fg-faint">
+                            {sector(b.id)}
+                          </span>
+                        </td>
+                        {/* Name links to detail */}
+                        <td className="px-3 py-3 align-middle font-medium">
+                          <Link
+                            to={`/building/${b.id}`}
+                            className="rounded-sm text-fg transition-colors hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                          >
+                            {b.name}
+                          </Link>
+                        </td>
+                        <td className="hidden px-3 py-3 align-middle text-fg-muted md:table-cell">
+                          {b.address}
+                        </td>
+                        {/* Risk index value */}
+                        <td className="px-3 py-3 align-middle">
+                          <span
+                            className={cn(
+                              "font-mono text-base font-semibold tabular-nums",
+                              tone === "critical" && "text-critical",
+                              tone === "major" && "text-major",
+                              tone === "minor" && "text-minor",
+                            )}
+                          >
+                            {Math.round(b.risk_score)}
+                          </span>
+                        </td>
+                        {/* Status tag */}
+                        <td className="px-3 py-3 align-middle">
+                          <StatusTag label={statusLabel} tone={tone} />
+                        </td>
+                        {/* Severity counts */}
+                        <td className="px-3 py-3 align-middle">
+                          <SeverityCell
+                            critical={b.critical}
+                            major={b.major}
+                            minor={b.minor}
+                          />
+                        </td>
+                        {/* View action */}
+                        <td className="px-3 py-3 text-right align-middle">
+                          <Link
+                            to={`/building/${b.id}`}
+                            aria-label={`${t("portfolio.viewDetail")} ${caseId(b.id)}`}
+                            className="inline-flex items-center gap-1.5 rounded-sm border border-line px-3 py-1 font-display text-xs font-medium uppercase tracking-wide text-fg-muted transition-colors hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                          >
+                            {t("portfolio.viewDetail")}
+                            <svg
+                              width="11"
+                              height="11"
+                              viewBox="0 0 11 11"
+                              fill="none"
+                              aria-hidden="true"
+                              className="shrink-0"
+                            >
+                              <line
+                                x1="2"
+                                y1="5.5"
+                                x2="8.5"
+                                y2="5.5"
+                                stroke="currentColor"
+                                strokeWidth="1.2"
+                                strokeLinecap="round"
+                              />
+                              <path
+                                d="M5.8 3 8.5 5.5 5.8 8"
+                                stroke="currentColor"
+                                strokeWidth="1.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
+        </Reveal>
       )}
     </div>
   );
