@@ -59,7 +59,7 @@ Read that as a check on the pipeline mechanics, not a real-world accuracy: the m
 
 ### Web app (React)
 
-Alongside the Streamlit app there is a polished React web app (Vite, TypeScript, Tailwind) served by a FastAPI backend that reuses the same Python core. It has three views: a RAG search landing page with example queries, a portfolio ranked by risk, and a per-building BI view with KPI charts and Excel or PDF report export. It is bilingual, English by default with a French toggle.
+Alongside the Streamlit app there is a polished React web app (Vite, TypeScript, Tailwind) served by a FastAPI backend that reuses the same Python core. It has three views: a RAG search landing page with example queries, a portfolio ranked by risk, and a per-building BI view with KPI charts, a small locator map that places the building in Luxembourg from its public coordinates, and Excel or PDF report export. Explanatory tooltips across the building page describe each indicator, and the severity colors are consistent everywhere (critical red, major amber, minor green). It is bilingual, English by default with a French toggle.
 
 Run it in two terminals, after `make data` and `make extract`:
 
@@ -125,7 +125,7 @@ Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport,
 
 ### Application web (React)
 
-À côté de l'app Streamlit, une application web React soignée (Vite, TypeScript, Tailwind) est servie par un backend FastAPI qui réutilise le même cœur Python. Trois vues : une page d'accueil de recherche RAG avec des exemples de requêtes, un portefeuille classé par risque, et une vue BI par bâtiment avec graphes KPI et export de rapport Excel ou PDF. Elle est bilingue, anglais par défaut avec une bascule français.
+À côté de l'app Streamlit, une application web React soignée (Vite, TypeScript, Tailwind) est servie par un backend FastAPI qui réutilise le même cœur Python. Trois vues : une page d'accueil de recherche RAG avec des exemples de requêtes, un portefeuille classé par risque, et une vue BI par bâtiment avec graphes KPI, une petite carte de localisation qui situe le bâtiment au Luxembourg à partir de ses coordonnées publiques, et un export de rapport Excel ou PDF. Des infobulles explicatives sur toute la page bâtiment décrivent chaque indicateur, et les couleurs de sévérité sont cohérentes partout (critique rouge, majeur orange, mineur vert). Elle est bilingue, anglais par défaut avec une bascule français.
 
 À lancer dans deux terminaux, après `make data` et `make extract` :
 
