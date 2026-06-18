@@ -306,10 +306,27 @@ def _report_plan(
     rng = random.Random(seed + building_id)
     insp_date = _build_inspection_date(rng)
     inspector = rng.choice(_INSPECTORS)
-    sections = [
-        (discipline, _sample_defects(rng, discipline, rng.randint(2, 4)))
-        for discipline in _DISCIPLINES
-    ]
+
+    # Per-building condition from 0 (sound) to 1 (heavily degraded), so the
+    # portfolio holds a realistic spread of low, medium, and high risk rather
+    # than every building looking equally bad. Condition drives how many
+    # disciplines are affected and how many defects each carries.
+    condition = rng.random()
+    n_disciplines = max(1, round(1 + condition * (len(_DISCIPLINES) - 1)))
+    affected = set(rng.sample(_DISCIPLINES, n_disciplines))
+    max_per_discipline = max(1, round(1 + condition * 3))
+
+    sections: list[tuple[str, list[dict[str, str]]]] = []
+    for discipline in _DISCIPLINES:
+        if discipline not in affected:
+            continue
+        count = rng.randint(1, max_per_discipline)
+        sections.append((discipline, _sample_defects(rng, discipline, count)))
+
+    if not sections:
+        fallback = rng.choice(_DISCIPLINES)
+        sections.append((fallback, _sample_defects(rng, fallback, 1)))
+
     return insp_date, inspector, sections
 
 
