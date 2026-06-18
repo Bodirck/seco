@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import type { AskResponse, Meta } from "../api/types";
 import AnswerPanel from "../components/search/AnswerPanel";
 import MockNoticeBanner from "../components/search/MockNoticeBanner";
+import { Button, Input, Spinner } from "../components/ui";
 
 type QueryState =
   | { status: "idle" }
@@ -57,6 +58,8 @@ export default function SearchPage() {
     runQuery(example);
   }
 
+  const isLoading = queryState.status === "loading";
+
   return (
     <div className="mx-auto max-w-2xl">
       {/* Mock notice banner */}
@@ -68,39 +71,42 @@ export default function SearchPage() {
 
       {/* Hero heading */}
       <div className="mb-10 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           {t("search.title")}
         </h1>
-        <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-slate-500">
+        <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-fg-muted">
           {t("search.subtitle")}
         </p>
       </div>
 
       {/* Search form */}
       <form onSubmit={handleSubmit} className="mb-6">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            ref={inputRef}
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder={t("search.placeholder")}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition duration-150 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-            disabled={queryState.status === "loading"}
-          />
-          <button
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <div className="min-w-0 flex-1">
+            <Input
+              ref={inputRef}
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder={t("search.placeholder")}
+              disabled={isLoading}
+              aria-label={t("search.placeholder")}
+              className="h-11 px-4 text-sm"
+            />
+          </div>
+          <Button
             type="submit"
-            disabled={queryState.status === "loading" || !question.trim()}
-            className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg bg-brand-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition duration-150 hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+            disabled={isLoading || !question.trim()}
+            className="h-11 shrink-0 px-5"
           >
             {t("search.ask")}
-          </button>
+          </Button>
         </div>
       </form>
 
       {/* Example chips */}
       <div className="mb-3">
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+        <p className="mb-2 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
           {t("search.examples")}
         </p>
         <div className="flex flex-wrap gap-2">
@@ -109,8 +115,8 @@ export default function SearchPage() {
               key={i}
               type="button"
               onClick={() => handleExampleClick(ex)}
-              disabled={queryState.status === "loading"}
-              className="cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm transition duration-150 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isLoading}
+              className="cursor-pointer rounded-full border border-line bg-ink-850 px-3 py-1.5 text-xs text-fg-muted transition duration-150 ease-out hover:border-signal-400/40 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {ex}
             </button>
@@ -119,22 +125,21 @@ export default function SearchPage() {
       </div>
 
       {/* Grounding note */}
-      <p className="mb-10 text-xs leading-relaxed text-slate-400">
+      <p className="mb-10 text-xs leading-relaxed text-fg-muted">
         {t("search.groundedNote")}
       </p>
 
       {/* Result area */}
       <div>
         {queryState.status === "idle" && (
-          <p className="text-center text-sm text-slate-400">{t("search.noAnswer")}</p>
+          <p className="text-center text-sm text-fg-faint">
+            {t("search.noAnswer")}
+          </p>
         )}
 
         {queryState.status === "loading" && (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500">
-            <span
-              className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"
-              aria-hidden="true"
-            />
+          <div className="flex items-center justify-center gap-3 py-12 text-sm text-fg-muted">
+            <Spinner size="sm" />
             {t("common.loading")}
           </div>
         )}
@@ -142,7 +147,7 @@ export default function SearchPage() {
         {queryState.status === "error" && (
           <div
             role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            className="rounded-lg border border-critical/30 bg-critical/10 px-4 py-3 text-sm text-critical"
           >
             {t("common.error")}
             {queryState.message && (

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Source } from "../../api/types";
+import { Card } from "../../components/ui";
 
 interface SourceCardProps {
   source: Source;
@@ -11,21 +12,21 @@ export default function SourceCard({ source, index }: SourceCardProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <Card className="p-4">
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 font-mono text-xs font-semibold tabular-nums text-brand-700">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-signal-500/15 font-mono text-xs font-semibold tabular-nums text-signal-300">
           {index + 1}
         </span>
-        <span className="text-sm font-medium text-slate-700">
+        <span className="text-sm font-medium text-fg">
           {t("common.building")}{" "}
           <span className="font-mono tabular-nums">{source.building_id}</span>
         </span>
-        <span className="font-mono text-xs tabular-nums text-slate-400">
+        <span className="font-mono text-xs tabular-nums text-fg-faint">
           #{source.document_id}
         </span>
         <Link
           to={`/building/${source.building_id}`}
-          className="ml-auto inline-flex items-center gap-1 rounded-md text-xs font-medium text-brand-600 transition-colors duration-150 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+          className="ml-auto inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-line px-3 font-display text-xs font-semibold text-fg transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
         >
           {t("portfolio.viewDetail")}
           <svg
@@ -42,9 +43,9 @@ export default function SourceCard({ source, index }: SourceCardProps) {
           </svg>
         </Link>
       </div>
-      <p className="text-sm italic leading-relaxed text-slate-600">
+      <p className="text-sm italic leading-relaxed text-fg-muted">
         &ldquo;{source.snippet}&rdquo;
       </p>
-    </div>
+    </Card>
   );
 }

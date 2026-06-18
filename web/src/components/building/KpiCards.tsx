@@ -1,59 +1,65 @@
 import { useTranslation } from "react-i18next";
 import type { Breakdown } from "../../api/types";
-import { InfoTip } from "../ui/Tooltip";
+import { Card, InfoTip } from "../ui";
+import type { Severity } from "../../lib/risk";
+import { SEVERITY_HEX } from "../../lib/risk";
 
 interface Props {
   breakdown: Breakdown;
 }
 
+interface KpiDef {
+  severity: Severity;
+  labelKey: string;
+  tipKey: string;
+  value: number;
+}
+
+/**
+ * Severity counts as instrument-style KPI cards. The risk score is intentionally
+ * not shown here: it lives in the page header as the headline metric, so showing
+ * it again would duplicate identity information.
+ */
 export default function KpiCards({ breakdown }: Props) {
   const { t } = useTranslation();
 
+  const cards: KpiDef[] = [
+    {
+      severity: "critical",
+      labelKey: "common.critical",
+      tipKey: "building.tips.critical",
+      value: breakdown.critical,
+    },
+    {
+      severity: "major",
+      labelKey: "common.major",
+      tipKey: "building.tips.major",
+      value: breakdown.major,
+    },
+    {
+      severity: "minor",
+      labelKey: "common.minor",
+      tipKey: "building.tips.minor",
+      value: breakdown.minor,
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {/* Risk score */}
-      <div className="rounded-lg border border-brand-200 bg-brand-50 p-4 shadow-sm">
-        <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-brand-700">
-          {t("common.riskScore")}
-          <InfoTip text={t("building.tips.riskScore")} />
-        </p>
-        <p className="mt-1 font-mono text-3xl font-bold tabular-nums text-brand-700">
-          {breakdown.risk_score.toFixed(1)}
-        </p>
-      </div>
-
-      {/* Critical */}
-      <div className="rounded-lg border border-red-100 bg-red-50 p-4 shadow-sm">
-        <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-red-600">
-          {t("common.critical")}
-          <InfoTip text={t("building.tips.critical")} />
-        </p>
-        <p className="mt-1 font-mono text-3xl font-bold tabular-nums text-red-700">
-          {breakdown.critical}
-        </p>
-      </div>
-
-      {/* Major */}
-      <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 shadow-sm">
-        <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-amber-600">
-          {t("common.major")}
-          <InfoTip text={t("building.tips.major")} />
-        </p>
-        <p className="mt-1 font-mono text-3xl font-bold tabular-nums text-amber-700">
-          {breakdown.major}
-        </p>
-      </div>
-
-      {/* Minor */}
-      <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 shadow-sm">
-        <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-emerald-600">
-          {t("common.minor")}
-          <InfoTip text={t("building.tips.minor")} />
-        </p>
-        <p className="mt-1 font-mono text-3xl font-bold tabular-nums text-emerald-700">
-          {breakdown.minor}
-        </p>
-      </div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {cards.map((card) => (
+        <Card key={card.severity} className="p-5">
+          <p className="flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
+            {t(card.labelKey)}
+            <InfoTip text={t(card.tipKey)} />
+          </p>
+          <p
+            className="mt-2 font-mono text-3xl font-bold tabular-nums"
+            style={{ color: SEVERITY_HEX[card.severity] }}
+          >
+            {card.value}
+          </p>
+        </Card>
+      ))}
     </div>
   );
 }

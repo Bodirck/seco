@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Defect, Severity } from "../../api/types";
-import { Tooltip } from "../ui/Tooltip";
+import { Badge, Tooltip } from "../ui";
+import { cn } from "../../lib/cn";
+import { severityTone } from "../../lib/risk";
 
 interface Props {
   defects: Defect[];
@@ -9,32 +11,28 @@ interface Props {
 
 const SEVERITIES: Severity[] = ["critical", "major", "minor"];
 
-function severityClasses(severity: Severity): string {
-  switch (severity) {
-    case "critical":
-      return "bg-red-100 text-red-700";
-    case "major":
-      return "bg-amber-100 text-amber-700";
-    case "minor":
-      return "bg-emerald-100 text-emerald-700";
-  }
-}
-
-/** Filter chip styling for the active (selected) and inactive states. */
+/**
+ * Filter chip styling. Active chips use the severity wash and color; idle chips
+ * are a quiet hairline outline that warms to the severity color on hover.
+ */
 function chipClasses(severity: Severity, active: boolean): string {
+  if (active) {
+    switch (severity) {
+      case "critical":
+        return "border-critical/40 bg-critical/15 text-critical";
+      case "major":
+        return "border-major/40 bg-major/15 text-major";
+      case "minor":
+        return "border-minor/40 bg-minor/15 text-minor";
+    }
+  }
   switch (severity) {
     case "critical":
-      return active
-        ? "border-red-300 bg-red-100 text-red-700"
-        : "border-slate-200 bg-white text-slate-400 hover:border-red-200 hover:text-red-600";
+      return "border-line bg-ink-800 text-fg-faint hover:border-critical/40 hover:text-critical";
     case "major":
-      return active
-        ? "border-amber-300 bg-amber-100 text-amber-700"
-        : "border-slate-200 bg-white text-slate-400 hover:border-amber-200 hover:text-amber-600";
+      return "border-line bg-ink-800 text-fg-faint hover:border-major/40 hover:text-major";
     case "minor":
-      return active
-        ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-        : "border-slate-200 bg-white text-slate-400 hover:border-emerald-200 hover:text-emerald-600";
+      return "border-line bg-ink-800 text-fg-faint hover:border-minor/40 hover:text-minor";
   }
 }
 
@@ -63,7 +61,7 @@ export default function DefectTable({ defects }: Props) {
     <div>
       {/* Filter controls */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-slate-500">
+        <span className="font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
           {t("building.filterSeverity")}
         </span>
         {SEVERITIES.map((s) => {
@@ -73,10 +71,10 @@ export default function DefectTable({ defects }: Props) {
               key={s}
               onClick={() => toggleFilter(s)}
               aria-pressed={active}
-              className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 ${chipClasses(
-                s,
-                active,
-              )}`}
+              className={cn(
+                "cursor-pointer rounded-full border px-2.5 py-1 font-mono text-xs font-medium transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70",
+                chipClasses(s, active),
+              )}
             >
               {t(`common.${s}`)}
             </button>
@@ -85,9 +83,9 @@ export default function DefectTable({ defects }: Props) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50">
+      <div className="overflow-x-auto rounded-xl border border-line">
+        <table className="min-w-full divide-y divide-line text-sm">
+          <thead className="bg-ink-800">
             <tr>
               {(
                 [
@@ -100,40 +98,44 @@ export default function DefectTable({ defects }: Props) {
               ).map((key) => (
                 <th
                   key={key}
-                  className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+                  className="px-3 py-2.5 text-left font-display text-xs font-medium uppercase tracking-wide text-fg-faint"
                 >
                   {t(key)}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
+          <tbody className="divide-y divide-line">
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
+                <td
+                  colSpan={5}
+                  className="px-3 py-6 text-center text-fg-muted"
+                >
                   {t("common.defects")}: 0
                 </td>
               </tr>
             ) : (
               visible.map((defect, idx) => (
-                <tr key={idx} className="transition-colors hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">
+                <tr
+                  key={idx}
+                  className="transition-colors duration-150 hover:bg-ink-800"
+                >
+                  <td className="whitespace-nowrap px-3 py-2.5 text-fg">
                     {defect.discipline}
                   </td>
-                  <td className="px-3 py-2 text-slate-700">{defect.element}</td>
-                  <td className="px-3 py-2 text-slate-600">{defect.description}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                  <td className="px-3 py-2.5 text-fg">{defect.element}</td>
+                  <td className="px-3 py-2.5 text-fg-muted">
+                    {defect.description}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-fg-muted">
                     {defect.location}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2">
+                  <td className="whitespace-nowrap px-3 py-2.5">
                     <Tooltip label={t(`building.tips.${defect.severity}`)}>
-                      <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${severityClasses(
-                          defect.severity,
-                        )}`}
-                      >
+                      <Badge tone={severityTone(defect.severity)}>
                         {t(`common.${defect.severity}`)}
-                      </span>
+                      </Badge>
                     </Tooltip>
                   </td>
                 </tr>

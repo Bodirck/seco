@@ -22,6 +22,15 @@
     "info": "Plus d'informations",
     "mockNotice": "Aucune cle API detectee : les reponses tournent en mode mock. Ajoutez une cle dans .env pour de vraies reponses."
   },
+  "provider": {
+    "label": "Fournisseur IA",
+    "tooltip": "Fournisseur IA effectif pour les reponses : {{provider}}.",
+    "mockTooltip": "Mode mock : les reponses sont generees localement sans cle API."
+  },
+  "footer": {
+    "tagline": "BuildingLens transforme les donnees publiques de la construction en vue de risque des batiments.",
+    "repo": "Depot GitHub"
+  },
   "search": {
     "title": "Interroger le portefeuille",
     "subtitle": "Posez une question en langage courant. La reponse s'appuie sur les rapports d'inspection et cite ses sources.",
@@ -55,7 +64,6 @@
     }
   },
   "building": {
-    "subtitle": "Repartition du risque, indicateurs cles et liste complete des defauts.",
     "overview": "Apercu",
     "byDiscipline": "Defauts par discipline",
     "bySeverity": "Defauts par severite",

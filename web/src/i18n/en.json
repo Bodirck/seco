@@ -22,6 +22,15 @@
     "info": "More information",
     "mockNotice": "No API key detected: answers run in mock mode. Add a key to .env for real answers."
   },
+  "provider": {
+    "label": "AI provider",
+    "tooltip": "Effective AI provider for answers: {{provider}}.",
+    "mockTooltip": "Running in mock mode: answers are generated locally without an API key."
+  },
+  "footer": {
+    "tagline": "BuildingLens turns public construction data into a building risk view.",
+    "repo": "GitHub repository"
+  },
   "search": {
     "title": "Ask the portfolio",
     "subtitle": "Ask a question in plain language. The answer is grounded in the inspection reports and cites its sources.",
@@ -55,7 +64,6 @@
     }
   },
   "building": {
-    "subtitle": "Risk breakdown, key indicators, and the full defect list.",
     "overview": "Overview",
     "byDiscipline": "Defects by discipline",
     "bySeverity": "Defects by severity",

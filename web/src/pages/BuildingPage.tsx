@@ -8,8 +8,18 @@ import DefectTable from "../components/building/DefectTable";
 import DisciplineChart from "../components/building/DisciplineChart";
 import KpiCards from "../components/building/KpiCards";
 import SeverityChart from "../components/building/SeverityChart";
-import LocatorMap from "../components/ui/LocatorMap";
-import { InfoTip } from "../components/ui/Tooltip";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  InfoTip,
+  LocatorMap,
+  PageHeader,
+  Section,
+  Spinner,
+} from "../components/ui";
+import { riskHex, riskTone } from "../lib/risk";
 
 function DownloadIcon() {
   return (
@@ -29,22 +39,14 @@ function DownloadIcon() {
   );
 }
 
-function InfoRow({
-  label,
-  value,
-  tip,
-}: {
-  label: string;
-  value: string;
-  tip?: string;
-}) {
+/** One quiet row inside the Overview card: a faint label and a mono value. */
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-3 py-2">
-      <dt className="flex items-center gap-1.5 text-sm text-slate-500">
+    <div className="flex items-start justify-between gap-3 py-2.5">
+      <dt className="text-xs font-medium uppercase tracking-wide text-fg-faint">
         {label}
-        {tip && <InfoTip text={tip} />}
       </dt>
-      <dd className="text-right text-sm font-medium text-slate-800">{value}</dd>
+      <dd className="text-right font-mono text-sm tabular-nums text-fg">{value}</dd>
     </div>
   );
 }
@@ -90,7 +92,8 @@ export default function BuildingPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-48 items-center justify-center text-slate-500">
+      <div className="flex min-h-48 items-center justify-center gap-3 text-fg-muted">
+        <Spinner />
         {t("common.loading")}
       </div>
     );
@@ -98,15 +101,16 @@ export default function BuildingPage() {
 
   if (notFound) {
     return (
-      <div className="flex min-h-48 items-center justify-center text-slate-500">
-        {t("building.notFound")}
-      </div>
+      <EmptyState
+        title={t("building.notFound")}
+        description={t("app.tagline")}
+      />
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-48 items-center justify-center text-red-600">
+      <div className="flex min-h-48 items-center justify-center text-critical">
         {t("common.error")} {error}
       </div>
     );
@@ -114,53 +118,74 @@ export default function BuildingPage() {
 
   if (!building) return null;
 
-  const yearBuilt = building.year_built != null ? String(building.year_built) : "-";
-  const height =
-    building.height_m != null ? `${building.height_m} m` : "-";
+  const yearBuilt =
+    building.year_built != null ? String(building.year_built) : "-";
+  const height = building.height_m != null ? `${building.height_m} m` : "-";
+  const hasCoordinates =
+    building.latitude != null && building.longitude != null;
+  const coordinates = hasCoordinates
+    ? `${building.latitude?.toFixed(4)}, ${building.longitude?.toFixed(4)}`
+    : "-";
+
+  const score = building.breakdown.risk_score;
+  const scoreColor = riskHex(score);
+  const scoreTone = riskTone(score);
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          {building.name}
-        </h1>
-        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
-          <span>
-            <span className="text-slate-400">{t("common.address")}:</span>{" "}
-            {building.address}
+      {/* Single home of identity: name, one meta line (address + source), and
+          the risk score promoted as the headline metric. */}
+      <PageHeader
+        title={building.name}
+        meta={
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>{building.address}</span>
+            {building.source && (
+              <Badge tone="neutral">{building.source}</Badge>
+            )}
           </span>
-          {building.source && (
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              {building.source}
-            </span>
-          )}
-        </p>
-        <p className="mt-1 text-sm text-slate-400">{t("building.subtitle")}</p>
-      </div>
+        }
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="flex items-center justify-end gap-1.5 font-display text-xs font-medium uppercase tracking-widest text-fg-faint">
+                {t("common.riskScore")}
+                <InfoTip text={t("building.tips.riskScore")} />
+              </p>
+              <p
+                className="font-mono text-4xl font-bold leading-none tabular-nums sm:text-5xl"
+                style={{ color: scoreColor }}
+              >
+                {score.toFixed(1)}
+              </p>
+            </div>
+            <Badge tone={scoreTone} className="self-start">
+              {scoreTone === "critical"
+                ? t("common.critical")
+                : scoreTone === "major"
+                  ? t("common.major")
+                  : t("common.minor")}
+            </Badge>
+          </div>
+        }
+      />
 
-      {/* KPI cards */}
+      {/* Severity KPI cards (risk score now lives in the header). */}
       <KpiCards breakdown={building.breakdown} />
 
-      {/* Overview: info card + locator map */}
-      <section className="space-y-3">
-        <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900">
-          {t("building.overview")}
-        </h2>
+      {/* Overview: info card + locator map. Identity rows removed to avoid
+          duplicating the header. */}
+      <Section title={t("building.overview")}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <dl className="divide-y divide-slate-100">
-              <InfoRow label={t("common.address")} value={building.address} />
-              <InfoRow
-                label={t("building.yearBuilt")}
-                value={yearBuilt}
-              />
+          <Card className="p-5">
+            <dl className="divide-y divide-line">
+              <InfoRow label={t("building.yearBuilt")} value={yearBuilt} />
               <InfoRow label={t("building.height")} value={height} />
-              <InfoRow label={t("common.source")} value={building.source || "-"} />
+              <InfoRow label={t("building.map")} value={coordinates} />
             </dl>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-slate-600">
+          </Card>
+          <Card className="p-5">
+            <h3 className="mb-3 flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
               {t("building.map")}
               <InfoTip text={t("building.tips.map")} />
             </h3>
@@ -170,9 +195,9 @@ export default function BuildingPage() {
               name={building.name}
               emptyLabel={t("building.noCoordinates")}
             />
-          </div>
+          </Card>
         </div>
-      </section>
+      </Section>
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -181,37 +206,32 @@ export default function BuildingPage() {
       </div>
 
       {/* Client report downloads */}
-      <section className="space-y-3">
-        <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900">
-          {t("building.downloads")}
-          <InfoTip text={t("building.tips.downloads")} />
-        </h2>
+      <Section title={t("building.downloads")} tip={t("building.tips.downloads")}>
         <div className="flex flex-wrap gap-3">
-          <a
+          <Button
             href={api.reportUrl(numericId, "xlsx")}
-            className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+            variant="primary"
+            leftIcon={<DownloadIcon />}
           >
-            <DownloadIcon />
             {t("building.downloadExcel")}
-          </a>
-          <a
+          </Button>
+          <Button
             href={api.reportUrl(numericId, "pdf")}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+            variant="secondary"
+            leftIcon={<DownloadIcon />}
           >
-            <DownloadIcon />
             {t("building.downloadPdf")}
-          </a>
+          </Button>
         </div>
-      </section>
+      </Section>
 
       {/* Defect list */}
-      <section className="space-y-3">
-        <h2 className="flex items-center gap-1.5 text-lg font-semibold text-slate-900">
-          {t("building.defectList")}
-          <InfoTip text={t("building.tips.defectList")} />
-        </h2>
+      <Section
+        title={t("building.defectList")}
+        tip={t("building.tips.defectList")}
+      >
         <DefectTable defects={building.defects} />
-      </section>
+      </Section>
 
       {/* Ask about this building */}
       <AskSection buildingId={numericId} />
