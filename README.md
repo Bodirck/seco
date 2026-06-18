@@ -20,6 +20,10 @@ The defect extraction, risk scoring, RAG question-answering, and the Streamlit i
 
 An asset manager or an insurer receives many inspection reports that are long and heterogeneous. Reading them one by one to spot the critical defects and compare buildings takes time. The idea behind BuildingLens is to do that reading for you: list the defects it found, rank the buildings by risk, and answer questions about the portfolio without you reopening each report.
 
+### Why this matters to SECO
+
+SECO is an independent technical-control and engineering body in construction. Its inspections produce exactly the kind of document this tool consumes: long, semi-structured reports and observation tables, defects listed by discipline, that feed the decennial and biennial insurance decisions of its clients. BuildingLens sits right on that output. It turns the unstructured result of an inspection into a structured, queryable risk view for the asset manager or insurer downstream, so a report becomes a comparable signal across a portfolio instead of a PDF in a folder. The product starts from a real pain in SECO's own value chain and works back to the technology, not the other way around.
+
 ### Status
 
 Work in progress. I'm committing the pieces as I build them, so the checklist below is the honest picture of what exists.
@@ -57,6 +61,21 @@ The buildings are real: footprints, heights, and coordinates from EUBUCCO Luxemb
 The generator records the exact defects it writes into each report, so the gold set is known without hand labelling (`eval/gold.jsonl`, 743 defects across 40 buildings). On this set, extraction with Claude reaches precision 1.00, recall 1.00, F1 1.00, and severity accuracy 1.00 (`make eval`).
 
 Read that as a check on the pipeline mechanics, not a real-world accuracy: the model recovers every defect from the report text and maps each RICS rating to the right severity. Because the reports are synthetic and the matching is element-level, a near-perfect score is expected here. On real, heterogeneous reports with OCR noise and varied wording, expect lower numbers and the need for a hand-labelled gold set.
+
+### Technical decisions and trade-offs
+
+- SQLite, not a database server: one file, zero setup, reproducible from zero. The trade-off is single-writer concurrency, which is fine for a single-user tool and named as a limit.
+- pdfplumber for text, not OCR: the reports are digital PDFs, so text extraction is enough; OCR (pytesseract) is the obvious add for scanned reports.
+- Local embeddings (sentence-transformers) and FAISS, not a hosted vector store: no external dependency, fully reproducible, and a multilingual model so French reports work. The trade-off is a full-corpus reindex on each ingest, acceptable at this size.
+- An LLM via API with a mock fallback: real extraction needs a key, but the whole app and the evaluation still run without one, so an evaluator can reproduce everything offline.
+- Streamlit first, then a React and FastAPI app: Streamlit bought speed for the core; the React app matches SECO's stack and was added only once the core was done. Both share the same Python core.
+- Synthetic inspection reports: no public corpus of real reports exists at volume, so a generator produces realistic ones against a real taxonomy (RICS C1/C2/C3). This is documented honestly and is swapped for real reports in production without touching the rest of the pipeline.
+
+### What I would ship, and what I would redo
+
+Ship as is: the Python core (extraction, scoring, RAG), the frozen data schema, the FastAPI API, the React UI, the mock mode, and the evaluation harness. These carry the product value and are written to be defended.
+
+Redo before production: replace the synthetic report generator with real SECO reports, and build a hand-labelled gold set, since the current 1.00 is a mechanics check on synthetic data, not real-world accuracy; make the RAG index incremental instead of rebuilding the whole corpus; move secrets and the settings store behind a real secrets manager and add authentication (the documented Azure Entra single sign-on) before the app leaves a single machine; and move from SQLite to Postgres with a vector extension at portfolio scale.
 
 ### Web app (React)
 
@@ -102,6 +121,10 @@ L'extraction des défauts, le scoring de risque, les questions/réponses RAG et 
 
 Un asset manager ou un assureur reçoit beaucoup de rapports d'inspection, longs et hétérogènes. Les lire un par un pour repérer les défauts critiques et comparer les bâtiments prend du temps. L'idée derrière BuildingLens est de faire cette lecture à sa place : lister les défauts trouvés, classer les bâtiments par risque, et répondre aux questions sur le parc sans avoir à rouvrir chaque rapport.
 
+### En quoi est-ce pertinent pour SECO
+
+SECO est un organisme indépendant de contrôle technique et d'ingénierie dans la construction. Ses inspections produisent exactement le type de document que cet outil consomme : des rapports longs et semi-structurés, des tableaux d'observations, des défauts listés par discipline, qui alimentent les décisions d'assurance décennale et biennale de ses clients. BuildingLens se place juste sur cette sortie. Il transforme le résultat non structuré d'une inspection en une vue de risque structurée et interrogeable pour l'asset manager ou l'assureur en aval, de sorte qu'un rapport devient un signal comparable à l'échelle d'un parc plutôt qu'un PDF dans un dossier. Le produit part d'un vrai point de douleur dans la chaîne de valeur de SECO et remonte vers la technologie, pas l'inverse.
+
 ### Statut
 
 Projet en cours de construction. Je commite les briques au fur et à mesure que je les réalise, donc la liste ci-dessous reflète honnêtement ce qui existe.
@@ -139,6 +162,21 @@ Les bâtiments sont réels : empreintes, hauteurs et coordonnées issues d'EUBUC
 Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport, donc le jeu de référence est connu sans annotation manuelle (`eval/gold.jsonl`, 743 défauts sur 40 bâtiments). Sur ce jeu, l'extraction avec Claude atteint une précision de 1.00, un rappel de 1.00, un F1 de 1.00 et une exactitude de sévérité de 1.00 (`make eval`).
 
 À lire comme une validation de la mécanique du pipeline, pas comme une précision en conditions réelles : le modèle retrouve chaque défaut du texte et associe chaque note RICS à la bonne sévérité. Comme les rapports sont synthétiques et que l'appariement se fait au niveau de l'élément, un score quasi parfait est attendu ici. Sur de vrais rapports hétérogènes (bruit OCR, formulations variées), attendre des chiffres plus bas et un jeu de référence annoté à la main.
+
+### Décisions techniques et compromis
+
+- SQLite, pas un serveur de base de données : un seul fichier, zéro installation, reproductible depuis zéro. Le compromis est l'écriture concurrente limitée, ce qui convient à un outil mono-utilisateur et est annoncé comme une limite.
+- pdfplumber pour le texte, pas d'OCR : les rapports sont des PDF numériques, l'extraction de texte suffit ; l'OCR (pytesseract) est l'ajout évident pour des rapports scannés.
+- Embeddings locaux (sentence-transformers) et FAISS, pas de base vectorielle hébergée : aucune dépendance externe, entièrement reproductible, et un modèle multilingue pour les rapports en français. Le compromis est une réindexation complète à chaque ingestion, acceptable à cette taille.
+- Un LLM via API avec un repli mock : l'extraction réelle demande une clé, mais toute l'application et l'évaluation tournent sans clé, donc un évaluateur peut tout reproduire hors ligne.
+- Streamlit d'abord, puis une app React et FastAPI : Streamlit a fait gagner du temps pour le cœur ; l'app React correspond à la stack de SECO et n'a été ajoutée qu'une fois le cœur terminé. Les deux partagent le même cœur Python.
+- Rapports d'inspection synthétiques : il n'existe pas de corpus public de vrais rapports en volume, un générateur en produit donc de réalistes sur une vraie taxonomie (RICS C1/C2/C3). C'est documenté honnêtement et remplacé par de vrais rapports en production sans toucher au reste du pipeline.
+
+### Ce que je mettrais en production, et ce que je referais
+
+À garder tel quel : le cœur Python (extraction, scoring, RAG), le schéma de données figé, l'API FastAPI, l'UI React, le mode mock et le harnais d'évaluation. Ce sont les parties qui portent la valeur du produit et qui sont écrites pour être défendues.
+
+À refaire avant la production : remplacer le générateur de rapports synthétiques par de vrais rapports SECO, et constituer un gold set annoté à la main, car le 1.00 actuel est une validation de mécanique sur données synthétiques, pas une précision en conditions réelles ; rendre l'index RAG incrémental au lieu de tout reconstruire ; placer les secrets et le stockage des réglages derrière un vrai gestionnaire de secrets et ajouter l'authentification (l'authentification unique Azure Entra documentée) avant que l'app ne quitte une seule machine ; et passer de SQLite à Postgres avec une extension vectorielle à l'échelle d'un parc.
 
 ### Application web (React)
 
