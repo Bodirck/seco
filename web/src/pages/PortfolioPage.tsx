@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import type { BuildingSummary } from "../api/types";
 import RiskChart from "../components/portfolio/RiskChart";
 import SeverityCell from "../components/portfolio/SeverityCell";
+import { InfoTip } from "../components/ui/Tooltip";
 
 // ---------------------------------------------------------------------------
 // KPI card
@@ -13,16 +14,20 @@ import SeverityCell from "../components/portfolio/SeverityCell";
 interface KpiCardProps {
   label: string;
   value: number | string;
+  tip: string;
   accent?: "default" | "red";
 }
 
-function KpiCard({ label, value, accent = "default" }: KpiCardProps) {
+function KpiCard({ label, value, tip, accent = "default" }: KpiCardProps) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
+    <div className="rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow hover:shadow-md">
+      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+        {label}
+        <InfoTip text={tip} />
+      </p>
       <p
         className={
-          "mt-1 text-3xl font-semibold tabular-nums " +
+          "mt-1 font-mono text-3xl font-semibold tabular-nums " +
           (accent === "red" ? "text-red-600" : "text-slate-900")
         }
       >
@@ -38,10 +43,11 @@ function KpiCard({ label, value, accent = "default" }: KpiCardProps) {
 
 function RiskPill({ score }: { score: number }) {
   const rounded = Math.round(score);
-  let cls = "inline-block rounded px-2 py-0.5 text-xs font-semibold tabular-nums ";
-  if (rounded >= 70) cls += "bg-red-50 text-red-700";
-  else if (rounded >= 40) cls += "bg-amber-50 text-amber-700";
-  else cls += "bg-slate-100 text-slate-600";
+  let cls =
+    "inline-block rounded px-2 py-0.5 font-mono text-xs font-semibold tabular-nums ";
+  if (rounded >= 70) cls += "bg-red-100 text-red-700";
+  else if (rounded >= 40) cls += "bg-amber-100 text-amber-700";
+  else cls += "bg-emerald-100 text-emerald-700";
   return <span className={cls}>{rounded}</span>;
 }
 
@@ -122,19 +128,34 @@ export default function PortfolioPage() {
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label={t("portfolio.buildings")} value={buildings.length} />
-        <KpiCard label={t("portfolio.totalDefects")} value={totalDefects} />
-        <KpiCard label={t("portfolio.criticalDefects")} value={totalCritical} accent="red" />
+        <KpiCard
+          label={t("portfolio.buildings")}
+          value={buildings.length}
+          tip={t("portfolio.tips.buildings")}
+        />
+        <KpiCard
+          label={t("portfolio.totalDefects")}
+          value={totalDefects}
+          tip={t("portfolio.tips.totalDefects")}
+        />
+        <KpiCard
+          label={t("portfolio.criticalDefects")}
+          value={totalCritical}
+          tip={t("portfolio.tips.criticalDefects")}
+          accent="red"
+        />
       </div>
 
       {/* Risk score bar chart */}
       {buildings.length > 0 && (
         <section>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-4 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-slate-500">
             {t("common.riskScore")}
+            <InfoTip text={t("portfolio.tips.riskChart")} />
           </h2>
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <RiskChart buildings={buildings} />
+            <p className="mt-3 text-xs text-slate-400">{t("portfolio.chartNote")}</p>
           </div>
         </section>
       )}
@@ -162,14 +183,14 @@ export default function PortfolioPage() {
                     className={
                       "group border-b border-slate-100 transition-colors last:border-b-0 " +
                       (idx % 2 === 0 ? "bg-white" : "bg-slate-50/50") +
-                      " hover:bg-blue-50/40"
+                      " hover:bg-brand-50/60"
                     }
                   >
                     {/* Name cell links to detail */}
                     <td className="px-4 py-3 font-medium text-slate-900">
                       <Link
                         to={`/building/${b.id}`}
-                        className="hover:text-blue-600 hover:underline"
+                        className="cursor-pointer rounded-sm text-slate-900 transition-colors hover:text-brand-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
                       >
                         {b.name}
                       </Link>
@@ -190,7 +211,7 @@ export default function PortfolioPage() {
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/building/${b.id}`}
-                        className="rounded border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                        className="inline-flex cursor-pointer items-center rounded border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
                       >
                         {t("portfolio.viewDetail")}
                       </Link>

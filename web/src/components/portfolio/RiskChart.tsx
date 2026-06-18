@@ -16,13 +16,13 @@ interface Props {
 }
 
 function truncate(name: string, max = 16): string {
-  return name.length > max ? name.slice(0, max - 1) + "…" : name;
+  return name.length > max ? name.slice(0, max - 1) + "..." : name;
 }
 
 function scoreColor(score: number): string {
   if (score >= 70) return "#ef4444"; // red-500
-  if (score >= 40) return "#f59e0b"; // amber-400
-  return "#94a3b8"; // slate-400
+  if (score >= 40) return "#f59e0b"; // amber-500
+  return "#10b981"; // emerald-500, low risk reads as positive
 }
 
 export default function RiskChart({ buildings }: Props) {

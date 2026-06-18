@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
 import type { AskResponse } from "../../api/types";
+import { InfoTip } from "../ui/Tooltip";
 
 interface Props {
   buildingId: number;
@@ -35,32 +36,31 @@ export default function AskSection({ buildingId }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-slate-600">
         {t("building.askAbout")}
+        <InfoTip text={t("building.tips.askAbout")} />
       </h3>
 
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("search.placeholder")}
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
         />
         <button
           onClick={() => void handleAsk()}
           disabled={loading || !question.trim()}
-          className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+          className="inline-flex cursor-pointer items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? t("common.loading") : t("search.ask")}
         </button>
       </div>
 
-      {error && (
-        <p className="mt-3 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       {response && (
         <div className="mt-4 space-y-3">
@@ -71,14 +71,14 @@ export default function AskSection({ buildingId }: Props) {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {t("search.sources")}
               </p>
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {response.sources.map((src, idx) => (
                   <li
                     key={idx}
-                    className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600"
+                    className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600"
                   >
-                    <span className="font-medium text-slate-700">
-                      Doc {src.document_id}
+                    <span className="font-mono font-medium tabular-nums text-brand-700">
+                      #{src.document_id}
                     </span>{" "}
                     {src.snippet}
                   </li>

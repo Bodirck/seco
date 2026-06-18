@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Defect, Severity } from "../../api/types";
+import { Tooltip } from "../ui/Tooltip";
 
 interface Props {
   defects: Defect[];
@@ -15,7 +16,25 @@ function severityClasses(severity: Severity): string {
     case "major":
       return "bg-amber-100 text-amber-700";
     case "minor":
-      return "bg-slate-100 text-slate-600";
+      return "bg-emerald-100 text-emerald-700";
+  }
+}
+
+/** Filter chip styling for the active (selected) and inactive states. */
+function chipClasses(severity: Severity, active: boolean): string {
+  switch (severity) {
+    case "critical":
+      return active
+        ? "border-red-300 bg-red-100 text-red-700"
+        : "border-slate-200 bg-white text-slate-400 hover:border-red-200 hover:text-red-600";
+    case "major":
+      return active
+        ? "border-amber-300 bg-amber-100 text-amber-700"
+        : "border-slate-200 bg-white text-slate-400 hover:border-amber-200 hover:text-amber-600";
+    case "minor":
+      return active
+        ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+        : "border-slate-200 bg-white text-slate-400 hover:border-emerald-200 hover:text-emerald-600";
   }
 }
 
@@ -49,19 +68,15 @@ export default function DefectTable({ defects }: Props) {
         </span>
         {SEVERITIES.map((s) => {
           const active = activeFilters.has(s);
-          const baseClass =
-            s === "critical"
-              ? "border-red-300 text-red-700"
-              : s === "major"
-                ? "border-amber-300 text-amber-700"
-                : "border-slate-300 text-slate-600";
           return (
             <button
               key={s}
               onClick={() => toggleFilter(s)}
-              className={`rounded border px-2 py-0.5 text-xs font-medium transition-opacity ${baseClass} ${
-                active ? "opacity-100" : "opacity-40"
-              }`}
+              aria-pressed={active}
+              className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 ${chipClasses(
+                s,
+                active,
+              )}`}
             >
               {t(`common.${s}`)}
             </button>
@@ -101,7 +116,7 @@ export default function DefectTable({ defects }: Props) {
               </tr>
             ) : (
               visible.map((defect, idx) => (
-                <tr key={idx} className="hover:bg-slate-50">
+                <tr key={idx} className="transition-colors hover:bg-slate-50">
                   <td className="whitespace-nowrap px-3 py-2 text-slate-700">
                     {defect.discipline}
                   </td>
@@ -111,11 +126,15 @@ export default function DefectTable({ defects }: Props) {
                     {defect.location}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">
-                    <span
-                      className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${severityClasses(defect.severity)}`}
-                    >
-                      {t(`common.${defect.severity}`)}
-                    </span>
+                    <Tooltip label={t(`building.tips.${defect.severity}`)}>
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${severityClasses(
+                          defect.severity,
+                        )}`}
+                      >
+                        {t(`common.${defect.severity}`)}
+                      </span>
+                    </Tooltip>
                   </td>
                 </tr>
               ))

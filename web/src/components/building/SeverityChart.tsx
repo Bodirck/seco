@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { InfoTip } from "../ui/Tooltip";
 
 interface Props {
   bySeverity: { critical: number; major: number; minor: number };
@@ -8,7 +9,7 @@ interface Props {
 const COLORS = {
   critical: "#ef4444",
   major: "#f59e0b",
-  minor: "#22c55e",
+  minor: "#10b981",
 };
 
 export default function SeverityChart({ bySeverity }: Props) {
@@ -26,8 +27,9 @@ export default function SeverityChart({ bySeverity }: Props) {
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-600">
+      <h3 className="mb-4 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-slate-600">
         {t("building.bySeverity")}
+        <InfoTip text={t("building.tips.bySeverity")} />
       </h3>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>

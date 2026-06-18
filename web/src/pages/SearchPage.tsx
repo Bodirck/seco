@@ -68,28 +68,30 @@ export default function SearchPage() {
 
       {/* Hero heading */}
       <div className="mb-10 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
           {t("search.title")}
         </h1>
-        <p className="mt-3 text-base text-slate-500">{t("search.subtitle")}</p>
+        <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-slate-500">
+          {t("search.subtitle")}
+        </p>
       </div>
 
       {/* Search form */}
       <form onSubmit={handleSubmit} className="mb-6">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             ref={inputRef}
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder={t("search.placeholder")}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition duration-150 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             disabled={queryState.status === "loading"}
           />
           <button
             type="submit"
             disabled={queryState.status === "loading" || !question.trim()}
-            className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg bg-brand-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition duration-150 hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
           >
             {t("search.ask")}
           </button>
@@ -97,7 +99,7 @@ export default function SearchPage() {
       </form>
 
       {/* Example chips */}
-      <div className="mb-10">
+      <div className="mb-3">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
           {t("search.examples")}
         </p>
@@ -108,13 +110,18 @@ export default function SearchPage() {
               type="button"
               onClick={() => handleExampleClick(ex)}
               disabled={queryState.status === "loading"}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm transition hover:border-slate-400 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm transition duration-150 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {ex}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Grounding note */}
+      <p className="mb-10 text-xs leading-relaxed text-slate-400">
+        {t("search.groundedNote")}
+      </p>
 
       {/* Result area */}
       <div>
@@ -123,9 +130,9 @@ export default function SearchPage() {
         )}
 
         {queryState.status === "loading" && (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-400">
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500">
             <span
-              className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600"
+              className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"
               aria-hidden="true"
             />
             {t("common.loading")}
@@ -133,7 +140,10 @@ export default function SearchPage() {
         )}
 
         {queryState.status === "error" && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
             {t("common.error")}
             {queryState.message && (
               <span className="ml-1 opacity-70">({queryState.message})</span>

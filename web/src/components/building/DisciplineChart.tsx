@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { InfoTip } from "../ui/Tooltip";
 
 interface Props {
   data: { discipline: string; count: number }[];
@@ -22,8 +23,9 @@ export default function DisciplineChart({ data }: Props) {
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-600">
+      <h3 className="mb-4 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-slate-600">
         {t("building.byDiscipline")}
+        <InfoTip text={t("building.tips.byDiscipline")} />
       </h3>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -48,7 +50,7 @@ export default function DisciplineChart({ data }: Props) {
               boxShadow: "none",
             }}
           />
-          <Bar dataKey="count" fill="#475569" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="count" fill="#2563eb" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
