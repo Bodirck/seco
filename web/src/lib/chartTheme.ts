@@ -26,18 +26,18 @@ export function chartColors(theme: Theme): ChartColors {
       tooltipBorder: "#CBD5E1",
       tooltipText: "#0F172A",
       tooltipLabel: "#475569",
-      cursor: "rgba(8,145,178,0.08)",
+      cursor: "rgba(230,110,0,0.10)",
       surface: "#FFFFFF",
     };
   }
   return {
-    grid: "#1B2433",
-    tick: "#61708A",
-    tooltipBg: "#0D131F",
-    tooltipBorder: "#2A3650",
-    tooltipText: "#E7EEF8",
-    tooltipLabel: "#9AA7BD",
-    cursor: "rgba(34,211,238,0.06)",
-    surface: "#0D131F",
+    grid: "#2A3052",
+    tick: "#626C8A",
+    tooltipBg: "#1E2240",
+    tooltipBorder: "#3D4570",
+    tooltipText: "#E8ECF5",
+    tooltipLabel: "#9AA3BD",
+    cursor: "rgba(255,122,0,0.10)",
+    surface: "#161A33",
   };
 }

@@ -36,7 +36,7 @@ export default function LocatorMap({ lat, lon, name, emptyLabel }: Props) {
   const tileUrl = isLight
     ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
     : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-  const markerColor = isLight ? "#0891B2" : "#22D3EE";
+  const markerColor = isLight ? "#E66E00" : "#FF7A00";
   const mapBg = isLight ? "#FFFFFF" : "#090D17";
 
   return (

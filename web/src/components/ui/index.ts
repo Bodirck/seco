@@ -14,3 +14,11 @@ export { PageHeader, Section } from "./Page";
 
 export { Tooltip, InfoTip } from "./Tooltip";
 export { default as LocatorMap } from "./LocatorMap";
+
+// "CLASSIFIED" v3 HUD chrome primitives.
+export { Panel } from "./Panel";
+export { DossierNumber } from "./DossierNumber";
+export { CodeLabel } from "./CodeLabel";
+export { StatusTag } from "./StatusTag";
+export { DecodeText } from "./DecodeText";
+export { ScanFrame } from "./ScanFrame";

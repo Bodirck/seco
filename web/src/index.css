@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,74 +6,82 @@
 
 /*
  * Two palettes as CSS variables (space-separated RGB triplets so Tailwind can apply
- * opacity). The dark "First Light" theme is the default; .light is the clear theme.
- * Toggling the class on <html> re-themes the whole app.
+ * opacity). The dark "CLASSIFIED" spy-tech theme is the default; .light is the clear
+ * theme. Toggling the class on <html> re-themes the whole app.
  */
 :root,
 .dark {
   color-scheme: dark;
-  --ink-950: 5 7 13;
-  --ink-900: 9 13 23;
-  --ink-850: 13 19 31;
-  --ink-800: 17 24 39;
-  --ink-700: 24 32 47;
-  --line: 27 36 51;
-  --line-strong: 42 54 80;
-  --fg: 231 238 248;
-  --fg-muted: 154 167 189;
-  --fg-faint: 97 112 138;
-  --signal-300: 103 232 249;
-  --signal-400: 34 211 238;
-  --signal-500: 6 182 212;
-  --signal-600: 8 145 178;
-  --signal-700: 14 116 144;
-  --onaccent: 5 7 13;
+  --ink-950: 10 14 26;
+  --ink-900: 10 14 26;
+  --ink-850: 22 26 51;
+  --ink-800: 30 34 64;
+  --ink-700: 38 43 77;
+  --line: 42 48 82;
+  --line-strong: 61 69 112;
+  --fg: 232 236 245;
+  --fg-muted: 154 163 189;
+  --fg-faint: 98 108 138;
+  --signal-300: 255 166 77;
+  --signal-400: 255 140 26;
+  --signal-500: 255 122 0;
+  --signal-600: 230 110 0;
+  --signal-700: 204 98 0;
+  --amber: 255 176 46;
+  --amber-300: 255 196 92;
+  --onaccent: 10 14 26;
   --critical: 251 94 107;
   --major: 245 181 68;
   --minor: 52 211 153;
+  --grid-dot: 255 255 255;
 }
 
 .light {
   color-scheme: light;
-  --ink-950: 248 250 252;
-  --ink-900: 248 250 252;
-  --ink-850: 255 255 255;
-  --ink-800: 241 245 249;
-  --ink-700: 226 232 240;
-  --line: 226 232 240;
-  --line-strong: 203 213 225;
-  --fg: 15 23 42;
-  --fg-muted: 71 85 105;
-  --fg-faint: 100 116 139;
-  --signal-300: 14 116 144;
-  --signal-400: 8 145 178;
-  --signal-500: 14 116 144;
-  --signal-600: 21 94 117;
-  --signal-700: 22 78 99;
-  --onaccent: 255 255 255;
+  --ink-950: 244 245 247;
+  --ink-900: 244 245 247;
+  --ink-850: 236 238 242;
+  --ink-800: 226 229 236;
+  --ink-700: 213 217 226;
+  --line: 213 217 226;
+  --line-strong: 184 190 204;
+  --fg: 20 24 42;
+  --fg-muted: 74 81 104;
+  --fg-faint: 122 129 153;
+  --signal-300: 204 98 0;
+  --signal-400: 255 122 0;
+  --signal-500: 230 110 0;
+  --signal-600: 204 98 0;
+  --signal-700: 179 86 0;
+  --amber: 181 120 26;
+  --amber-300: 204 136 30;
+  --onaccent: 10 14 26;
   --critical: 220 38 38;
-  --major: 217 119 6;
+  --major: 181 120 26;
   --minor: 5 150 105;
+  --grid-dot: 20 24 42;
 }
 
 body {
   @apply bg-ink-900 font-sans text-fg antialiased;
 }
 
-/* A single faint atmospheric glow behind the app, not a pattern. */
+/* Fine dot grid + a faint orange glow, the intelligence-terminal backdrop. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(60rem 60rem at 75% -10%, rgb(var(--signal-400) / 0.06), transparent 60%),
-    radial-gradient(50rem 50rem at 0% 100%, rgb(var(--signal-400) / 0.04), transparent 55%);
+  background-image:
+    radial-gradient(circle, rgb(var(--grid-dot) / 0.05) 1px, transparent 1px),
+    radial-gradient(42rem 42rem at 85% -8%, rgb(var(--signal-500) / 0.07), transparent 60%),
+    radial-gradient(38rem 38rem at 0% 100%, rgb(var(--signal-500) / 0.05), transparent 55%);
+  background-size: 26px 26px, 100% 100%, 100% 100%;
 }
 
 ::selection {
-  background: rgb(var(--signal-400) / 0.25);
+  background: rgb(var(--signal-500) / 0.30);
 }
 
 /* Thin scrollbars for the instrument feel. */
@@ -102,6 +110,7 @@ body::before {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
