@@ -18,6 +18,12 @@ lib/
 lib64/
 # The Python lib/ rule above must not swallow the React app source directory.
 !web/src/lib/
+
+# Impeccable design-tooling context files (kept local, not part of the deliverable)
+PRODUCT.md
+DESIGN.md
+.impeccable/
+
 parts/
 sdist/
 var/

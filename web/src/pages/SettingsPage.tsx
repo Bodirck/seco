@@ -391,7 +391,7 @@ export default function SettingsPage() {
         title={t("settings.authTitle")}
         accent="amber"
         windowButtons
-        className="animate-panel-in opacity-60 [animation-delay:60ms]"
+        className="animate-panel-in [animation-delay:60ms]"
       >
         <div aria-disabled="true">
           <div className="flex items-center justify-between gap-3">
@@ -401,7 +401,7 @@ export default function SettingsPage() {
           <p className="mt-3 text-sm leading-relaxed text-fg-muted">
             {t("settings.authBody")}
           </p>
-          <div className="mt-5 flex flex-col gap-4">
+          <div className="mt-5 flex flex-col gap-4 opacity-60">
             <Input
               type="text"
               label={t("settings.tenantId")}
