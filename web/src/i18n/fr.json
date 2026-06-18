@@ -18,6 +18,8 @@
     "defects": "Defauts",
     "building": "Batiment",
     "address": "Adresse",
+    "source": "Source",
+    "info": "Plus d'informations",
     "mockNotice": "Aucune cle API detectee : les reponses tournent en mode mock. Ajoutez une cle dans .env pour de vraies reponses."
   },
   "search": {
@@ -27,6 +29,7 @@
     "ask": "Demander",
     "examples": "Essayez un exemple",
     "sources": "Sources",
+    "groundedNote": "Les reponses s'appuient sur les rapports d'inspection et citent les passages utilises.",
     "noAnswer": "Pas encore de reponse. Saisissez une question ci-dessus ou choisissez un exemple.",
     "exampleList": [
       "Quels batiments ont des defauts critiques de securite incendie ?",
@@ -42,15 +45,24 @@
     "totalDefects": "Defauts",
     "criticalDefects": "Defauts critiques",
     "name": "Nom",
-    "viewDetail": "Voir"
+    "viewDetail": "Voir",
+    "chartNote": "Affichage des 12 batiments les plus a risque.",
+    "tips": {
+      "buildings": "Nombre total de batiments du portefeuille, issus des donnees ouvertes EUBUCCO Luxembourg.",
+      "totalDefects": "Tous les defauts extraits des rapports d'inspection, sur l'ensemble des batiments.",
+      "criticalDefects": "Defauts juges critiques : un risque immediat pour la securite ou la structure.",
+      "riskChart": "Score de risque par batiment, du plus eleve au plus faible. Le score combine le nombre de defauts et leur gravite."
+    }
   },
   "building": {
     "subtitle": "Repartition du risque, indicateurs cles et liste complete des defauts.",
+    "overview": "Apercu",
     "byDiscipline": "Defauts par discipline",
     "bySeverity": "Defauts par severite",
     "defectList": "Liste des defauts",
     "downloadExcel": "Telecharger Excel",
     "downloadPdf": "Telecharger PDF",
+    "downloads": "Rapport client",
     "discipline": "Discipline",
     "element": "Element",
     "description": "Description",
@@ -58,6 +70,22 @@
     "severity": "Severite",
     "filterSeverity": "Filtrer par severite",
     "askAbout": "Interroger ce batiment",
-    "notFound": "Batiment introuvable."
+    "notFound": "Batiment introuvable.",
+    "map": "Localisation au Luxembourg",
+    "yearBuilt": "Annee de construction",
+    "height": "Hauteur",
+    "noCoordinates": "Aucune coordonnee publique disponible pour ce batiment.",
+    "tips": {
+      "riskScore": "Score de risque de 0 a 100. Il pondere d'abord les defauts critiques, puis majeurs, puis mineurs, sur une courbe saturante : un batiment peut s'approcher de 100 sans jamais le depasser.",
+      "critical": "Critique : un risque immediat pour la securite ou l'integrite structurelle. A traiter sans delai.",
+      "major": "Majeur : un defaut important qui demande une remise en etat planifiee.",
+      "minor": "Mineur : un probleme cosmetique ou a faible impact, a surveiller.",
+      "byDiscipline": "Repartition des defauts par discipline du batiment : structure, toiture, equipements techniques, etc.",
+      "bySeverity": "La part des defauts a chaque niveau de severite.",
+      "defectList": "Chaque defaut extrait du rapport d'inspection, avec la phrase dont il provient. Utilisez les filtres pour cibler une severite.",
+      "downloads": "Generez un rapport pret pour le client avec la synthese et le tableau complet des defauts. Excel garde le tableau interactif ; le PDF est pret a imprimer.",
+      "askAbout": "Posez votre question en langage courant. La reponse s'appuie uniquement sur le rapport de ce batiment et cite les passages utilises.",
+      "map": "Position approximative du batiment au Luxembourg, d'apres ses coordonnees publiques."
+    }
   }
 }

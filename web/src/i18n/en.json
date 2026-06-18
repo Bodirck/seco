@@ -18,6 +18,8 @@
     "defects": "Defects",
     "building": "Building",
     "address": "Address",
+    "source": "Source",
+    "info": "More information",
     "mockNotice": "No API key detected: answers run in mock mode. Add a key to .env for real answers."
   },
   "search": {
@@ -27,6 +29,7 @@
     "ask": "Ask",
     "examples": "Try an example",
     "sources": "Sources",
+    "groundedNote": "Answers are grounded in the inspection reports and cite the passages they used.",
     "noAnswer": "No answer yet. Type a question above or pick an example.",
     "exampleList": [
       "Which buildings have critical fire-safety defects?",
@@ -42,15 +45,24 @@
     "totalDefects": "Defects",
     "criticalDefects": "Critical defects",
     "name": "Name",
-    "viewDetail": "View"
+    "viewDetail": "View",
+    "chartNote": "Showing the 12 highest-risk buildings.",
+    "tips": {
+      "buildings": "Total buildings in the portfolio, ingested from EUBUCCO Luxembourg open data.",
+      "totalDefects": "All defects extracted from the inspection reports across every building.",
+      "criticalDefects": "Defects rated critical: an immediate safety or structural concern.",
+      "riskChart": "Risk score per building, highest first. The score combines how many defects a building has with how severe they are."
+    }
   },
   "building": {
     "subtitle": "Risk breakdown, key indicators, and the full defect list.",
+    "overview": "Overview",
     "byDiscipline": "Defects by discipline",
     "bySeverity": "Defects by severity",
     "defectList": "Defect list",
     "downloadExcel": "Download Excel",
     "downloadPdf": "Download PDF",
+    "downloads": "Client report",
     "discipline": "Discipline",
     "element": "Element",
     "description": "Description",
@@ -58,6 +70,22 @@
     "severity": "Severity",
     "filterSeverity": "Filter by severity",
     "askAbout": "Ask about this building",
-    "notFound": "Building not found."
+    "notFound": "Building not found.",
+    "map": "Location in Luxembourg",
+    "yearBuilt": "Year built",
+    "height": "Height",
+    "noCoordinates": "No public coordinates available for this building.",
+    "tips": {
+      "riskScore": "Risk score from 0 to 100. It weighs critical defects most, then major, then minor, on a saturating curve so a building can approach but never exceed 100.",
+      "critical": "Critical: an immediate risk to safety or structural integrity. Address without delay.",
+      "major": "Major: a significant defect that needs planned remediation.",
+      "minor": "Minor: a cosmetic or low-impact issue to monitor.",
+      "byDiscipline": "How the defects split across building disciplines such as structure, roofing or building services.",
+      "bySeverity": "The share of defects at each severity rating.",
+      "defectList": "Every defect extracted from the inspection report, each with the sentence it came from. Use the filters to focus on a severity.",
+      "downloads": "Generate a client-ready report with the executive summary and the full defect table. Excel keeps the table interactive; PDF is print-ready.",
+      "askAbout": "Ask in plain language. The answer is grounded only in this building's report and cites the passages it used.",
+      "map": "Approximate position of the building in Luxembourg, from its public coordinates."
+    }
   }
 }

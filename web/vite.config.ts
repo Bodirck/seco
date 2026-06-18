@@ -2,12 +2,27 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // The dev server proxies /api to the FastAPI backend on port 8000.
+// The heavy charting and mapping libraries are split into their own chunks so the
+// initial bundle stays small and the map only downloads when a building page loads.
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
     proxy: {
       "/api": "http://localhost:8000",
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          recharts: ["recharts"],
+          leaflet: ["leaflet", "react-leaflet"],
+          i18n: ["i18next", "react-i18next"],
+        },
+      },
     },
   },
 });
