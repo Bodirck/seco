@@ -1,21 +1,52 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  /* Design tokens (see design-system/buildinglens/MASTER.md) */
-  --color-primary: #2563eb;
-  --color-accent: #059669;
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
-  --color-border: #e2e8f0;
+  color-scheme: dark;
 }
 
 body {
-  @apply bg-slate-50 font-sans text-slate-800 antialiased;
+  @apply bg-ink-900 font-sans text-fg antialiased;
+}
+
+/* A single faint atmospheric glow behind the app, not a pattern. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 60rem at 75% -10%, rgba(34, 211, 238, 0.06), transparent 60%),
+    radial-gradient(50rem 50rem at 0% 100%, rgba(34, 211, 238, 0.04), transparent 55%);
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.25);
+  color: #ffffff;
+}
+
+/* Thin dark scrollbars for the instrument feel. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3650 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #1b2433;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #2a3650;
+  background-clip: padding-box;
 }
 
 /* Respect users who prefer fewer animations. */
