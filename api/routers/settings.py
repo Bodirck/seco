@@ -50,16 +50,23 @@ def _tail(key: str) -> str | None:
 
 
 def _effective_name() -> str:
-    """Type name of the client get_llm() would actually build for the live config.
+    """Type name of the client get_llm() would build, computed WITHOUT constructing it.
 
-    Building a client can raise if the provider's SDK is not installed (clients
-    import their SDK lazily). The settings snapshot must never 500 over that, so
-    we report "MockClient" (the safe runtime fallback) instead of propagating.
+    Mirrors the provider dispatch in get_llm (provider plus key presence) so the
+    settings snapshot stays fast and never imports a provider SDK just to read a name.
+    An online provider with no key falls back to mock, exactly like get_llm.
     """
-    try:
-        return type(get_llm()).__name__
-    except Exception:  # noqa: BLE001 - reporting must not crash the endpoint
-        return "MockClient"
+    cfg = config.get_settings()
+    provider = (cfg.llm_provider or "").strip().lower()
+    if provider == "anthropic":
+        return "AnthropicClient" if cfg.anthropic_api_key else "MockClient"
+    if provider == "openai":
+        return "OpenAIClient" if cfg.openai_api_key else "MockClient"
+    if provider == "mistral":
+        return "MistralClient" if cfg.mistral_api_key else "MockClient"
+    if provider == "local":
+        return "OllamaClient"
+    return "MockClient"
 
 
 def _snapshot() -> dict:

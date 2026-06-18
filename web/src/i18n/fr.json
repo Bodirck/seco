@@ -66,6 +66,8 @@
     "subtitle": "Posez une question en langage courant. La reponse s'appuie sur les rapports d'inspection et cite ses sources.",
     "placeholder": "Posez une question sur les batiments...",
     "ask": "Demander",
+    "searching": "Recherche en cours",
+    "searchingNote": "Recuperation des passages pertinents et ancrage de la reponse.",
     "examples": "Essayez un exemple",
     "sources": "Sources",
     "groundedNote": "Les reponses s'appuient sur les rapports d'inspection et citent les passages utilises.",

@@ -9,6 +9,8 @@ interface DecodeTextProps {
 }
 
 const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/-_#";
+const TICK_MS = 22;
+const TARGET_TICKS = 16; // total reveal lasts ~TARGET_TICKS * TICK_MS (about 350ms)
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) return false;
@@ -29,14 +31,15 @@ function scramble(target: string, revealed: number): string {
 }
 
 /**
- * On mount, briefly scrambles the characters then resolves left-to-right onto
- * the real text (a light decode effect). Under prefers-reduced-motion it renders
- * the final text instantly. The interval is cleared on unmount, and the output
- * always ends on exactly `text`. No external dependency.
+ * On mount, briefly scrambles the characters then resolves left-to-right onto the
+ * real text (a quick decode effect, bounded to roughly 350ms regardless of length
+ * so long headings do not crawl). Under prefers-reduced-motion it renders the final
+ * text instantly. The interval is cleared on unmount and the output always ends on
+ * exactly `text`. No external dependency.
  */
 export function DecodeText({ text, className, as = "span" }: DecodeTextProps) {
   const [display, setDisplay] = useState(() => (prefersReducedMotion() ? text : ""));
-  const frameRef = useRef<number>(0);
+  const idRef = useRef<number>(0);
 
   useEffect(() => {
     if (prefersReducedMotion()) {
@@ -44,24 +47,23 @@ export function DecodeText({ text, className, as = "span" }: DecodeTextProps) {
       return;
     }
 
+    // Reveal in chunks so the whole string resolves in a bounded number of ticks.
+    const step = Math.max(1, Math.ceil(text.length / TARGET_TICKS));
     let revealed = 0;
     setDisplay(scramble(text, 0));
-    // Reveal one more character every few ticks; settle on the exact text.
-    const id = window.setInterval(() => {
-      frameRef.current += 1;
-      if (frameRef.current % 2 === 0) {
-        revealed += 1;
-      }
+
+    idRef.current = window.setInterval(() => {
+      revealed += step;
       if (revealed >= text.length) {
         setDisplay(text);
-        window.clearInterval(id);
+        window.clearInterval(idRef.current);
         return;
       }
       setDisplay(scramble(text, revealed));
-    }, 28);
+    }, TICK_MS);
 
     return () => {
-      window.clearInterval(id);
+      window.clearInterval(idRef.current);
     };
   }, [text]);
 

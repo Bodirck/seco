@@ -57,7 +57,7 @@ export default {
       keyframes: {
         scanline: {
           "0%": { transform: "translateY(-100%)" },
-          "100%": { transform: "translateY(100%)" },
+          "100%": { transform: "translateY(200%)" },
         },
         "panel-in": {
           "0%": { opacity: "0", transform: "translateY(8px)" },

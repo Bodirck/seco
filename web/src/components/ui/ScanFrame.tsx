@@ -61,7 +61,7 @@ export function ScanFrame({ label, className, children }: ScanFrameProps) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
-        <div className="absolute inset-x-0 -top-1/2 h-1/2 animate-scanline bg-gradient-to-b from-transparent via-signal-400/25 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-1/2 animate-scanline bg-gradient-to-b from-transparent via-signal-400/25 to-transparent" />
       </div>
 
       {children ? <div className="relative h-full w-full">{children}</div> : null}

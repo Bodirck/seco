@@ -66,6 +66,8 @@
     "subtitle": "Ask a question in plain language. The answer is grounded in the inspection reports and cites its sources.",
     "placeholder": "Ask a question about the buildings...",
     "ask": "Ask",
+    "searching": "Query in progress",
+    "searchingNote": "Retrieving the relevant report passages and grounding the answer.",
     "examples": "Try an example",
     "sources": "Sources",
     "groundedNote": "Answers are grounded in the inspection reports and cite the passages they used.",

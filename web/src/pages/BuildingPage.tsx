@@ -232,15 +232,14 @@ export default function BuildingPage() {
         </Panel>
       </Reveal>
 
-      {/* Scan visual + geo intel side by side. */}
+      {/* Scan visual + geo intel, equal size side by side. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Reveal index={1}>
           <Panel
             code="SCAN // VOLUME"
-            title={t("building.overview")}
             footer={`REF 0xB4 // ${case_} // POINT CLOUD`}
           >
-            <ScanFrame label={case_} className="h-[260px]">
+            <ScanFrame label={case_} className="h-[300px]">
               <div className="absolute right-3 top-3">
                 <CodeLabel className="text-[10px]">{sector_}</CodeLabel>
               </div>
@@ -259,32 +258,40 @@ export default function BuildingPage() {
               lon={building.longitude}
               name={building.name}
               emptyLabel={t("building.noCoordinates")}
+              zoom={9}
+              className="h-[300px]"
             />
-            <dl className="mt-4 divide-y divide-line border-t border-line pt-1">
-              <div className="flex items-center justify-between gap-2 py-2">
-                <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
-                  COORD
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="font-mono text-sm tabular-nums text-fg">
-                    {coordinates}
-                  </span>
-                  <InfoTip text={t("building.tips.map")} />
-                </span>
-              </div>
-              <DataField label="YEAR" value={yearBuilt} />
-              <DataField label="ARCHITECT" value="N/A" />
-              <DataField label="HEIGHT" value={height} />
-              <div className="flex items-center justify-between gap-3 py-2">
-                <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
-                  STATUS
-                </span>
-                <StatusTag label={statusLabel} tone={scoreTone} />
-              </div>
-            </dl>
           </Panel>
         </Reveal>
       </div>
+
+      {/* Dossier data record: the fields, in their own full-width panel. */}
+      <Reveal index={3}>
+        <Panel code="DATA // RECORD" footer={`REF 0xD1 // ${case_}`}>
+          <dl className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
+            <div className="flex items-baseline justify-between gap-3 py-2">
+              <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
+                COORD
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="font-mono text-sm tabular-nums text-fg">
+                  {coordinates}
+                </span>
+                <InfoTip text={t("building.tips.map")} />
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between gap-3 py-2">
+              <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
+                STATUS
+              </span>
+              <StatusTag label={statusLabel} tone={scoreTone} />
+            </div>
+            <DataField label="YEAR" value={yearBuilt} />
+            <DataField label="ARCHITECT" value="N/A" />
+            <DataField label="HEIGHT" value={height} />
+          </dl>
+        </Panel>
+      </Reveal>
 
       {/* Severity KPI tiles (risk index lives in the dossier head). */}
       <Reveal index={3}>

@@ -168,10 +168,26 @@ export default function SearchPage() {
         )}
 
         {queryState.status === "loading" && (
-          <div className="flex items-center justify-center gap-3 py-12 text-sm text-fg-muted">
-            <Spinner size="sm" />
-            {t("common.loading")}
-          </div>
+          <Panel
+            code="QUERY // RUNNING"
+            accent="amber"
+            footer="RETRIEVING INTEL // GROUNDED SEARCH"
+            className="animate-panel-in"
+          >
+            <div className="flex items-center gap-4 py-3">
+              <Spinner />
+              <div className="min-w-0">
+                <DecodeText
+                  as="p"
+                  text={t("search.searching")}
+                  className="block font-display text-sm font-semibold uppercase tracking-wide text-fg"
+                />
+                <p className="mt-1 text-xs leading-relaxed text-fg-muted">
+                  {t("search.searchingNote")}
+                </p>
+              </div>
+            </div>
+          </Panel>
         )}
 
         {queryState.status === "error" && (
