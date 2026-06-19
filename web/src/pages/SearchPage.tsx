@@ -8,11 +8,9 @@ import {
   Button,
   CodeLabel,
   DecodeText,
-  Input,
   Panel,
   Spinner,
 } from "../components/ui";
-import { CODES } from "../lib/dossier";
 
 type QueryState =
   | { status: "idle" }
@@ -79,11 +77,11 @@ export default function SearchPage() {
 
       {/* Query terminal: the search form lives inside a "QUERY //" dossier panel. */}
       <Panel
-        code={CODES.query}
+        code={t("search.code")}
         title={t("search.title")}
         accent="orange"
         windowButtons
-        footer="REF 0x1F // SECTOR 03 // INTEL TERMINAL"
+        footer="SECTOR 02 // INTEL"
         className="animate-panel-in"
       >
         {/* Hero heading with a decode reveal. */}
@@ -99,14 +97,16 @@ export default function SearchPage() {
         {/* Search form: prompt input + orange Ask button. */}
         <form onSubmit={handleSubmit} className="mt-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-sm border border-line bg-ink-800 pl-3 transition duration-150 ease-out focus-within:border-signal-400/60 focus-within:ring-2 focus-within:ring-signal-400/70">
+            {/* The whole frame is a label, so a click anywhere in it focuses the
+                input, not just the narrow text glyph. */}
+            <label className="flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-sm border border-line bg-ink-800 pl-3 transition duration-150 ease-out focus-within:border-signal-400/60 focus-within:ring-2 focus-within:ring-signal-400/70">
               <span
                 aria-hidden="true"
                 className="select-none font-mono text-sm font-semibold text-signal-400"
               >
                 &gt;_
               </span>
-              <Input
+              <input
                 ref={inputRef}
                 type="text"
                 value={question}
@@ -114,9 +114,9 @@ export default function SearchPage() {
                 placeholder={t("search.placeholder")}
                 disabled={isLoading}
                 aria-label={t("search.placeholder")}
-                className="h-11 border-0 bg-transparent px-0 focus-visible:ring-0"
+                className="h-11 min-w-0 flex-1 border-0 bg-transparent pr-3 text-sm text-fg placeholder-fg-faint focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
-            </div>
+            </label>
             <Button
               type="submit"
               disabled={isLoading || !question.trim()}
@@ -169,7 +169,7 @@ export default function SearchPage() {
 
         {queryState.status === "loading" && (
           <Panel
-            code="QUERY // RUNNING"
+            code={t("search.codeRunning")}
             accent="amber"
             footer="RETRIEVING INTEL // GROUNDED SEARCH"
             className="animate-panel-in"

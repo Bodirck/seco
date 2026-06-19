@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
 import type { AskResponse } from "../../api/types";
 import { Button, Input, Panel, Spinner } from "../ui";
-import { CODES } from "../../lib/dossier";
 
 interface Props {
   buildingId: number;
@@ -42,11 +41,11 @@ export default function AskSection({ buildingId, caseId }: Props) {
     <Panel
       code={
         <>
-          {CODES.query} {caseId}
+          {t("search.code")} {caseId}
         </>
       }
       title={t("building.askAbout")}
-      footer={`REF 0xA9 // ${caseId} // GROUNDED`}
+      footer={`${caseId} // GROUNDED`}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <Input

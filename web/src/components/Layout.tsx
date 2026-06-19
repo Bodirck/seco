@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import i18n from "../i18n";
 import { api } from "../api/client";
 import { Badge, Tooltip } from "./ui";
@@ -152,8 +152,25 @@ function LangSwitcher() {
   );
 }
 
+/** Each top-level section maps to a sector number for the header status strip. */
+const SECTOR_BY_PATH: Record<string, string> = {
+  "/": "01",
+  "/search": "02",
+  "/portfolio": "03",
+  "/ingest": "04",
+  "/settings": "05",
+};
+
+function sectorForPath(pathname: string): string {
+  if (SECTOR_BY_PATH[pathname]) return SECTOR_BY_PATH[pathname];
+  if (pathname.startsWith("/building")) return "03";
+  return "01";
+}
+
 export default function Layout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
+  const sectorCode = sectorForPath(pathname);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -202,7 +219,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             BuildingLens Terminal
           </span>
           <span aria-hidden="true" className="font-mono text-[10px] tracking-[0.18em] text-fg-faint">
-            // SESSION: USER // SECTOR 01
+            // SESSION: USER // SECTOR {sectorCode}
           </span>
         </div>
       </header>

@@ -238,7 +238,7 @@ export default function SettingsPage() {
         title={t("settings.title")}
         accent="orange"
         windowButtons
-        footer="REF 0x0C // SECTOR 01 // CLEARANCE: OPS"
+        footer="SECTOR 05 // CLEARANCE: OPS"
         className="animate-panel-in"
       >
         <DecodeText

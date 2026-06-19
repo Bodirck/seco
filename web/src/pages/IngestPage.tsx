@@ -124,7 +124,7 @@ export default function IngestPage() {
         title={t("ingest.title")}
         accent="orange"
         windowButtons
-        footer="REF 0x2B // SECTOR 04 // INTAKE QUEUE"
+        footer="SECTOR 04 // INTAKE QUEUE"
         className="animate-panel-in"
       >
         <DecodeText

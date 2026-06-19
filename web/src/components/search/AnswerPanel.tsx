@@ -23,7 +23,7 @@ export default function AnswerPanel({ response }: AnswerPanelProps) {
         code="INTEL // RESPONSE"
         accent="orange"
         windowButtons
-        footer="REF 0xA7 // GROUNDED // VERIFIED"
+        footer="GROUNDED // VERIFIED"
         className="animate-panel-in border-l-2 border-l-signal-500"
       >
         <p className="whitespace-pre-wrap font-sans leading-relaxed text-fg">

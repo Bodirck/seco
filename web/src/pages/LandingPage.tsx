@@ -199,7 +199,7 @@ export default function LandingPage() {
       {/* PROBLEM: a plain dossier note panel. */}
       <Reveal index={1}>
       <Panel
-        code="BRIEF // CONTEXT"
+        code="BRIEF //"
         title={t("landing.problemTitle")}
         accent="amber"
       >

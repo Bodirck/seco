@@ -64,6 +64,8 @@
   "search": {
     "title": "Interroger le portefeuille",
     "subtitle": "Posez une question en langage courant. La reponse s'appuie sur les rapports d'inspection et cite ses sources.",
+    "code": "REQUÊTE //",
+    "codeRunning": "REQUÊTE // EN COURS",
     "placeholder": "Posez une question sur les batiments...",
     "ask": "Demander",
     "searching": "Recherche en cours",
@@ -82,6 +84,8 @@
   "portfolio": {
     "title": "Portefeuille",
     "subtitle": "Tous les batiments classes par score de risque, avec le nombre de defauts.",
+    "code": "PARC IMMOBILIER",
+    "codeIndex": "PARC // INDEX",
     "buildings": "Batiments",
     "totalDefects": "Defauts",
     "criticalDefects": "Defauts critiques",

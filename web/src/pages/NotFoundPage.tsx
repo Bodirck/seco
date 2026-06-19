@@ -9,7 +9,7 @@ export default function NotFoundPage() {
       <Panel
         code="SIGNAL LOST"
         accent="amber"
-        footer="REF 0x404 // SECTOR 03 // TRACE TERMINATED"
+        footer="STATUS: 404 // TRACE TERMINATED"
         className="w-full animate-panel-in"
       >
         <div className="flex flex-col items-center gap-4 py-6 text-center">

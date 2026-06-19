@@ -11,7 +11,7 @@ interface PanelProps {
   accent?: "orange" | "amber";
   /** Show the decorative window buttons (minus / square / X). Defaults to true. */
   windowButtons?: boolean;
-  /** Optional faint technical micro-text footer (e.g. "REF 0xA7 // SECTOR 03"). */
+  /** Optional faint technical micro-text footer (e.g. "SECTOR 03 // VERIFIED"). */
   footer?: string;
   className?: string;
   children?: ReactNode;

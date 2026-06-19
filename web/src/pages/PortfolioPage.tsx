@@ -72,7 +72,7 @@ function KpiPanel({ code, label, value, tip, ref_, accent = "orange", critical }
 }
 
 // ---------------------------------------------------------------------------
-// PortfolioPage: the "CASE LOG" view.
+// PortfolioPage: the "ASSET REGISTER" view.
 // ---------------------------------------------------------------------------
 
 export default function PortfolioPage() {
@@ -142,7 +142,7 @@ export default function PortfolioPage() {
     <div>
       {/* Header dossier */}
       <Reveal index={0} className="mb-8">
-        <Panel code="CASE LOG // PORTFOLIO" footer="REF 0xC1 // CLEARANCE: OPEN // VERIFIED">
+        <Panel code={t("portfolio.code")} footer="SECTOR 03 // VERIFIED">
           <DecodeText
             as="h1"
             text={t("portfolio.title")}
@@ -160,7 +160,7 @@ export default function PortfolioPage() {
             label={t("portfolio.buildings")}
             value={buildings.length}
             tip={t("portfolio.tips.buildings")}
-            ref_="REF 0xB0 // SECTOR 01"
+            ref_="ALL ASSETS"
           />
         </Reveal>
         <Reveal index={2}>
@@ -169,7 +169,7 @@ export default function PortfolioPage() {
             label={t("portfolio.totalDefects")}
             value={totalDefects}
             tip={t("portfolio.tips.totalDefects")}
-            ref_="REF 0xB1 // SECTOR 02"
+            ref_="ALL SEVERITIES"
           />
         </Reveal>
         <Reveal index={3}>
@@ -178,7 +178,7 @@ export default function PortfolioPage() {
             label={t("portfolio.criticalDefects")}
             value={totalCritical}
             tip={t("portfolio.tips.criticalDefects")}
-            ref_="REF 0xB2 // PRIORITY: HIGH"
+            ref_="PRIORITY: HIGH"
             accent="amber"
             critical
           />
@@ -191,7 +191,7 @@ export default function PortfolioPage() {
           <Panel
             code={CODES.risk}
             title={t("common.riskScore")}
-            footer="REF 0xD3 // TOP 12 // DESC"
+            footer="TOP 12 // DESC"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
@@ -221,9 +221,9 @@ export default function PortfolioPage() {
       ) : (
         <Reveal index={5}>
           <Panel
-            code="CASE LOG // INDEX"
+            code={t("portfolio.codeIndex")}
             title={t("nav.portfolio")}
-            footer={`REF 0xE7 // ${buildings.length} FILES // VERIFIED`}
+            footer={`${buildings.length} ASSETS // VERIFIED`}
           >
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">

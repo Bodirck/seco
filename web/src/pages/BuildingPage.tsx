@@ -188,7 +188,7 @@ export default function BuildingPage() {
               {CODES.casefile} {case_}
             </>
           }
-          footer={`REF 0xA7 // ${sector_} // VERIFIED`}
+          footer={`${sector_} // VERIFIED`}
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             {/* Identity block */}
@@ -237,7 +237,7 @@ export default function BuildingPage() {
         <Reveal index={1}>
           <Panel
             code="SCAN // VOLUME"
-            footer={`REF 0xB4 // ${case_} // POINT CLOUD`}
+            footer={`${case_} // POINT CLOUD`}
           >
             <ScanFrame label={case_} className="h-[300px]">
               <div className="absolute right-3 top-3">
@@ -251,7 +251,7 @@ export default function BuildingPage() {
           <Panel
             code={CODES.geo}
             title={t("building.map")}
-            footer={`REF 0xC2 // ${coordinates}`}
+            footer={coordinates}
           >
             <LocatorMap
               lat={building.latitude}
@@ -267,7 +267,7 @@ export default function BuildingPage() {
 
       {/* Dossier data record: the fields, in their own full-width panel. */}
       <Reveal index={3}>
-        <Panel code="DATA // RECORD" footer={`REF 0xD1 // ${case_}`}>
+        <Panel code="DATA // RECORD" footer={case_}>
           <dl className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
             <div className="flex items-baseline justify-between gap-3 py-2">
               <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
@@ -313,7 +313,7 @@ export default function BuildingPage() {
         <Panel
           code="REPORT // EXPORT"
           title={t("building.downloads")}
-          footer={`REF 0xE1 // ${case_} // CLIENT-READY`}
+          footer={`${case_} // CLIENT-READY`}
         >
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -340,7 +340,7 @@ export default function BuildingPage() {
         <Panel
           code={CODES.defects}
           title={t("building.defectList")}
-          footer={`REF 0xF3 // ${building.defects.length} ENTRIES // ${sector_}`}
+          footer={`${building.defects.length} ENTRIES // ${sector_}`}
         >
           <div className="mb-3 flex items-center gap-1.5 font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
             {t("building.defectList")}

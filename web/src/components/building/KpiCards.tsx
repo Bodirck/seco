@@ -34,21 +34,21 @@ export default function KpiCards({ breakdown, buildingId }: Props) {
       labelKey: "common.critical",
       tipKey: "building.tips.critical",
       value: breakdown.critical,
-      ref_: `REF 0x01 // ${case_} // PRIORITY: HIGH`,
+      ref_: `${case_} // PRIORITY: HIGH`,
     },
     {
       severity: "major",
       labelKey: "common.major",
       tipKey: "building.tips.major",
       value: breakdown.major,
-      ref_: `REF 0x02 // ${case_} // PLANNED`,
+      ref_: `${case_} // PLANNED`,
     },
     {
       severity: "minor",
       labelKey: "common.minor",
       tipKey: "building.tips.minor",
       value: breakdown.minor,
-      ref_: `REF 0x03 // ${case_} // MONITOR`,
+      ref_: `${case_} // MONITOR`,
     },
   ];
 

@@ -64,6 +64,8 @@
   "search": {
     "title": "Ask the portfolio",
     "subtitle": "Ask a question in plain language. The answer is grounded in the inspection reports and cites its sources.",
+    "code": "QUERY //",
+    "codeRunning": "QUERY // RUNNING",
     "placeholder": "Ask a question about the buildings...",
     "ask": "Ask",
     "searching": "Query in progress",
@@ -82,6 +84,8 @@
   "portfolio": {
     "title": "Portfolio",
     "subtitle": "All buildings ranked by risk score, with defect counts.",
+    "code": "ASSET REGISTER",
+    "codeIndex": "REGISTER // INDEX",
     "buildings": "Buildings",
     "totalDefects": "Defects",
     "criticalDefects": "Critical defects",
