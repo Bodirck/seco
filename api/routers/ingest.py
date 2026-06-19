@@ -118,8 +118,8 @@ def ingest(
                     raise HTTPException(status_code=404, detail="Registry building not found.")
                 cur = conn.execute(
                     "INSERT INTO buildings "
-                    "(source_id, name, address, year_built, height_m, latitude, longitude, source) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "(source_id, name, address, year_built, height_m, latitude, longitude, source, commune) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         cand.get("source_id"),
                         cand.get("name"),
@@ -129,6 +129,7 @@ def ingest(
                         cand.get("latitude"),
                         cand.get("longitude"),
                         cand.get("source"),
+                        cand.get("commune"),
                     ),
                 )
                 conn.commit()

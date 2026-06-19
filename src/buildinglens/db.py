@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS buildings (
     latitude    REAL,
     longitude   REAL,
     source      TEXT,                 -- provenance label, e.g. "EUBUCCO v0.2 / gov-luxembourg"
+    commune     TEXT,                 -- real commune (point-in-polygon, ACT boundaries); NULL if unresolved
     risk_score  REAL                  -- computed by the scoring step
 );
 

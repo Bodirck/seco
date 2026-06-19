@@ -125,14 +125,21 @@ def _synthetic_name(rng: random.Random) -> str:
     return f"{btype} {suffix}"
 
 
-def _synthetic_address(rng: random.Random) -> str:
-    """Return a synthetic but plausible Luxembourg address (deterministic)."""
+def _synthetic_address(rng: random.Random, commune: str | None = None) -> str:
+    """Return a synthetic Luxembourg address (deterministic).
+
+    The street, number and postcode are synthetic placeholders. The commune is the
+    real one (resolved by point-in-polygon) when provided, and falls back to a random
+    commune only when it could not be resolved. The fallback choice is always drawn
+    so the rng sequence (hence the rest of the address) is stable either way.
+    """
     number = rng.randint(1, 120)
     street_type = rng.choice(_LU_STREET_TYPES)
     street_name = rng.choice(_LU_STREET_NAMES)
-    commune = rng.choice(_LU_COMMUNES)
+    fallback_commune = rng.choice(_LU_COMMUNES)
+    commune_name = commune or fallback_commune
     postcode = rng.randint(1000, 9999)
-    return f"{number}, {street_type} {street_name}, {postcode} {commune}, Luxembourg"
+    return f"{number}, {street_type} {street_name}, {postcode} {commune_name}, Luxembourg"
 
 
 def _insert_buildings(
@@ -146,9 +153,9 @@ def _insert_buildings(
         cursor.execute(
             """
             INSERT INTO buildings
-                (source_id, name, address, year_built, height_m, latitude, longitude, source)
+                (source_id, name, address, year_built, height_m, latitude, longitude, source, commune)
             VALUES
-                (:source_id, :name, :address, :year_built, :height_m, :latitude, :longitude, :source)
+                (:source_id, :name, :address, :year_built, :height_m, :latitude, :longitude, :source, :commune)
             """,
             row,
         )
@@ -165,6 +172,8 @@ def _parquet_rows(
     """Read the cached parquet, sample rows, reproject, and return building dicts."""
     import pyarrow.parquet as pq
     from shapely import wkb as shapely_wkb
+
+    from buildinglens import communes
 
     transformer = _build_transformer()
 
@@ -219,9 +228,13 @@ def _parquet_rows(
             else "EUBUCCO v0.2 / gov-luxembourg"
         )
 
-        # EUBUCCO has no names or addresses for LU: assign synthetic placeholders.
+        # Real commune from the centroid (point-in-polygon against ACT boundaries).
+        commune = communes.commune_for_point(lat, lon)
+
+        # EUBUCCO has no names or addresses for LU: name/street/number/postcode are
+        # synthetic placeholders; the commune in the address is the real one above.
         name = _synthetic_name(name_rng)
-        address = _synthetic_address(name_rng)
+        address = _synthetic_address(name_rng, commune=commune)
 
         # source_id: use EUBUCCO's own id column if present, else a positional label.
         sid_raw = record.get("id")
@@ -237,6 +250,7 @@ def _parquet_rows(
                 "latitude": lat,
                 "longitude": lon,
                 "source": source_label,
+                "commune": commune,
             }
         )
 
@@ -261,8 +275,10 @@ def _synthetic_rows(
         lat = rng.uniform(49.44, 50.18)
         lon = rng.uniform(5.73, 6.53)
         height_m = round(rng.uniform(5.0, 30.0), 1)
+        # No boundaries offline: the assigned commune is the synthetic "real" one.
+        commune = rng.choice(_LU_COMMUNES)
         name = _synthetic_name(rng)
-        address = _synthetic_address(rng)
+        address = _synthetic_address(rng, commune=commune)
         rows.append(
             {
                 "source_id": f"synth-LU-{seed}-{i:04d}",
@@ -273,6 +289,7 @@ def _synthetic_rows(
                 "latitude": round(lat, 6),
                 "longitude": round(lon, 6),
                 "source": "synthetic",
+                "commune": commune,
             }
         )
 
