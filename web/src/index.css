@@ -27,6 +27,8 @@
   --signal-500: 255 122 0;
   --signal-600: 230 110 0;
   --signal-700: 204 98 0;
+  /* Active tab label: bright orange in dark (AA on ink-900), darker orange in light (AA there). */
+  --tab-active: 255 166 77;
   --amber: 255 176 46;
   --amber-300: 255 196 92;
   --onaccent: 10 14 26;
@@ -53,6 +55,7 @@
   --signal-500: 230 110 0;
   --signal-600: 204 98 0;
   --signal-700: 179 86 0;
+  --tab-active: 179 86 0;
   --amber: 181 120 26;
   --amber-300: 176 116 24;
   --onaccent: 10 14 26;

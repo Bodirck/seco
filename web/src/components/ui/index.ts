@@ -17,6 +17,8 @@ export { default as LocatorMap } from "./LocatorMap";
 
 // "CLASSIFIED" v3 HUD chrome primitives.
 export { Panel } from "./Panel";
+export { Tabs } from "./Tabs";
+export type { TabItem } from "./Tabs";
 export { DossierNumber } from "./DossierNumber";
 export { CodeLabel } from "./CodeLabel";
 export { StatusTag } from "./StatusTag";

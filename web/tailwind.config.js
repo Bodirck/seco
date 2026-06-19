@@ -38,6 +38,8 @@ export default {
           DEFAULT: v("--amber"),
           300: v("--amber-300"),
         },
+        // Active tab label: orange in both themes, tuned to clear AA contrast on each.
+        "tab-active": v("--tab-active"),
         // Text/icon color to place on an orange fill (dark, both themes).
         onaccent: v("--onaccent"),
         critical: v("--critical"),
