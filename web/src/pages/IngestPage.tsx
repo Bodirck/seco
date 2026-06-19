@@ -16,6 +16,7 @@ import {
   Spinner,
   StatusTag,
 } from "../components/ui";
+import RegistrySearch from "../components/RegistrySearch";
 import { caseId, CODES, sector } from "../lib/dossier";
 import { riskTone } from "../lib/risk";
 
@@ -31,7 +32,6 @@ type Target = "existing" | "registry" | "new";
 export default function IngestPage() {
   const { t } = useTranslation();
   const selectId = useId();
-  const registrySelectId = useId();
   const fileInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,10 +45,9 @@ export default function IngestPage() {
   const [address, setAddress] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  // Public-registry candidates, loaded lazily the first time the tab is opened.
-  const [candidates, setCandidates] = useState<RegistryCandidate[] | null>(null);
-  const [candidatesError, setCandidatesError] = useState<string | null>(null);
+  // Public-registry selection (held here so it survives paging inside the search).
   const [selectedRegistryId, setSelectedRegistryId] = useState("");
+  const [selectedCandidate, setSelectedCandidate] = useState<RegistryCandidate | null>(null);
 
   // Submission state.
   const [submitting, setSubmitting] = useState(false);
@@ -78,27 +77,6 @@ export default function IngestPage() {
       active = false;
     };
   }, []);
-
-  // Load registry candidates the first time the registry target is selected.
-  useEffect(() => {
-    if (target !== "registry" || candidates !== null) return;
-    let active = true;
-    api
-      .registryCandidates(8)
-      .then((list) => {
-        if (!active) return;
-        setCandidates(list);
-        if (list.length > 0) setSelectedRegistryId(list[0].source_id);
-      })
-      .catch((err) => {
-        if (active) {
-          setCandidatesError(err instanceof Error ? err.message : String(err));
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [target, candidates]);
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFile(e.target.files?.[0] ?? null);
@@ -146,8 +124,6 @@ export default function IngestPage() {
 
   const buildingsLoading = buildings === null;
   const hasBuildings = (buildings?.length ?? 0) > 0;
-  const selectedCandidate =
-    candidates?.find((c) => c.source_id === selectedRegistryId) ?? null;
 
   const radioClass = (active: boolean) =>
     "flex-1 cursor-pointer rounded-sm border px-4 py-3 text-left transition duration-150 ease-out " +
@@ -257,63 +233,37 @@ export default function IngestPage() {
               </div>
             )}
 
-            {/* Public-registry selector. */}
+            {/* Public-registry search by commune. */}
             {target === "registry" && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <p className="text-xs leading-relaxed text-fg-faint">
                   {t("ingest.registryHint")}
                 </p>
-                {candidatesError ? (
-                  <p role="alert" className="text-sm text-critical">
-                    {candidatesError}
-                  </p>
-                ) : candidates === null ? (
-                  <div className="flex items-center gap-2 py-2 text-sm text-fg-muted">
-                    <Spinner size="sm" />
-                    {t("ingest.registryLoading")}
-                  </div>
-                ) : candidates.length === 0 ? (
-                  <p className="text-sm text-fg-muted">{t("ingest.registryEmpty")}</p>
-                ) : (
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor={registrySelectId}
-                      className="block font-display text-xs font-medium uppercase tracking-wide text-fg-faint"
-                    >
-                      {t("ingest.selectRegistry")}
-                    </label>
-                    <select
-                      id={registrySelectId}
-                      value={selectedRegistryId}
-                      onChange={(e) => {
-                        setSelectedRegistryId(e.target.value);
-                        setResult(null);
-                        setError(null);
-                      }}
-                      className="w-full cursor-pointer rounded-sm border border-line bg-ink-800 px-3 py-2 text-sm text-fg transition duration-150 ease-out focus-visible:border-signal-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
-                    >
-                      {candidates.map((c) => (
-                        <option
-                          key={c.source_id}
-                          value={c.source_id}
-                          className="bg-ink-800 text-fg"
-                        >
-                          {c.name} — {c.address}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedCandidate && (
-                      <p className="font-mono text-xs text-fg-faint">
-                        {selectedCandidate.latitude != null &&
-                        selectedCandidate.longitude != null
-                          ? `${selectedCandidate.latitude.toFixed(4)}, ${selectedCandidate.longitude.toFixed(4)}`
-                          : "N/A"}
-                        {selectedCandidate.height_m != null
-                          ? ` · ${selectedCandidate.height_m} m`
-                          : ""}
-                        {` · ${selectedCandidate.source}`}
-                      </p>
-                    )}
+                <RegistrySearch
+                  selectedId={selectedRegistryId}
+                  onSelect={(c) => {
+                    setSelectedRegistryId(c.source_id);
+                    setSelectedCandidate(c);
+                    setResult(null);
+                    setError(null);
+                  }}
+                />
+                {selectedCandidate && (
+                  <div className="rounded-sm border border-signal-400/40 bg-ink-800 px-3 py-2">
+                    <CodeLabel accent="amber">{t("ingest.selectedBuilding")}</CodeLabel>
+                    <p className="mt-1 font-display text-sm font-semibold uppercase tracking-wide text-fg">
+                      {selectedCandidate.name}
+                    </p>
+                    <p className="font-mono text-xs text-fg-faint">
+                      {selectedCandidate.commune ?? "?"}
+                      {selectedCandidate.latitude != null &&
+                      selectedCandidate.longitude != null
+                        ? ` · ${selectedCandidate.latitude.toFixed(4)}, ${selectedCandidate.longitude.toFixed(4)}`
+                        : ""}
+                      {selectedCandidate.height_m != null
+                        ? ` · ${selectedCandidate.height_m} m`
+                        : ""}
+                    </p>
                   </div>
                 )}
               </div>

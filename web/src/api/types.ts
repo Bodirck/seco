@@ -92,6 +92,27 @@ export interface RegistryCandidate {
   latitude: number | null;
   longitude: number | null;
   source: string;
+  /** Real commune from point-in-polygon (ACT boundaries); null if unresolved. */
+  commune: string | null;
+}
+
+/** Paginated result of GET /api/registry/search. */
+export interface RegistrySearchResponse {
+  candidates: RegistryCandidate[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+}
+
+/** One commune with its count of not-yet-imported registry buildings. */
+export interface CommuneOption {
+  name: string;
+  count: number;
+}
+
+export interface CommuneListResponse {
+  communes: CommuneOption[];
 }
 
 export type SettingsProvider =

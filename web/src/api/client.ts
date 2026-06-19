@@ -2,9 +2,11 @@ import type {
   AskResponse,
   BuildingDetail,
   BuildingSummary,
+  CommuneListResponse,
   IngestResult,
   Meta,
   RegistryCandidate,
+  RegistrySearchResponse,
   SettingsState,
   SettingsTestResult,
   SettingsUpdate,
@@ -73,6 +75,16 @@ export const api = {
     getJson<{ candidates: RegistryCandidate[] }>(
       `/api/registry/candidates?n=${n}`,
     ).then((r) => r.candidates),
+
+  registrySearch: (q: string, page = 1, pageSize = 20) =>
+    getJson<RegistrySearchResponse>(
+      `/api/registry/search?q=${encodeURIComponent(q)}&page=${page}&page_size=${pageSize}`,
+    ),
+
+  communes: (q = "", limit = 50) =>
+    getJson<CommuneListResponse>(
+      `/api/registry/communes?q=${encodeURIComponent(q)}&limit=${limit}`,
+    ).then((r) => r.communes),
 
   ingest: async (args: {
     file: File;
