@@ -32,7 +32,7 @@ export default function SeverityCell({ critical, major, minor }: Props) {
   return (
     <div className="flex items-center gap-2">
       {counts.map(({ sev, value, label }) => (
-        <Tooltip key={sev} label={label}>
+        <Tooltip key={sev} label={label} focusable={false}>
           <span className={cn(chip, tones[sev].chip)}>
             <span
               className={cn("h-1.5 w-1.5 rounded-full", tones[sev].dot)}

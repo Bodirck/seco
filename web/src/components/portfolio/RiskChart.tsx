@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import type { BuildingSummary } from "../../api/types";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { riskHex } from "../../lib/risk";
 import { useTheme } from "../../theme/ThemeProvider";
 import { chartColors } from "../../lib/chartTheme";
@@ -25,11 +26,12 @@ function truncate(name: string, max = 16): string {
 export default function RiskChart({ buildings }: Props) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const c = chartColors(theme);
 
   const data = buildings
     .slice(0, 12)
-    .map((b) => ({ name: truncate(b.name), score: Math.round(b.risk_score), fullName: b.name }));
+    .map((b) => ({ name: truncate(b.name), score: Math.round(b.risk_score), fullName: b.name, id: b.id }));
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -67,7 +69,15 @@ export default function RiskChart({ buildings }: Props) {
           labelStyle={{ color: c.tooltipLabel }}
           itemStyle={{ color: c.tooltipText }}
         />
-        <Bar dataKey="score" radius={[2, 2, 0, 0]}>
+        <Bar
+          dataKey="score"
+          radius={[2, 2, 0, 0]}
+          cursor="pointer"
+          onClick={(_entry, index) => {
+            const b = data[index];
+            if (b) navigate(`/building/${b.id}`);
+          }}
+        >
           {data.map((entry, index) => (
             <Cell key={index} fill={riskHex(entry.score)} />
           ))}
