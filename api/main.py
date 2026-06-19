@@ -13,7 +13,7 @@ from buildinglens import config, db
 from buildinglens.llm import get_llm
 
 from .deps import get_conn
-from .routers import ask, buildings, ingest, registry, reports, settings
+from .routers import ask, buildings, ingest, registry, reports, search, settings
 
 app = FastAPI(title="BuildingLens API", version="0.1.0")
 
@@ -30,6 +30,7 @@ app.include_router(ask.router, prefix="/api")
 app.include_router(ingest.router, prefix="/api")
 app.include_router(registry.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
+app.include_router(search.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
 
 
