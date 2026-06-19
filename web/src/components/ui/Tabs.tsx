@@ -73,7 +73,7 @@ export function Tabs({ items, paramKey, defaultId, ariaLabel, className }: TabsP
 
   return (
     <div className={className}>
-      <div role="tablist" aria-label={ariaLabel} className="flex flex-wrap items-stretch gap-1 border-b border-line">
+      <div role="tablist" aria-label={ariaLabel} className="flex flex-wrap items-end gap-1 border-b border-line">
         {items.map((item, i) => {
           const selected = item.id === active;
           return (
@@ -90,10 +90,10 @@ export function Tabs({ items, paramKey, defaultId, ariaLabel, className }: TabsP
               onClick={() => select(item.id)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className={cn(
-                "relative -mb-px inline-flex min-h-11 items-center gap-2 px-3 py-2 font-display text-xs font-medium uppercase tracking-[0.18em] cursor-pointer transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70",
+                "relative -mb-px inline-flex h-11 items-center gap-2 rounded-t-md border px-4 font-display text-xs font-medium uppercase tracking-[0.2em] cursor-pointer transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70",
                 selected
-                  ? "border-b-2 border-signal-500 text-tab-active"
-                  : "border-b-2 border-transparent text-fg-muted hover:text-signal-300",
+                  ? "border-line border-b-2 border-b-signal-500 bg-ink-900 text-tab-active"
+                  : "border-line border-b-transparent bg-ink-850 text-fg-muted hover:bg-ink-900 hover:text-fg",
               )}
             >
               {item.label}
