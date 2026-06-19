@@ -14,5 +14,6 @@ requires-python = ">=3.11"
 where = ["src"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+# "src" for the buildinglens package, "." so the api.* FastAPI routers import too.
+pythonpath = ["src", "."]
 testpaths = ["tests"]
