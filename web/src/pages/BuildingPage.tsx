@@ -198,6 +198,35 @@ export default function BuildingPage() {
         ? t("common.major")
         : t("common.minor");
 
+  // Real EUBUCCO attributes for the Case File strip. Null fields are omitted so we
+  // never print "N/A"; footprint area is real, use/floors are ML-estimated (the
+  // InfoTip says so). Replaces the deleted Data Record block with non-redundant facts.
+  const cap = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
+  const buildingAttrs: ({ label: string; value: string; tip?: string } | null)[] = [
+    building.use_type
+      ? {
+          label: t("building.use"),
+          value: cap(building.use_type) + (building.use_subtype ? ` (${building.use_subtype})` : ""),
+          tip: t("building.tips.use"),
+        }
+      : null,
+    building.floors != null
+      ? { label: t("building.floors"), value: String(building.floors), tip: t("building.tips.floors") }
+      : null,
+    building.height_m != null
+      ? { label: t("building.height"), value: `${building.height_m} m`, tip: t("building.tips.height") }
+      : null,
+    building.footprint_area_m2 != null
+      ? { label: t("building.footprint"), value: `${building.footprint_area_m2} m²`, tip: t("building.tips.footprint") }
+      : null,
+    building.year_built != null
+      ? { label: t("building.yearBuilt"), value: String(building.year_built) }
+      : null,
+  ];
+  const visibleAttrs = buildingAttrs.filter(
+    (x): x is { label: string; value: string; tip?: string } => x !== null,
+  );
+
   // -------------------------------------------------------------------------
   // Tab 1: Case File (identity head + scan + geo)
   // -------------------------------------------------------------------------
@@ -230,6 +259,20 @@ export default function BuildingPage() {
                 <span>{building.address}</span>
                 {building.source && <StatusTag label={building.source} tone="signal" />}
               </div>
+
+              {visibleAttrs.length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+                  {visibleAttrs.map((a) => (
+                    <span key={a.label} className="inline-flex items-baseline gap-1.5">
+                      <span className="font-display text-[10px] font-medium uppercase tracking-[0.18em] text-fg-faint">
+                        {a.label}
+                      </span>
+                      <span className="font-mono text-sm tabular-nums text-fg">{a.value}</span>
+                      {a.tip && <InfoTip text={a.tip} />}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Risk index headline metric */}

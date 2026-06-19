@@ -162,6 +162,9 @@
     "map": "Localisation au Luxembourg",
     "yearBuilt": "Annee de construction",
     "height": "Hauteur",
+    "use": "Usage",
+    "floors": "Étages",
+    "footprint": "Emprise",
     "noCoordinates": "Aucune coordonnee publique disponible pour ce batiment.",
     "tips": {
       "riskScore": "Score de risque de 0 a 100. Il pondere d'abord les defauts critiques, puis majeurs, puis mineurs, sur une courbe saturante : un batiment peut s'approcher de 100 sans jamais le depasser.",
@@ -173,7 +176,11 @@
       "defectList": "Chaque defaut extrait du rapport d'inspection, avec la phrase dont il provient. Cliquez une colonne pour trier, ou filtrez par severite.",
       "downloads": "Generez un rapport pret pour le client avec la synthese et le tableau complet des defauts. Excel garde le tableau interactif ; le PDF est pret a imprimer.",
       "askAbout": "Posez votre question en langage courant. La reponse s'appuie uniquement sur le rapport de ce batiment et cite les passages utilises.",
-      "map": "Position approximative du batiment au Luxembourg, d'apres ses coordonnees publiques."
+      "map": "Position approximative du batiment au Luxembourg, d'apres ses coordonnees publiques.",
+      "use": "Usage du bâtiment, estimé par modèle (EUBUCCO). Pas une déclaration cadastrale.",
+      "floors": "Nombre d'étages, estimé par modèle (EUBUCCO), affiché arrondi.",
+      "footprint": "Surface au sol, calculée depuis l'empreinte réelle du bâtiment (EUBUCCO, EPSG:3035).",
+      "height": "Hauteur du bâtiment. Issue du cadastre luxembourgeois pour la plupart, estimée par modèle pour le reste (EUBUCCO)."
     }
   },
   "settings": {

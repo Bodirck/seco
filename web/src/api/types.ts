@@ -35,6 +35,12 @@ export interface Defect {
 export interface BuildingDetail extends BuildingSummary {
   year_built: number | null;
   source_id: string | null;
+  /** EUBUCCO-derived attributes. Footprint area is real; use/floors are ML-estimated. */
+  use_type: string | null;
+  use_subtype: string | null;
+  floors: number | null;
+  footprint_area_m2: number | null;
+  type_confidence: number | null;
   breakdown: Breakdown;
   kpis: {
     by_discipline: { discipline: string; count: number }[];

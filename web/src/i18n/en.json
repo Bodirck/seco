@@ -162,6 +162,9 @@
     "map": "Location in Luxembourg",
     "yearBuilt": "Year built",
     "height": "Height",
+    "use": "Use",
+    "floors": "Floors",
+    "footprint": "Footprint",
     "noCoordinates": "No public coordinates available for this building.",
     "tips": {
       "riskScore": "Risk score from 0 to 100. It weighs critical defects most, then major, then minor, on a saturating curve so a building can approach but never exceed 100.",
@@ -173,7 +176,11 @@
       "defectList": "Every defect extracted from the inspection report, each with the sentence it came from. Click a column to sort, or filter by severity.",
       "downloads": "Generate a client-ready report with the executive summary and the full defect table. Excel keeps the table interactive; PDF is print-ready.",
       "askAbout": "Ask in plain language. The answer is grounded only in this building's report and cites the passages it used.",
-      "map": "Approximate position of the building in Luxembourg, from its public coordinates."
+      "map": "Approximate position of the building in Luxembourg, from its public coordinates.",
+      "use": "Building use, model-estimated by EUBUCCO. Not a cadastral declaration.",
+      "floors": "Number of floors, model-estimated by EUBUCCO and shown rounded.",
+      "footprint": "Ground footprint area, computed from the real building outline (EUBUCCO, EPSG:3035).",
+      "height": "Building height. From the Luxembourg cadastre for most buildings, model-estimated for the rest (EUBUCCO)."
     }
   },
   "settings": {
