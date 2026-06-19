@@ -155,9 +155,11 @@ def _insert_buildings(
         cursor.execute(
             """
             INSERT INTO buildings
-                (source_id, name, address, year_built, height_m, latitude, longitude, source, commune)
+                (source_id, name, address, year_built, height_m, latitude, longitude, source, commune,
+                 use_type, use_subtype, floors, footprint_area_m2, type_confidence)
             VALUES
-                (:source_id, :name, :address, :year_built, :height_m, :latitude, :longitude, :source, :commune)
+                (:source_id, :name, :address, :year_built, :height_m, :latitude, :longitude, :source, :commune,
+                 :use_type, :use_subtype, :floors, :footprint_area_m2, :type_confidence)
             """,
             row,
         )
@@ -233,6 +235,40 @@ def _parquet_rows(
         # Real commune from the centroid (point-in-polygon against ACT boundaries).
         commune = communes.commune_for_point(lat, lon)
 
+        # Real footprint area from the EPSG:3035 polygon (computed BEFORE reprojection,
+        # since 3035 is an equal-area metric CRS, so .area is already in m2).
+        try:
+            _area = round(float(geom.area), 1)
+        except Exception:
+            _area = None
+        footprint_area_m2 = _area if _area and _area > 0 else None
+
+        # EUBUCCO attributes that are ML-estimated (labelled "estimated" in the UI).
+        type_raw = record.get("type")
+        use_type = str(type_raw) if type_raw is not None and str(type_raw).lower() != "nan" else None
+        subtype_raw = record.get("subtype")
+        use_subtype = (
+            str(subtype_raw) if subtype_raw is not None and str(subtype_raw).lower() != "nan" else None
+        )
+        floors_raw = record.get("floors")
+        try:
+            floors = (
+                int(round(float(floors_raw)))
+                if floors_raw is not None and str(floors_raw).lower() != "nan"
+                else None
+            )
+        except (ValueError, TypeError):
+            floors = None
+        conf_raw = record.get("type_confidence")
+        try:
+            type_confidence = (
+                round(float(conf_raw), 2)
+                if conf_raw is not None and str(conf_raw).lower() != "nan"
+                else None
+            )
+        except (ValueError, TypeError):
+            type_confidence = None
+
         # EUBUCCO has no names or addresses for LU: name/street/number/postcode are
         # synthetic placeholders; the commune in the address is the real one above.
         name = _synthetic_name(name_rng)
@@ -253,6 +289,11 @@ def _parquet_rows(
                 "longitude": lon,
                 "source": source_label,
                 "commune": commune,
+                "use_type": use_type,
+                "use_subtype": use_subtype,
+                "floors": floors,
+                "footprint_area_m2": footprint_area_m2,
+                "type_confidence": type_confidence,
             }
         )
 
@@ -293,6 +334,12 @@ def _synthetic_rows(
                 "longitude": round(lon, 6),
                 "source": "synthetic",
                 "commune": None,
+                # No real footprint offline, so area stays None (never fabricated).
+                "use_type": None,
+                "use_subtype": None,
+                "floors": None,
+                "footprint_area_m2": None,
+                "type_confidence": None,
             }
         )
 

@@ -128,8 +128,9 @@ def ingest(
                     )
                 cur = conn.execute(
                     "INSERT INTO buildings "
-                    "(source_id, name, address, year_built, height_m, latitude, longitude, source, commune) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "(source_id, name, address, year_built, height_m, latitude, longitude, source, commune, "
+                    "use_type, use_subtype, floors, footprint_area_m2, type_confidence) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         cand.get("source_id"),
                         cand.get("name"),
@@ -140,6 +141,11 @@ def ingest(
                         cand.get("longitude"),
                         cand.get("source"),
                         cand.get("commune"),
+                        cand.get("use_type"),
+                        cand.get("use_subtype"),
+                        cand.get("floors"),
+                        cand.get("footprint_area_m2"),
+                        cand.get("type_confidence"),
                     ),
                 )
                 conn.commit()

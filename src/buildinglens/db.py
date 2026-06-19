@@ -23,7 +23,12 @@ CREATE TABLE IF NOT EXISTS buildings (
     name        TEXT,
     address     TEXT,
     year_built  INTEGER,
-    height_m    REAL,                 -- real attribute, well covered by EUBUCCO LU
+    height_m    REAL,                 -- EUBUCCO: ~78% real (LU cadastre), ~22% ML-estimated
+    use_type    TEXT,                 -- EUBUCCO type (residential / non-residential), mostly ML-estimated
+    use_subtype TEXT,                 -- EUBUCCO subtype, ML-estimated
+    floors      INTEGER,              -- EUBUCCO floors, ML-estimated (stored rounded)
+    footprint_area_m2 REAL,           -- real: area of the EUBUCCO footprint polygon (EPSG:3035)
+    type_confidence REAL,             -- EUBUCCO model confidence for the use type, if any
     latitude    REAL,
     longitude   REAL,
     source      TEXT,                 -- provenance label, e.g. "EUBUCCO v0.2 / gov-luxembourg"
