@@ -2,8 +2,8 @@ import { useTranslation } from "react-i18next";
 import type { Breakdown } from "../../api/types";
 import { CodeLabel, InfoTip, Panel } from "../ui";
 import type { Severity } from "../../lib/risk";
-import { SEVERITY_HEX } from "../../lib/risk";
-import { caseId } from "../../lib/dossier";
+import { SEVERITY_HEX, riskHex } from "../../lib/risk";
+import { caseId, CODES } from "../../lib/dossier";
 
 interface Props {
   breakdown: Breakdown;
@@ -19,14 +19,14 @@ interface KpiDef {
 }
 
 /**
- * Severity counts as instrument-style dossier tiles. Each count is a small Panel
- * with a code label, a big mono figure colored by severity, and a faint footer.
- * The risk index is intentionally not shown here: it lives in the dossier head
- * as the headline metric, so repeating it would duplicate identity information.
+ * The KPI tab tiles: the risk index recalled as the first tile, then the critical /
+ * major / minor defect counts. Each is a small Panel with a code label, a big mono
+ * figure colored by its tone, and a faint footer.
  */
 export default function KpiCards({ breakdown, buildingId }: Props) {
   const { t } = useTranslation();
   const case_ = caseId(buildingId);
+  const score = breakdown.risk_score;
 
   const cards: KpiDef[] = [
     {
@@ -53,7 +53,23 @@ export default function KpiCards({ breakdown, buildingId }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Risk index recalled as the headline tile, before the severity counts. */}
+      <Panel code={CODES.risk} accent="orange" footer={`${case_} // RISK`}>
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-display text-xs font-medium uppercase tracking-wide text-fg-faint">
+            {t("common.riskScore")}
+          </p>
+          <InfoTip text={t("building.tips.riskScore")} />
+        </div>
+        <p
+          className="mt-2 font-mono text-4xl font-bold tabular-nums"
+          style={{ color: riskHex(score) }}
+        >
+          {score.toFixed(1)}
+        </p>
+      </Panel>
+
       {cards.map((card) => (
         <Panel
           key={card.severity}
