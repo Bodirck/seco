@@ -53,11 +53,63 @@ export interface Source {
   document_id: number;
   building_id: number;
   snippet: string;
+  /** The full retrieved chunk, so a citation can expand beyond the 200-char snippet. */
+  full_text?: string;
+  /** Retrieval relevance score; null when the backend does not expose one. */
+  score: number | null;
+  building_name: string | null;
+  commune: string | null;
 }
 
 export interface AskResponse {
   answer: string;
   sources: Source[];
+}
+
+/** One conversation turn sent back to the server to ground a follow-up question. */
+export interface Turn {
+  question: string;
+  answer: string;
+}
+
+/** A turn as held in the Search transcript, with its own streaming state and sources. */
+export type ChatTurnStatus = "loading" | "streaming" | "success" | "error";
+
+export interface ChatTurn {
+  id: string;
+  question: string;
+  status: ChatTurnStatus;
+  answer: string;
+  sources: Source[];
+  /** Human-readable summary of the scope this turn ran under, if any. */
+  scopeSummary?: string;
+  errorMessage?: string;
+}
+
+/** One frame of the NDJSON answer stream from POST /api/ask/stream. */
+export type AskStreamEvent =
+  | { type: "sources"; sources: Source[] }
+  | { type: "delta"; text: string }
+  | { type: "done" }
+  | { type: "error"; message: string };
+
+/** One selectable facet value with how many buildings carry it. */
+export interface FacetOption {
+  value: string;
+  count: number;
+}
+
+/** Facet values for the Search scope bar (GET /api/search/options). */
+export interface SearchOptions {
+  communes: FacetOption[];
+  uses: FacetOption[];
+  severities: FacetOption[];
+}
+
+/** Result of POST /api/search/resolve: the building ids matching the chosen facets. */
+export interface ResolveScopeResponse {
+  building_ids: number[];
+  count: number;
 }
 
 export interface Meta {
