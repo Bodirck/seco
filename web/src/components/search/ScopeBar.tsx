@@ -73,6 +73,7 @@ function FacetMenu({
   onToggle: (facet: FacetKey, value: string) => void;
   renderValue: (value: string) => string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
@@ -142,7 +143,7 @@ function FacetMenu({
           >
             {options.length === 0 ? (
               <p className="px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-fg-faint">
-                0
+                {t("search.scope.noOptions")}
               </p>
             ) : (
               options.map((opt) => {
@@ -209,7 +210,9 @@ export default function ScopeBar({
   } else if (resolvedCount === 0) {
     summary = t("search.scope.empty");
   } else if (resolvedCount === null) {
-    summary = t("search.scope.allBuildings");
+    // Non-empty scope whose count has not arrived yet (the empty case is handled
+    // above), so show a neutral resolving state, not "All buildings".
+    summary = t("search.scope.resolving");
   } else {
     summary = t("search.scope.summary", { n: resolvedCount, total });
   }

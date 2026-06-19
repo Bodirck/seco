@@ -510,8 +510,10 @@ def answer_stream(
 
     Emits exactly one {"type": "sources", ...} frame from this turn's retrieval,
     then zero or more {"type": "delta", "text": ...} frames whose concatenation
-    is the full answer, then one {"type": "done"} frame. A generation failure
-    after retrieval emits {"type": "error", "message": ...} instead of done.
+    is the full answer, then one {"type": "done"} frame. A failure during
+    retrieval (in _prepare, before any sources) or during generation emits
+    {"type": "error", "message": ...} instead, so the client never sees a
+    silently truncated stream.
 
     Shares _prepare with answer(), so the streamed sources are identical to the
     non-streamed ones for the same request.
@@ -519,7 +521,17 @@ def answer_stream(
     if client is None:
         client = get_llm()
 
-    prep = _prepare(question, conn, building_id, building_ids, k, index_dir, history)
+    try:
+        prep = _prepare(
+            question, conn, building_id, building_ids, k, index_dir, history
+        )
+    except Exception as exc:
+        # Retrieval or index load failed before any answer body. Surface it as an
+        # error frame (the sources frame has not been sent, so ordering is intact).
+        warnings.warn(f"RAG preparation failed: {exc}", stacklevel=2)
+        yield {"type": "error", "message": str(exc)}
+        return
+
     if "early" in prep:
         early = prep["early"]
         yield {"type": "sources", "sources": early["sources"]}

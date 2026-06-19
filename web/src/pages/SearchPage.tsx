@@ -167,14 +167,17 @@ export default function SearchPage() {
     const controller = new AbortController();
     abortRef.current = controller;
     let deltas = 0;
+    let gotSources = false;
 
     try {
       await api.askStream(q, {
         buildingIds,
         history,
         signal: controller.signal,
-        onSources: (sources) =>
-          updateTurn(id, (turn) => ({ ...turn, sources, status: "streaming" })),
+        onSources: (sources) => {
+          gotSources = true;
+          updateTurn(id, (turn) => ({ ...turn, sources, status: "streaming" }));
+        },
         onDelta: (text) => {
           deltas += 1;
           updateTurn(id, (turn) => ({
@@ -193,10 +196,27 @@ export default function SearchPage() {
             ? { ...turn, status: "success" }
             : { ...turn, status: "error", errorMessage: t("search.stopped") },
         );
-      } else if (deltas === 0) {
-        // Pre-delta failure: fall back transparently to the non-streaming ask.
+      } else if (deltas > 0) {
+        // Mid-stream failure: keep the partial answer with a soft note.
+        updateTurn(id, (turn) => ({
+          ...turn,
+          status: "success",
+          errorMessage: t("search.streamFallback"),
+        }));
+      } else if (gotSources) {
+        // Retrieval already ran server side and only generation failed. Do NOT
+        // re-run a second retrieval + generation; surface the error instead.
+        const message = err instanceof Error ? err.message : String(err);
+        updateTurn(id, (turn) => ({ ...turn, status: "error", errorMessage: message }));
+      } else {
+        // Nothing arrived (pre-sources failure): fall back transparently to the
+        // non-streaming ask, which shares the abort signal so Stop still works.
         try {
-          const resp = await api.ask(q, { buildingIds, history });
+          const resp = await api.ask(q, {
+            buildingIds,
+            history,
+            signal: controller.signal,
+          });
           updateTurn(id, (turn) => ({
             ...turn,
             answer: resp.answer,
@@ -204,16 +224,21 @@ export default function SearchPage() {
             status: "success",
           }));
         } catch (err2) {
-          const message = err2 instanceof Error ? err2.message : String(err2);
-          updateTurn(id, (turn) => ({ ...turn, status: "error", errorMessage: message }));
+          if (controller.signal.aborted) {
+            updateTurn(id, (turn) => ({
+              ...turn,
+              status: "error",
+              errorMessage: t("search.stopped"),
+            }));
+          } else {
+            const message = err2 instanceof Error ? err2.message : String(err2);
+            updateTurn(id, (turn) => ({
+              ...turn,
+              status: "error",
+              errorMessage: message,
+            }));
+          }
         }
-      } else {
-        // Mid-stream failure: keep the partial answer with a soft note.
-        updateTurn(id, (turn) => ({
-          ...turn,
-          status: "success",
-          errorMessage: t("search.streamFallback"),
-        }));
       }
     } finally {
       setBusy(false);

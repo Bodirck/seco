@@ -89,6 +89,8 @@
       "use": "Use",
       "severity": "Severity",
       "allBuildings": "All buildings",
+      "resolving": "Resolving scope...",
+      "noOptions": "No options",
       "clearAll": "Clear all",
       "summary": "{{n}} of {{total}} buildings",
       "empty": "No buildings match this scope. Clear a filter to widen it.",

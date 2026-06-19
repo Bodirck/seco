@@ -151,14 +151,17 @@ Answers a free-text question using RAG: retrieves relevant document chunks from 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `question` | string | yes | The question to answer. |
-| `building_id` | integer or null | no | If provided, restricts retrieval to chunks from that building. |
+| `building_id` | integer or null | no | If provided, restricts retrieval to chunks from that single building (the building-page path). |
+| `building_ids` | array of integers or null | no | Portfolio scope: restricts retrieval to the listed buildings. An empty list means filters matched nothing and returns a friendly no-results answer. Ignored when `building_id` is set. |
+| `history` | array of `{question, answer}` | no | Prior conversation turns, used only to help resolve a follow-up question. Retrieval always uses the latest question; the last few turns are bounded server side. |
 
 **Example request:**
 
 ```json
 {
   "question": "Which buildings have critical fire-safety defects?",
-  "building_id": null
+  "building_ids": [12, 3],
+  "history": []
 }
 ```
 
@@ -171,18 +174,66 @@ Answers a free-text question using RAG: retrieves relevant document chunks from 
     {
       "document_id": 18,
       "building_id": 12,
-      "snippet": "Emergency exit on second floor does not meet current regulations (C3 condition)."
+      "snippet": "Emergency exit on second floor does not meet current regulations (C3 condition).",
+      "full_text": "Security: Emergency exit on second floor does not meet current regulations (C3 condition). ...",
+      "score": 0.41,
+      "building_name": "Tour Hollerich",
+      "commune": "Luxembourg"
     },
     {
       "document_id": 5,
       "building_id": 3,
-      "snippet": "Sprinkler system found inoperative during inspection."
+      "snippet": "Sprinkler system found inoperative during inspection.",
+      "full_text": "Fire safety: Sprinkler system found inoperative during inspection. ...",
+      "score": 0.38,
+      "building_name": "Residence Royal",
+      "commune": "Luxembourg"
     }
   ]
 }
 ```
 
-In mock mode (no API key) the answer field contains a placeholder string and sources is an empty array.
+`snippet` is the first 200 characters of the chunk; `full_text` is the whole retrieved chunk; `score` is the retrieval relevance (or null); `building_name` and `commune` come from a single batched lookup. In mock mode (no API key) the answer field contains a placeholder string; sources are still populated from retrieval.
+
+---
+
+## POST /api/ask/stream
+
+Same inputs as `POST /api/ask` (`question`, `building_id`, `building_ids`, `history`), but streams the answer instead of returning it whole. Used by the Search page so the answer appears token by token.
+
+**Response:** `200`, `Content-Type: application/x-ndjson`. The body is newline-delimited JSON frames, in this order:
+
+1. exactly one sources frame: `{"type": "sources", "sources": [ ... ]}` (the same enriched source shape as `/api/ask`, emitted before any answer text)
+2. zero or more delta frames: `{"type": "delta", "text": "..."}` (concatenating the deltas reconstructs the full answer)
+3. exactly one terminal frame: `{"type": "done"}` on success, or `{"type": "error", "message": "..."}` if retrieval or generation fails
+
+A failure inside `/api/ask/stream` is reported as an `error` frame, not an HTTP error, because the `200` headers are already sent once streaming starts. The legacy `POST /api/ask` stays available and is used as the client side fallback.
+
+---
+
+## GET /api/search/options
+
+Facet values for the Search scope bar, each with a building count.
+
+**Response:**
+
+```json
+{
+  "communes": [{ "value": "Esch-sur-Alzette", "count": 3 }],
+  "uses": [{ "value": "residential", "count": 13 }],
+  "severities": [{ "value": "critical", "count": 35 }]
+}
+```
+
+Communes and uses exclude NULLs. A severity count is the number of distinct buildings with at least one defect of that severity.
+
+## POST /api/search/resolve
+
+Resolves a set of facet selections to the AND-combined building id set, the single source of truth for turning filters into a scope.
+
+**Request body:** `{ "communes": [], "uses": [], "severities": [] }` (any subset; an absent facet imposes no constraint).
+
+**Response:** `{ "building_ids": [5, 18, 20], "count": 3 }`.
 
 ---
 

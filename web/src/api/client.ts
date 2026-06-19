@@ -23,6 +23,8 @@ export interface AskOptions {
   buildingId?: number;
   buildingIds?: number[];
   history?: Turn[];
+  /** Abort signal so a non-streaming ask (e.g. the streaming fallback) can be cancelled. */
+  signal?: AbortSignal;
 }
 
 function askBody(question: string, o: AskOptions): Record<string, unknown> {
@@ -86,6 +88,7 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(askBody(question, o)),
+      signal: o.signal,
     });
     if (!res.ok) {
       throw await toError(res);

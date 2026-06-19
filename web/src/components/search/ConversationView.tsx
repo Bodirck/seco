@@ -34,6 +34,14 @@ export default function ConversationView({ turns }: Props) {
         <div key={turn.id} className="space-y-4">
           <QuestionBubble text={turn.question} />
 
+          {/* Announce coarsely (the visible status text), not per streamed delta. */}
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="false"
+            aria-busy={turn.status === "loading" || turn.status === "streaming"}
+            className="space-y-4"
+          >
           {turn.status === "loading" && (
             <Panel
               code={t("search.codeRunning")}
@@ -81,6 +89,7 @@ export default function ConversationView({ turns }: Props) {
               )}
             </div>
           )}
+          </div>
         </div>
       ))}
     </div>
