@@ -7,7 +7,7 @@
     "home": "Home",
     "search": "Search",
     "portfolio": "Portfolio",
-    "ingest": "Ingest",
+    "ingest": "Import",
     "settings": "Settings"
   },
   "common": {
@@ -34,7 +34,7 @@
   "landing": {
     "kicker": "Building intelligence",
     "title": "Turn inspection reports into a clear building risk view",
-    "subtitle": "BuildingLens reads technical inspection reports and public construction data, then surfaces the defects and risk that matter to asset managers and insurers.",
+    "subtitle": "See which buildings carry the most risk, open any one as a full dossier, and ask the whole portfolio a question, from the inspection reports you already hold.",
     "ctaSearch": "Ask the portfolio",
     "ctaPortfolio": "Browse the portfolio",
     "problemTitle": "The problem",
@@ -49,7 +49,7 @@
     "statDocuments": "Documents",
     "statDefects": "Defects",
     "noData": "No data ingested yet",
-    "ctaIngest": "Feed a report",
+    "ctaIngest": "Import a report",
     "howItWorks": "BuildingLens runs on public data: EUBUCCO Luxembourg buildings, STATEC construction permits, and synthetic inspection reports. Everything is reproducible from the"
   },
   "notFound": {
@@ -96,7 +96,7 @@
     }
   },
   "ingest": {
-    "title": "Ingest a report",
+    "title": "Import a report",
     "subtitle": "Upload an inspection PDF. BuildingLens extracts the defects, recomputes the risk score, and indexes the text for search.",
     "targetExisting": "Existing building",
     "targetNew": "New building",
@@ -106,17 +106,17 @@
     "file": "Inspection PDF",
     "chooseFile": "Choose a PDF",
     "noFile": "No file selected",
-    "submit": "Ingest",
-    "submitting": "Ingesting...",
+    "submit": "Import",
+    "submitting": "Importing...",
     "processingNote": "Extraction can take a moment.",
-    "resultTitle": "Ingestion complete",
+    "resultTitle": "Import complete",
     "defectsExtracted": "Defects extracted",
     "newRiskScore": "New risk score",
     "viewBuilding": "View building",
     "mockNote": "No defects were extracted: the app is running in mock mode without an API key. Configure a key in",
     "emptyTitle": "No buildings yet",
-    "emptyBody": "Ingest your first inspection report to extract its defects, score the building and make it searchable.",
-    "cta": "Ingest a report"
+    "emptyBody": "Import your first inspection report to extract its defects, score the building and make it searchable.",
+    "cta": "Import a report"
   },
   "building": {
     "overview": "Overview",

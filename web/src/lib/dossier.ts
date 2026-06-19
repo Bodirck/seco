@@ -28,7 +28,7 @@ export const CODES = {
   defects: "DEFECT LOG",
   query: "QUERY //",
   ops: "OPS // SETTINGS",
-  intake: "INTAKE // INGEST",
+  intake: "INTAKE // IMPORT",
   status: "STATUS:",
 } as const;
 

@@ -7,8 +7,8 @@
     "home": "Accueil",
     "search": "Recherche",
     "portfolio": "Portefeuille",
-    "ingest": "Ingestion",
-    "settings": "Parametres"
+    "ingest": "Importer",
+    "settings": "Paramètres"
   },
   "common": {
     "language": "Langue",
@@ -32,25 +32,25 @@
     "mockTooltip": "Mode mock : les reponses sont generees localement sans cle API."
   },
   "landing": {
-    "kicker": "Intelligence batimentaire",
-    "title": "Transformez les rapports d'inspection en une vue de risque claire",
-    "subtitle": "BuildingLens lit les rapports d'inspection technique et les donnees publiques de la construction, puis fait ressortir les defauts et le risque qui comptent pour les asset managers et les assureurs.",
+    "kicker": "Renseignement bâtiment",
+    "title": "Transformez les rapports d'inspection en une vue claire du risque",
+    "subtitle": "Repérez les bâtiments les plus à risque, ouvrez chacun comme un dossier, et interrogez tout le parc en langage courant, à partir des rapports que vous détenez déjà.",
     "ctaSearch": "Interroger le portefeuille",
     "ctaPortfolio": "Parcourir le portefeuille",
-    "problemTitle": "Le probleme",
-    "problemBody": "Les asset managers et les assureurs croulent sous des piles de rapports d'inspection longs et heterogenes. Chacun est redige differemment, les defauts importants sont noyes dans une prose dense, et il n'existe aucun moyen rapide de comparer le risque sur un parc entier. Tout lire a la main ne passe pas a l'echelle.",
-    "featureExtractTitle": "Extraire les defauts",
-    "featureExtractBody": "Sortez chaque defaut d'un rapport PDF, avec sa discipline, sa localisation et sa severite.",
-    "featureScoreTitle": "Noter le risque",
-    "featureScoreBody": "Agregez les defauts en un seul score de risque par batiment, pondere par la severite.",
+    "problemTitle": "Le problème",
+    "problemBody": "Les asset managers et les assureurs accumulent des rapports d'inspection longs et hétérogènes. Les défauts critiques sont noyés dans une prose dense, et rien ne permet de comparer rapidement le risque sur un parc entier. Les lire à la main ne passe pas à l'échelle.",
+    "featureExtractTitle": "Extraire les défauts",
+    "featureExtractBody": "Sortez chaque défaut d'un rapport PDF, avec sa discipline, sa localisation et sa sévérité.",
+    "featureScoreTitle": "Calculer le risque",
+    "featureScoreBody": "Agrégez les défauts en un score de risque par bâtiment, pondéré par la sévérité.",
     "featureAskTitle": "Interroger en langage courant",
-    "featureAskBody": "Questionnez le parc avec des mots de tous les jours et obtenez des reponses ancrees dans les rapports, avec citations.",
-    "statBuildings": "Batiments",
+    "featureAskBody": "Posez vos questions en langage courant et obtenez des réponses ancrées dans les rapports, avec leurs sources.",
+    "statBuildings": "Bâtiments",
     "statDocuments": "Documents",
-    "statDefects": "Defauts",
-    "noData": "Aucune donnee ingeree pour l'instant",
-    "ctaIngest": "Charger un rapport",
-    "howItWorks": "BuildingLens fonctionne sur des donnees publiques : batiments EUBUCCO Luxembourg, permis de construire STATEC, et rapports d'inspection synthetiques. Tout est reproductible depuis le"
+    "statDefects": "Défauts",
+    "noData": "Aucune donnée chargée pour l'instant",
+    "ctaIngest": "Importer un rapport",
+    "howItWorks": "BuildingLens fonctionne sur des données publiques : bâtiments EUBUCCO Luxembourg, permis de construire STATEC, et rapports d'inspection synthétiques. Tout est reproductible. Code et détails dans le"
   },
   "notFound": {
     "title": "Page introuvable",
@@ -96,7 +96,7 @@
     }
   },
   "ingest": {
-    "title": "Ingerer un rapport",
+    "title": "Importer un rapport",
     "subtitle": "Chargez un PDF d'inspection. BuildingLens en extrait les defauts, recalcule le score de risque et indexe le texte pour la recherche.",
     "targetExisting": "Batiment existant",
     "targetNew": "Nouveau batiment",
@@ -106,17 +106,17 @@
     "file": "PDF d'inspection",
     "chooseFile": "Choisir un PDF",
     "noFile": "Aucun fichier selectionne",
-    "submit": "Ingerer",
-    "submitting": "Ingestion...",
+    "submit": "Importer",
+    "submitting": "Import en cours...",
     "processingNote": "L'extraction peut prendre un moment.",
-    "resultTitle": "Ingestion terminee",
+    "resultTitle": "Import termine",
     "defectsExtracted": "Defauts extraits",
     "newRiskScore": "Nouveau score de risque",
     "viewBuilding": "Voir le batiment",
     "mockNote": "Aucun defaut n'a ete extrait : l'application tourne en mode mock sans cle API. Configurez une cle dans",
     "emptyTitle": "Aucun batiment pour l'instant",
-    "emptyBody": "Ingerez votre premier rapport d'inspection pour en extraire les defauts, noter le batiment et le rendre interrogeable.",
-    "cta": "Ingerer un rapport"
+    "emptyBody": "Importez votre premier rapport d'inspection pour en extraire les defauts, calculer le risque du batiment et le rendre interrogeable.",
+    "cta": "Importer un rapport"
   },
   "building": {
     "overview": "Apercu",

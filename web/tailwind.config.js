@@ -65,7 +65,9 @@ export default {
         },
       },
       animation: {
-        scanline: "scanline 3.5s linear infinite",
+        // A single scan-in sweep on mount that then settles (holds off-screen),
+        // so the scan reads as "scanned once", not as a perpetual loading bar.
+        scanline: "scanline 2.6s ease-out 1 forwards",
         "panel-in": "panel-in 280ms ease-out both",
       },
     },

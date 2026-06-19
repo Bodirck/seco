@@ -199,10 +199,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Faint technical sub-bar: decorative codes, chrome only. */}
         <div className="mx-auto hidden max-w-6xl items-center gap-3 border-t border-line px-4 py-1 sm:flex">
           <span className="font-display text-[10px] font-medium uppercase tracking-[0.18em] text-signal-300/80">
-            SECURE TERMINAL
+            BuildingLens Terminal
           </span>
           <span aria-hidden="true" className="font-mono text-[10px] tracking-[0.18em] text-fg-faint">
-            // SESSION 0x1F // SECTOR 03 // ENCRYPTED
+            // SESSION: USER // SECTOR 01
           </span>
         </div>
       </header>
@@ -213,10 +213,10 @@ export default function Layout({ children }: { children: ReactNode }) {
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-4 sm:flex-row sm:items-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-faint">
-            REF 0xA7 // {t("footer.tagline")}
+            {t("footer.tagline")}
           </p>
           <a
-            href="https://github.com/mmilanesi/buildinglens"
+            href="https://github.com/Bodirck/seco"
             target="_blank"
             rel="noreferrer"
             className="rounded-sm font-display text-[10px] font-medium uppercase tracking-[0.18em] text-fg-faint cursor-pointer transition-colors duration-150 hover:text-signal-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"

@@ -162,7 +162,7 @@ export default function LandingPage() {
             {CODES.casefile} <span className="text-signal-500">BUILDINGLENS</span>
           </>
         }
-        footer="REF 0xA7 // SECTOR 03 // VERIFIED"
+        footer="CLASSIFICATION: PUBLIC // REGION: LUXEMBOURG"
       >
         <div className="grid gap-6 sm:grid-cols-[1.4fr_1fr] sm:items-center">
           <div>
@@ -199,7 +199,7 @@ export default function LandingPage() {
       {/* PROBLEM: a plain dossier note panel. */}
       <Reveal index={1}>
       <Panel
-        code="BRIEF // 02"
+        code="BRIEF // CONTEXT"
         title={t("landing.problemTitle")}
         accent="amber"
       >
@@ -270,7 +270,7 @@ export default function LandingPage() {
         <p className="max-w-2xl text-sm leading-relaxed text-fg-muted">
           {t("landing.howItWorks")}{" "}
           <a
-            href="https://github.com/mmilanesi/buildinglens"
+            href="https://github.com/Bodirck/seco"
             target="_blank"
             rel="noreferrer"
             className="rounded-sm font-display text-signal-300 transition-colors duration-150 hover:text-signal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"

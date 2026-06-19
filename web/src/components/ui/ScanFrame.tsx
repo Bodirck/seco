@@ -9,12 +9,12 @@ interface ScanFrameProps {
 }
 
 /**
- * A stylized "3D scan" visual placeholder. We have no real building photos (only
- * public footprints), so this is an honest decorative stand-in: a framed box with
- * a faint blue-white perspective wireframe / point grid and a slow scan-line sweep
- * overlay. Theme-aware via tokens; the wireframe stroke uses currentColor so it
- * stays legible in both light and dark. The scan sweep is suppressed under
- * prefers-reduced-motion by the global rule in index.css.
+ * A stylized "3D scan" of a building. We have no real building photos (only public
+ * footprints), so this is an honest decorative stand-in: a wireframe tower in
+ * perspective over a faint point grid, with a single scan-in sweep on mount (it
+ * settles rather than looping, so it does not read as a perpetual loading bar).
+ * Theme-aware via currentColor; the sweep is suppressed under prefers-reduced-motion
+ * by the global rule in index.css.
  */
 export function ScanFrame({ label, className, children }: ScanFrameProps) {
   return (
@@ -24,39 +24,48 @@ export function ScanFrame({ label, className, children }: ScanFrameProps) {
         className,
       )}
     >
-      {/* Perspective wireframe + point cloud, faint signal-tinted text color. */}
       <svg
         viewBox="0 0 400 220"
         preserveAspectRatio="xMidYMid slice"
         aria-hidden="true"
-        className="absolute inset-0 h-full w-full text-signal-400/35"
+        className="absolute inset-0 h-full w-full text-signal-400/40"
       >
         <defs>
-          <pattern id="scanframe-dots" width="20" height="20" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="1" fill="currentColor" opacity="0.45" />
+          <pattern id="scanframe-dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="currentColor" opacity="0.4" />
           </pattern>
         </defs>
         <rect x="0" y="0" width="400" height="220" fill="url(#scanframe-dots)" />
-        {/* A stylized wireframe volume (extruded footprint). */}
-        <g stroke="currentColor" strokeWidth="1.1" fill="none" opacity="0.9">
-          {/* Front face */}
-          <path d="M150 150 L150 80 L250 80 L250 150 Z" />
-          {/* Top face, receding to a vanishing point */}
-          <path d="M150 80 L188 52 L288 52 L250 80" />
-          {/* Right side */}
-          <path d="M250 80 L288 52 L288 122 L250 150" />
-          {/* Vertical guides */}
-          <line x1="150" y1="150" x2="150" y2="80" />
-          <line x1="250" y1="150" x2="250" y2="80" />
+
+        {/* Ground reticle */}
+        <g stroke="currentColor" strokeWidth="0.8" opacity="0.45">
+          <line x1="36" y1="186" x2="364" y2="186" />
+          <line x1="200" y1="182" x2="200" y2="190" />
         </g>
-        {/* Base reticle */}
-        <g stroke="currentColor" strokeWidth="0.8" opacity="0.5">
-          <line x1="40" y1="178" x2="360" y2="178" />
-          <line x1="200" y1="30" x2="200" y2="40" />
+
+        {/* Wireframe tower: front face, right (receding) face, top, floor lines. */}
+        <g stroke="currentColor" strokeWidth="1.1" fill="none" opacity="0.95">
+          {/* Front face */}
+          <path d="M156 56 L156 186 L256 186 L256 56 Z" />
+          {/* Right (receding) face */}
+          <path d="M256 56 L298 40 L298 170 L256 186" />
+          {/* Top face */}
+          <path d="M156 56 L198 40 L298 40 L256 56 Z" />
+          {/* Floor lines across the front face */}
+          <g strokeWidth="0.7" opacity="0.7">
+            <line x1="156" y1="78" x2="256" y2="78" />
+            <line x1="156" y1="100" x2="256" y2="100" />
+            <line x1="156" y1="122" x2="256" y2="122" />
+            <line x1="156" y1="144" x2="256" y2="144" />
+            <line x1="156" y1="164" x2="256" y2="164" />
+            {/* Two window mullions */}
+            <line x1="189" y1="56" x2="189" y2="186" />
+            <line x1="222" y1="56" x2="222" y2="186" />
+          </g>
         </g>
       </svg>
 
-      {/* Slow vertical scan sweep. A thin highlighted band that travels down. */}
+      {/* Single scan-in sweep: a soft band that travels the full height once. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
