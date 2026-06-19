@@ -83,8 +83,8 @@ Alongside the Streamlit app there is a polished React web app (Vite, TypeScript,
 
 - a landing page that explains what the product does and shows live data counts;
 - a RAG search that answers questions in plain language and cites its sources;
-- a portfolio ranked by risk, with a risk chart and defect counts;
-- a per-building view with KPI charts, a locator map placing the building in Luxembourg from its public coordinates, explanatory tooltips on every indicator, and Excel or PDF report export;
+- a portfolio ranked by risk, in two tabs: an overview with the key figures and the risk chart (click a bar to open that building), and a clean asset index table;
+- a per-building view in three tabs (case file with a locator map placing the building in Luxembourg from its public coordinates, KPI charts, and a defect log you can sort and filter per column), a command bar to ask a question about that building from any tab, explanatory tooltips on every indicator, and Excel or PDF report export. The year built and height are kept in the data but not surfaced here, to keep the view focused;
 - a Settings page to choose the AI provider (Anthropic, OpenAI, Mistral, or a local Ollama model) and set its key from the UI, with a connection test (the key is stored server-side and never sent back to the browser);
 - a RAG ingestion page to upload a new inspection PDF and have it extracted, scored and indexed on the spot.
 
@@ -184,8 +184,8 @@ Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport,
 
 - une page d'accueil qui explique le produit et affiche les compteurs de données en direct ;
 - une recherche RAG qui répond en langage courant et cite ses sources ;
-- un portefeuille classé par risque, avec un graphe de risque et le nombre de défauts ;
-- une vue par bâtiment avec graphes KPI, une carte de localisation qui situe le bâtiment au Luxembourg à partir de ses coordonnées publiques, des infobulles sur chaque indicateur, et un export de rapport Excel ou PDF ;
+- un portefeuille classé par risque, en deux onglets : une vue d'ensemble avec les chiffres clés et le graphe de risque (cliquer une barre ouvre le bâtiment), et une table d'index du parc épurée ;
+- une vue par bâtiment en trois onglets (dossier avec une carte qui situe le bâtiment au Luxembourg à partir de ses coordonnées publiques, graphes KPI, et un journal des défauts triable et filtrable par colonne), une barre de commande pour interroger ce bâtiment depuis n'importe quel onglet, des infobulles sur chaque indicateur, et un export de rapport Excel ou PDF. L'année de construction et la hauteur sont conservées dans les données mais pas affichées ici, pour garder la vue concentrée ;
 - une page Réglages pour choisir le fournisseur IA (Anthropic, OpenAI, Mistral, ou un modèle local Ollama) et saisir sa clé depuis l'interface, avec un test de connexion (la clé est stockée côté serveur et jamais renvoyée au navigateur) ;
 - une page d'ingestion RAG pour charger un nouveau rapport PDF et le faire extraire, scorer et indexer immédiatement.
 
