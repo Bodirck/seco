@@ -1,4 +1,6 @@
 import {
+  Suspense,
+  lazy,
   useEffect,
   useState,
   type CSSProperties,
@@ -27,7 +29,6 @@ import {
   DossierNumber,
   EmptyState,
   InfoTip,
-  LocatorMap,
   Panel,
   ScanFrame,
   Spinner,
@@ -37,6 +38,9 @@ import {
 import { caseId, sector, CODES } from "../lib/dossier";
 import { cn } from "../lib/cn";
 import { riskHex, riskTone } from "../lib/risk";
+
+// Lazy so leaflet and its CSS only download when the Case File tab renders the map.
+const LocatorMap = lazy(() => import("../components/ui/LocatorMap"));
 
 function DownloadIcon() {
   return (
@@ -260,14 +264,22 @@ export default function BuildingPage() {
           </Panel>
 
           <Panel code={CODES.geo} title={t("building.map")} footer={coordinates}>
-            <LocatorMap
-              lat={building.latitude}
-              lon={building.longitude}
-              name={building.name}
-              emptyLabel={t("building.noCoordinates")}
-              zoom={9}
-              className="h-[300px]"
-            />
+            <Suspense
+              fallback={
+                <div className="flex h-[300px] items-center justify-center rounded-sm border border-line bg-ink-800">
+                  <Spinner />
+                </div>
+              }
+            >
+              <LocatorMap
+                lat={building.latitude}
+                lon={building.longitude}
+                name={building.name}
+                emptyLabel={t("building.noCoordinates")}
+                zoom={9}
+                className="h-[300px]"
+              />
+            </Suspense>
           </Panel>
         </div>
       </Reveal>

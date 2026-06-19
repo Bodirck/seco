@@ -13,7 +13,9 @@ export { Spinner, EmptyState } from "./Feedback";
 export { PageHeader, Section } from "./Page";
 
 export { Tooltip, InfoTip } from "./Tooltip";
-export { default as LocatorMap } from "./LocatorMap";
+// NOTE: LocatorMap is intentionally NOT re-exported here. It pulls in leaflet and
+// its CSS, and this barrel is imported app-wide (e.g. by Layout), so re-exporting
+// it would force leaflet into the entry chunk. Import it lazily where it is used.
 
 // "CLASSIFIED" v3 HUD chrome primitives.
 export { Panel } from "./Panel";
