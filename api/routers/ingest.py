@@ -29,6 +29,9 @@ _INGEST_LOCK = threading.Lock()
 
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]+")
 
+# Cap on uploaded PDFs, so a single request cannot read an unbounded blob into memory.
+_MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB
+
 
 def _safe_unique_name(original: str) -> str:
     """Build a collision-free filesystem name from an uploaded file name.
@@ -72,10 +75,16 @@ def ingest(
             detail="Provide building_id to attach the report, or a non-empty name to create a building.",
         )
 
+    # Reject oversized uploads before reading the whole file into memory.
+    if file.size is not None and file.size > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="PDF is too large (maximum 20 MB).")
+
     # Read the upload bytes before taking the lock (I/O that needs no DB).
     data = file.file.read()
     if not data:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(data) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="PDF is too large (maximum 20 MB).")
 
     with _INGEST_LOCK:
         # --- Save the upload under the configured data root ---
@@ -109,7 +118,17 @@ def ingest(
                 building_name = clean_name
 
             # --- Extract text and insert the documents row ---
-            doc_ids = ingest_pdf.ingest_reports(conn, [(target_building_id, saved_path)])
+            try:
+                doc_ids = ingest_pdf.ingest_reports(conn, [(target_building_id, saved_path)])
+            except HTTPException:
+                raise
+            except Exception as exc:
+                # A malformed or non-PDF file surfaces here as a parser error; report
+                # it as a client error rather than a 500.
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not read the uploaded PDF; it may be corrupt or not a valid PDF file.",
+                ) from exc
             if not doc_ids:
                 raise HTTPException(
                     status_code=400,

@@ -66,12 +66,20 @@ CREATE TABLE IF NOT EXISTS app_settings (
 
 
 def connect(db_path: str | Path) -> sqlite3.Connection:
-    """Open a connection with foreign keys on and row access by column name."""
+    """Open a connection with foreign keys on and row access by column name.
+
+    WAL mode plus a busy timeout let concurrent readers and a writer coexist:
+    the API serves reads, settings writes and ingest writes from a threadpool,
+    so without these a read or a settings PUT landing during an ingest write
+    would fail with "database is locked" instead of waiting briefly.
+    """
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
+    conn.execute("PRAGMA journal_mode = WAL")
     return conn
 
 

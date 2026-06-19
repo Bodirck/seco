@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-import { api } from "../api/client";
+import { api, ApiError } from "../api/client";
 import type { AskResponse, BuildingDetail, Severity } from "../api/types";
 import AskBar from "../components/building/AskBar";
 import DefectTable, {
@@ -125,11 +125,10 @@ export default function BuildingPage() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.startsWith("404")) {
+        if (err instanceof ApiError && err.status === 404) {
           setNotFound(true);
         } else {
-          setError(msg);
+          setError(err instanceof Error ? err.message : String(err));
         }
       })
       .finally(() => {

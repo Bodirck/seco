@@ -9,20 +9,32 @@ import type {
   SettingsUpdate,
 } from "./types";
 
+/** Error carrying the HTTP status so callers can branch on it (e.g. 404). */
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 /**
- * Build an Error from a failed response, preferring the FastAPI `detail` body
- * (which carries the precise, user-meaningful message) over the bare status line.
+ * Build an ApiError from a failed response, preferring the FastAPI `detail` body
+ * (which carries the precise, user-meaningful message) over the bare status line,
+ * and keeping the HTTP status so callers can distinguish e.g. a 404 from a 500.
  */
-async function toError(res: Response): Promise<Error> {
+async function toError(res: Response): Promise<ApiError> {
+  let message = `${res.status} ${res.statusText}`;
   try {
     const body = await res.json();
     if (body && typeof body.detail === "string" && body.detail.trim()) {
-      return new Error(body.detail);
+      message = body.detail;
     }
   } catch {
-    // No JSON body; fall back to the status line.
+    // No JSON body; keep the status line.
   }
-  return new Error(`${res.status} ${res.statusText}`);
+  return new ApiError(res.status, message);
 }
 
 async function getJson<T>(url: string): Promise<T> {
