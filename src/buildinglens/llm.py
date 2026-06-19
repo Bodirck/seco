@@ -17,13 +17,19 @@ select that provider. Mock needs nothing installed.
 from __future__ import annotations
 
 import json
-from typing import Protocol
+from typing import Iterator, Protocol
 
 from .config import Settings, settings as default_settings
 
 
 class LLMClient(Protocol):
     def complete(self, prompt: str, system: str | None = None, max_tokens: int = 4096) -> str: ...
+
+    def stream(
+        self, prompt: str, system: str | None = None, max_tokens: int = 4096
+    ) -> Iterator[str]:
+        """Yield answer text in deltas. Concatenated, the deltas equal complete()."""
+        ...
 
 
 class MockClient:
@@ -40,6 +46,24 @@ class MockClient:
         if "json" in haystack or "defect" in haystack:
             return '{"defects": []}'
         return "[mock] no live model configured; set LLM_PROVIDER and an API key for real output."
+
+    def stream(
+        self, prompt: str, system: str | None = None, max_tokens: int = 4096
+    ) -> Iterator[str]:
+        # Simulate token streaming so the offline path exercises the full
+        # streaming pipeline: chunk the canned answer into small word groups.
+        text = self.complete(prompt, system=system, max_tokens=max_tokens)
+        words = text.split()
+        if not words:
+            return
+        group: list[str] = []
+        for word in words:
+            group.append(word)
+            if len(group) >= 3:
+                yield " ".join(group) + " "
+                group = []
+        if group:
+            yield " ".join(group)
 
 
 class AnthropicClient:
@@ -63,6 +87,21 @@ class AnthropicClient:
         resp = self._client.messages.create(**kwargs)
         return "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
 
+    def stream(
+        self, prompt: str, system: str | None = None, max_tokens: int = 4096
+    ) -> Iterator[str]:
+        kwargs: dict = {
+            "model": self._model,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if system:
+            kwargs["system"] = system
+        with self._client.messages.stream(**kwargs) as stream:
+            for text in stream.text_stream:
+                if text:
+                    yield text
+
 
 class OpenAIClient:
     name = "openai"
@@ -83,6 +122,23 @@ class OpenAIClient:
         )
         return resp.choices[0].message.content or ""
 
+    def stream(
+        self, prompt: str, system: str | None = None, max_tokens: int = 4096
+    ) -> Iterator[str]:
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+        chunks = self._client.chat.completions.create(
+            model=self._model, messages=messages, max_tokens=max_tokens, stream=True
+        )
+        for chunk in chunks:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield delta
+
 
 class MistralClient:
     name = "mistral"
@@ -102,6 +158,21 @@ class MistralClient:
             model=self._model, messages=messages, max_tokens=max_tokens
         )
         return resp.choices[0].message.content or ""
+
+    def stream(
+        self, prompt: str, system: str | None = None, max_tokens: int = 4096
+    ) -> Iterator[str]:
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+        events = self._client.chat.stream(
+            model=self._model, messages=messages, max_tokens=max_tokens
+        )
+        for event in events:
+            delta = event.data.choices[0].delta.content
+            if delta:
+                yield delta
 
 
 class OllamaClient:
@@ -127,6 +198,32 @@ class OllamaClient:
         )
         resp.raise_for_status()
         return resp.json().get("message", {}).get("content", "")
+
+    def stream(
+        self, prompt: str, system: str | None = None, max_tokens: int = 4096
+    ) -> Iterator[str]:
+        import requests  # lazy
+
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+        with requests.post(
+            f"{self._base_url}/api/chat",
+            json={"model": self._model, "messages": messages, "stream": True},
+            timeout=120,
+            stream=True,
+        ) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                obj = json.loads(line)
+                piece = obj.get("message", {}).get("content", "")
+                if piece:
+                    yield piece
+                if obj.get("done"):
+                    break
 
 
 def get_llm(provider: str | None = None, cfg: Settings | None = None) -> LLMClient:

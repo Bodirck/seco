@@ -13,17 +13,24 @@ Generation : our own get_llm() (the passed client), never LlamaIndex's LLM. This
             multi-provider behaviour and the mock fallback intact. Settings.llm is forced to
             None so LlamaIndex never tries to build an OpenAI client.
 
-Public surface (unchanged, callers depend on it byte for byte)
---------------------------------------------------------------
+Public surface
+--------------
     build_index(conn, index_dir) -> int
-    answer(question, conn, building_id, k, client, index_dir) -> dict
+    answer(question, conn, building_id, k, client, index_dir, building_ids, history) -> dict
+    answer_stream(...) -> Iterator[dict]   # NDJSON-ready {type: sources|delta|done|error}
+
+The legacy answer() call shape (question, conn, building_id, k, client, index_dir)
+is preserved byte for byte; building_ids and history are optional and appended
+after it. Scope precedence: a single building_id wins (the building-page path),
+else a non-empty building_ids set, else the whole portfolio. history feeds only
+the generation prompt, never retrieval.
 """
 
 from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from .config import settings
 from .llm import LLMClient, get_llm
@@ -84,6 +91,17 @@ _PERSIST_PROBE = "docstore.json"
 # Marker written when the corpus is empty, so the lazy build in answer() does not
 # loop forever trying to (re)build a persisted index that cannot exist.
 _EMPTY_MARKER = "empty.marker"
+
+# Friendly terminal messages. French, to match the synthetic corpus and the
+# existing answers; the UI chrome around them is English only.
+_EMPTY_CORPUS_MSG = "Il n'y a pas d'information disponible dans la base de donnees."
+_NO_RESULT_MSG = (
+    "Il n'y a pas d'information pertinente pour cette question dans la base de donnees."
+)
+_EMPTY_SCOPE_MSG = (
+    "Aucun batiment ne correspond au perimetre selectionne. "
+    "Retirez un filtre pour elargir la recherche."
+)
 
 
 def _resolve_index_dir(index_dir: str | Path | None) -> Path:
@@ -200,17 +218,23 @@ def _load_index(idx_dir: Path) -> Any:
     return load_index_from_storage(storage)
 
 
-def _retrieve(index: Any, question: str, building_id: int | None, k: int) -> list[Any]:
-    """Retrieve up to k nodes, restricted to one building when building_id is set.
+def _retrieve(
+    index: Any,
+    question: str,
+    building_id: int | None,
+    building_ids: list[int] | None,
+    k: int,
+) -> list[Any]:
+    """Retrieve up to k nodes, optionally scoped to one building or a set.
 
-    Uses LlamaIndex MetadataFilters for the building restriction and also
-    post-filters defensively so the building_id guarantee holds regardless of the
-    vector store backend.
+    Scope precedence: a single building_id (EQ filter) wins and keeps the
+    building-page behaviour byte for byte; otherwise a non-empty building_ids
+    list restricts retrieval with an IN filter; otherwise the whole portfolio is
+    in scope. We always post-filter defensively so the scope guarantee holds
+    regardless of the vector store backend. For the set case the corpus is small,
+    so we over-fetch then post-filter and cap, ensuring in-scope chunks survive.
     """
-    if building_id is None:
-        retriever = index.as_retriever(similarity_top_k=k)
-        results = retriever.retrieve(question)
-    else:
+    if building_id is not None:
         from llama_index.core.vector_stores import (  # lazy import
             FilterOperator,
             MetadataFilter,
@@ -224,50 +248,133 @@ def _retrieve(index: Any, question: str, building_id: int | None, k: int) -> lis
                 )
             ]
         )
-        # The corpus is small; over-fetch then post-filter and cap, so the right
-        # building's best chunks are guaranteed to make the final k.
         retriever = index.as_retriever(similarity_top_k=k, filters=filters)
         results = retriever.retrieve(question)
         results = [
             r for r in results if r.node.metadata.get("building_id") == building_id
         ]
+        return results[:k]
 
-    return results[:k]
+    if building_ids:
+        from llama_index.core.vector_stores import (  # lazy import
+            FilterOperator,
+            MetadataFilter,
+            MetadataFilters,
+        )
+
+        id_set = set(building_ids)
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="building_id",
+                    value=list(id_set),
+                    operator=FilterOperator.IN,
+                )
+            ]
+        )
+        # Over-fetch then post-filter: on a small corpus the in-scope chunks can
+        # be crowded out by out-of-scope nearest neighbours before the IN filter.
+        retriever = index.as_retriever(
+            similarity_top_k=max(k * 4, 20), filters=filters
+        )
+        results = retriever.retrieve(question)
+        results = [
+            r for r in results if r.node.metadata.get("building_id") in id_set
+        ]
+        return results[:k]
+
+    retriever = index.as_retriever(similarity_top_k=k)
+    return retriever.retrieve(question)[:k]
 
 
-def answer(
+def _format_history(
+    history: list[dict] | None,
+    max_turns: int = 3,
+    max_answer_chars: int = 300,
+) -> str:
+    """Render the last few conversation turns as a compact plain-text transcript.
+
+    Used only to help the model resolve a follow-up question, never as a source
+    of facts. Bounded server side (turn count and answer length) so a client
+    cannot blow up the prompt with a long history.
+    """
+    if not history:
+        return ""
+    lines: list[str] = []
+    for turn in history[-max_turns:]:
+        q = str(turn.get("question") or "").strip()
+        a = str(turn.get("answer") or "").strip()
+        if not q and not a:
+            continue
+        if len(a) > max_answer_chars:
+            a = a[:max_answer_chars].rstrip() + "..."
+        lines.append(f"Q: {q}\nR: {a}")
+    return "\n\n".join(lines)
+
+
+def _build_sources(conn: Any, retrieved: list[Any]) -> list[dict]:
+    """Build enriched cited passages from the retrieved nodes.
+
+    Each source keeps the original document_id / building_id / snippet and adds
+    the relevance score, the full chunk text (for an expandable view), and the
+    building name + commune resolved with one batched lookup, never N+1.
+    """
+    ids = sorted(
+        {
+            item.node.metadata.get("building_id")
+            for item in retrieved
+            if item.node.metadata.get("building_id") is not None
+        }
+    )
+    info_by_id: dict[int, tuple[str | None, str | None]] = {}
+    if ids:
+        placeholders = ",".join("?" for _ in ids)
+        for row in conn.execute(
+            f"SELECT id, name, commune FROM buildings WHERE id IN ({placeholders})",
+            ids,
+        ).fetchall():
+            info_by_id[row["id"]] = (row["name"], row["commune"])
+
+    sources: list[dict] = []
+    for item in retrieved:
+        meta = item.node.metadata
+        bid = meta.get("building_id")
+        name, commune = info_by_id.get(bid, (None, None))
+        content = item.node.get_content()
+        score = getattr(item, "score", None)
+        sources.append(
+            {
+                "document_id": meta.get("document_id"),
+                "building_id": bid,
+                "snippet": content[:200],
+                "full_text": content,
+                "score": round(score, 4) if score is not None else None,
+                "building_name": name,
+                "commune": commune,
+            }
+        )
+    return sources
+
+
+def _prepare(
     question: str,
     conn: Any,
-    building_id: int | None = None,
-    k: int = 5,
-    client: LLMClient | None = None,
-    index_dir: str | Path | None = None,
+    building_id: int | None,
+    building_ids: list[int] | None,
+    k: int,
+    index_dir: str | Path | None,
+    history: list[dict] | None,
 ) -> dict:
-    """Answer a natural-language question grounded in the inspection reports.
+    """Shared retrieval + scope + enriched sources + prompt building.
 
-    Parameters
-    ----------
-    question:
-        User question (French or English).
-    conn:
-        Open SQLite connection. Used to build the index if not yet persisted.
-    building_id:
-        When set, retrieval is restricted to chunks from this building.
-    k:
-        Number of chunks to retrieve.
-    client:
-        LLM client for answer generation. Defaults to get_llm().
-    index_dir:
-        Override the default index directory (useful for testing).
-
-    Returns
-    -------
-    dict with keys:
-        "answer"  : str - generated answer grounded in context
-        "sources" : list of {"document_id", "building_id", "snippet"}
+    Returns either {"early": <answer dict>} for a terminal case (empty scope,
+    empty corpus, or no relevant chunk) or {"sources", "system_prompt",
+    "user_prompt"} ready for generation. answer() and answer_stream() both go
+    through this, so streamed and non-streamed results can never drift.
     """
-    if client is None:
-        client = get_llm()
+    # Empty scope: filters matched zero buildings. Never touch the index.
+    if building_ids is not None and len(building_ids) == 0:
+        return {"early": {"answer": _EMPTY_SCOPE_MSG, "sources": []}}
 
     idx_dir = _resolve_index_dir(index_dir)
     _ensure_llama_settings()
@@ -276,22 +383,17 @@ def answer(
     if not _is_persisted(idx_dir):
         build_index(conn, idx_dir)
 
-    # Empty corpus: a marker is present but no real index. Return the friendly
-    # "no data" message instead of crashing on a missing index.
+    # Empty corpus: a marker is present but no real index.
     if (idx_dir / _EMPTY_MARKER).exists():
-        return {
-            "answer": "Il n'y a pas d'information disponible dans la base de donnees.",
-            "sources": [],
-        }
+        return {"early": {"answer": _EMPTY_CORPUS_MSG, "sources": []}}
 
     index = _load_index(idx_dir)
-    retrieved = _retrieve(index, question, building_id, k)
+    retrieved = _retrieve(index, question, building_id, building_ids, k)
 
     if not retrieved:
-        return {
-            "answer": "Il n'y a pas d'information pertinente pour cette question dans la base de donnees.",
-            "sources": [],
-        }
+        return {"early": {"answer": _NO_RESULT_MSG, "sources": []}}
+
+    sources = _build_sources(conn, retrieved)
 
     # Build the numbered, grounded context block from the retrieved nodes.
     context_lines: list[str] = []
@@ -308,32 +410,133 @@ def answer(
     system_prompt = (
         "Tu es un assistant specialise dans l'analyse de rapports d'inspection immobiliere. "
         "Reponds uniquement en te basant sur le contexte fourni. "
-        "Si le contexte ne contient pas l'information necessaire, dis que tu ne sais pas."
+        "Si le contexte ne contient pas l'information necessaire, dis que tu ne sais pas. "
+        "L'historique de conversation sert uniquement a comprendre la question de suivi: "
+        "ne cite jamais entre crochets a partir de l'historique, "
+        "uniquement a partir du contexte numerote."
+    )
+
+    history_block = _format_history(history)
+    history_prefix = (
+        f"Conversation precedente:\n{history_block}\n\n" if history_block else ""
     )
 
     user_prompt = (
+        f"{history_prefix}"
         f"Contexte extrait des rapports d'inspection:\n\n{context_block}\n\n"
         f"Question: {question}\n\n"
         "Reponds en francais, de facon concise et factuellement exacte, "
         "en citant les numeros de contexte entre crochets quand tu t'appuies dessus."
     )
 
+    return {
+        "sources": sources,
+        "system_prompt": system_prompt,
+        "user_prompt": user_prompt,
+    }
+
+
+def answer(
+    question: str,
+    conn: Any,
+    building_id: int | None = None,
+    k: int = 5,
+    client: LLMClient | None = None,
+    index_dir: str | Path | None = None,
+    building_ids: list[int] | None = None,
+    history: list[dict] | None = None,
+) -> dict:
+    """Answer a natural-language question grounded in the inspection reports.
+
+    Parameters
+    ----------
+    question:
+        User question (French or English).
+    conn:
+        Open SQLite connection. Used to build the index if not yet persisted.
+    building_id:
+        When set, retrieval is restricted to chunks from this single building
+        (the building-page path; this branch is unchanged).
+    k:
+        Number of chunks to retrieve.
+    client:
+        LLM client for answer generation. Defaults to get_llm().
+    index_dir:
+        Override the default index directory (useful for testing).
+    building_ids:
+        Portfolio scope: when a non-empty list, retrieval is restricted to this
+        set. An empty list short-circuits to the friendly empty-scope message.
+        Ignored when building_id is set.
+    history:
+        Prior conversation turns ({"question", "answer"}), used only to help the
+        model resolve a follow-up. Retrieval always uses the latest question.
+
+    Returns
+    -------
+    dict with keys:
+        "answer"  : str - generated answer grounded in context
+        "sources" : list of {"document_id", "building_id", "snippet",
+                    "full_text", "score", "building_name", "commune"}
+    """
+    if client is None:
+        client = get_llm()
+
+    prep = _prepare(question, conn, building_id, building_ids, k, index_dir, history)
+    if "early" in prep:
+        return prep["early"]
+
     try:
-        raw_answer = client.complete(user_prompt, system=system_prompt)
+        raw_answer = client.complete(
+            prep["user_prompt"], system=prep["system_prompt"]
+        )
     except Exception as exc:
         warnings.warn(f"LLM completion failed: {exc}", stacklevel=2)
         raw_answer = f"[erreur de generation: {exc}]"
 
-    sources = [
-        {
-            "document_id": item.node.metadata.get("document_id"),
-            "building_id": item.node.metadata.get("building_id"),
-            "snippet": item.node.get_content()[:200],
-        }
-        for item in retrieved
-    ]
+    return {"answer": raw_answer, "sources": prep["sources"]}
 
-    return {"answer": raw_answer, "sources": sources}
+
+def answer_stream(
+    question: str,
+    conn: Any,
+    building_id: int | None = None,
+    k: int = 5,
+    client: LLMClient | None = None,
+    index_dir: str | Path | None = None,
+    building_ids: list[int] | None = None,
+    history: list[dict] | None = None,
+) -> Iterator[dict]:
+    """Stream the grounded answer as NDJSON-ready event dicts.
+
+    Emits exactly one {"type": "sources", ...} frame from this turn's retrieval,
+    then zero or more {"type": "delta", "text": ...} frames whose concatenation
+    is the full answer, then one {"type": "done"} frame. A generation failure
+    after retrieval emits {"type": "error", "message": ...} instead of done.
+
+    Shares _prepare with answer(), so the streamed sources are identical to the
+    non-streamed ones for the same request.
+    """
+    if client is None:
+        client = get_llm()
+
+    prep = _prepare(question, conn, building_id, building_ids, k, index_dir, history)
+    if "early" in prep:
+        early = prep["early"]
+        yield {"type": "sources", "sources": early["sources"]}
+        yield {"type": "delta", "text": early["answer"]}
+        yield {"type": "done"}
+        return
+
+    yield {"type": "sources", "sources": prep["sources"]}
+    try:
+        for piece in client.stream(prep["user_prompt"], system=prep["system_prompt"]):
+            if piece:
+                yield {"type": "delta", "text": piece}
+    except Exception as exc:
+        warnings.warn(f"LLM stream failed: {exc}", stacklevel=2)
+        yield {"type": "error", "message": str(exc)}
+        return
+    yield {"type": "done"}
 
 
 # ---------------------------------------------------------------------------
