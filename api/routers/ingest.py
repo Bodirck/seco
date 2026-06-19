@@ -2,11 +2,11 @@
 
 Ingests a single inspection-report PDF end to end by composing the existing
 core functions: ingest_pdf (text extraction + documents row), extract (LLM
-defect extraction), scoring (risk recompute), and rag (FAISS reindex).
+defect extraction), scoring (risk recompute), and rag (vector-index reindex).
 
 The whole pipeline runs under one module-level lock so concurrent uploads
-serialize. This avoids SQLite write races and a double FAISS reindex when two
-requests arrive at once. The corpus is small, so a synchronous endpoint is fine.
+serialize. This avoids SQLite write races and a double vector-index reindex when
+two requests arrive at once. The corpus is small, so a synchronous endpoint is fine.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from ..deps import get_conn
 
 router = APIRouter(tags=["ingest"])
 
-# Serializes the full ingest pipeline (DB writes + FAISS reindex) across requests.
+# Serializes the full ingest pipeline (DB writes + vector-index reindex) across requests.
 _INGEST_LOCK = threading.Lock()
 
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]+")
@@ -55,7 +55,7 @@ def ingest(
     Attach to an existing building via building_id, or create a new building by
     passing a non-empty name. Returns a summary of what the pipeline produced.
     """
-    # Lazy imports: keep startup light and avoid loading heavy deps (faiss,
+    # Lazy imports: keep startup light and avoid loading heavy deps (llama-index,
     # sentence-transformers, pdfplumber) until an ingest actually happens.
     from buildinglens import extract, ingest_pdf, rag, scoring
     from buildinglens.llm import get_llm
@@ -130,8 +130,8 @@ def ingest(
             ).fetchone()
             new_risk_score = round(float(score_row["risk_score"] or 0.0), 2)
 
-            # --- Rebuild the FAISS index explicitly (answer() only auto-builds when
-            # the index file is missing, so a fresh document would otherwise be unseen). ---
+            # --- Rebuild the vector index explicitly (answer() only auto-builds when
+            # the index is missing, so a fresh document would otherwise be unseen). ---
             chunks_indexed = rag.build_index(conn)
         except BaseException:
             # Undo a partial ingest: drop a building we created (and anything

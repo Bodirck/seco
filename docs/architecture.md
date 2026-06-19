@@ -15,7 +15,7 @@ The Python package `buildinglens` (under `src/buildinglens/`) is the shared core
 
 ### React SPA (web/)
 
-Built with Vite 5 + React 18 + TypeScript strict + Tailwind CSS v3. Routing via react-router-dom v6. Charts via recharts. Internationalisation via react-i18next (English default, French toggle).
+Built with Vite 5 + React 18 + TypeScript strict + Tailwind CSS v3. Routing via react-router-dom v6. Charts via recharts. The interface is in English (react-i18next is wired in, with the French bundle kept dormant for a future switcher).
 
 Three pages:
 - `/` (SearchPage): free-text question, sent to `POST /api/ask`, answer and sources displayed.
@@ -43,7 +43,7 @@ CORS is configured to accept requests from `http://localhost:5173` and `http://1
 | `ingest_pdf.py` | Reads a PDF with pdfplumber and chunks the text. |
 | `extract.py` | Calls the LLM to identify and classify defects in a chunk. |
 | `scoring.py` | Computes a weighted severity-based risk score per building. |
-| `rag.py` | Builds the FAISS index (sentence-transformers embeddings), retrieves relevant chunks, and calls the LLM to produce a cited answer. |
+| `rag.py` | Builds a LlamaIndex vector index (local sentence-transformers embeddings), retrieves relevant chunks, and calls the LLM to produce a cited answer. |
 | `reports.py` | Generates per-building Excel (openpyxl) and PDF (reportlab) reports. |
 | `llm.py` | Wraps the Anthropic Claude API; falls back to a deterministic mock when no API key is present. |
 | `db.py` | Opens and initialises the SQLite database. |
@@ -71,7 +71,7 @@ buildinglens core
         +---> SQLite  (buildings, defects, chunks, embeddings)
         |
         +---> LLM API (Anthropic Claude, or mock when key absent)
-              RAG: retrieve chunks from FAISS, send to LLM, return answer + citations
+              RAG: retrieve chunks from the LlamaIndex vector index, send to LLM, return answer + citations
 ```
 
 ### Diagram (Mermaid)

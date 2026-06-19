@@ -20,7 +20,7 @@ Returns the active LLM provider and row counts from the database. Useful for the
   "provider": "claude-3-5-haiku-20241022",
   "buildings": 40,
   "documents": 40,
-  "defects": 743
+  "defects": 241
 }
 ```
 
@@ -144,7 +144,7 @@ Defects are ordered by severity (critical first, then major, then minor) then by
 
 ## POST /api/ask
 
-Answers a free-text question using RAG: retrieves relevant document chunks from the FAISS index, sends them to the LLM, and returns the answer with cited source snippets.
+Answers a free-text question using RAG: retrieves relevant document chunks from the LlamaIndex vector index, sends them to the LLM, and returns the answer with cited source snippets.
 
 **Request body (JSON):**
 

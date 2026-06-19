@@ -58,7 +58,7 @@ The buildings are real: footprints, heights, and coordinates from EUBUCCO Luxemb
 
 ### Evaluation
 
-The generator records the exact defects it writes into each report, so the gold set is known without hand labelling (`eval/gold.jsonl`, 743 defects across 40 buildings). On this set, extraction with Claude reaches precision 1.00, recall 1.00, F1 1.00, and severity accuracy 1.00 (`make eval`).
+The generator records the exact defects it writes into each report, so the gold set is known without hand labelling (`eval/gold.jsonl`, 241 defects across 40 buildings). On this set, extraction with Claude reaches precision 1.00, recall 1.00, F1 1.00, and severity accuracy 1.00 (`make eval`).
 
 Read that as a check on the pipeline mechanics, not a real-world accuracy: the model recovers every defect from the report text and maps each RICS rating to the right severity. Because the reports are synthetic and the matching is element-level, a near-perfect score is expected here. On real, heterogeneous reports with OCR noise and varied wording, expect lower numbers and the need for a hand-labelled gold set.
 
@@ -88,7 +88,7 @@ Alongside the Streamlit app there is a polished React web app (Vite, TypeScript,
 - a Settings page to choose the AI provider (Anthropic, OpenAI, Mistral, or a local Ollama model) and set its key from the UI, with a connection test (the key is stored server-side and never sent back to the browser);
 - a RAG ingestion page to upload a new inspection PDF and have it extracted, scored and indexed on the spot.
 
-Severity colors are consistent everywhere (critical red, major amber, minor green). It is bilingual, English by default with a French toggle. This is a single-user local tool: there is no authentication yet (see "With three more months").
+Severity colors are consistent everywhere (critical red, major amber, minor green). The interface is in English. This is a single-user local tool: there is no authentication yet (see "With three more months").
 
 Run it in two terminals, after `make data` and `make extract`:
 
@@ -159,7 +159,7 @@ Les bâtiments sont réels : empreintes, hauteurs et coordonnées issues d'EUBUC
 
 ### Évaluation
 
-Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport, donc le jeu de référence est connu sans annotation manuelle (`eval/gold.jsonl`, 743 défauts sur 40 bâtiments). Sur ce jeu, l'extraction avec Claude atteint une précision de 1.00, un rappel de 1.00, un F1 de 1.00 et une exactitude de sévérité de 1.00 (`make eval`).
+Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport, donc le jeu de référence est connu sans annotation manuelle (`eval/gold.jsonl`, 241 défauts sur 40 bâtiments). Sur ce jeu, l'extraction avec Claude atteint une précision de 1.00, un rappel de 1.00, un F1 de 1.00 et une exactitude de sévérité de 1.00 (`make eval`).
 
 À lire comme une validation de la mécanique du pipeline, pas comme une précision en conditions réelles : le modèle retrouve chaque défaut du texte et associe chaque note RICS à la bonne sévérité. Comme les rapports sont synthétiques et que l'appariement se fait au niveau de l'élément, un score quasi parfait est attendu ici. Sur de vrais rapports hétérogènes (bruit OCR, formulations variées), attendre des chiffres plus bas et un jeu de référence annoté à la main.
 
@@ -189,7 +189,7 @@ Le générateur enregistre les défauts exacts qu'il écrit dans chaque rapport,
 - une page Réglages pour choisir le fournisseur IA (Anthropic, OpenAI, Mistral, ou un modèle local Ollama) et saisir sa clé depuis l'interface, avec un test de connexion (la clé est stockée côté serveur et jamais renvoyée au navigateur) ;
 - une page d'ingestion RAG pour charger un nouveau rapport PDF et le faire extraire, scorer et indexer immédiatement.
 
-Les couleurs de sévérité sont cohérentes partout (critique rouge, majeur orange, mineur vert). Elle est bilingue, anglais par défaut avec une bascule français. C'est un outil local mono-utilisateur : il n'y a pas encore d'authentification (voir "Avec trois mois de plus").
+Les couleurs de sévérité sont cohérentes partout (critique rouge, majeur orange, mineur vert). L'interface est en anglais. C'est un outil local mono-utilisateur : il n'y a pas encore d'authentification (voir "Avec trois mois de plus").
 
 À lancer dans deux terminaux, après `make data` et `make extract` :
 

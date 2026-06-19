@@ -51,7 +51,7 @@ web/
     i18n/
       en.json   # English strings (default)
       fr.json   # French strings
-      index.ts  # i18next initialisation (reads "lang" from localStorage)
+      index.ts  # i18next initialisation (English only; French bundle dormant)
     pages/
       BuildingPage.tsx   # /building/:id
       PortfolioPage.tsx  # /portfolio
@@ -66,9 +66,7 @@ web/
 
 ## Internationalisation
 
-English is the default language. French is available via the EN / FR toggle in the top-right corner of the navigation bar.
-
-Switching the language calls `i18n.changeLanguage()` and stores the choice in `localStorage` under the key `"lang"`. On the next page load that stored value is read back, so the chosen language persists across sessions.
+The interface is in English. The French translation bundle (`src/i18n/fr.json`) stays in the codebase but is dormant: i18n initialises to English (`lng: "en"`) and there is no language switcher in the UI, so a bilingual mode can be restored later without re-translating.
 
 Translation keys live in `src/i18n/en.json` and `src/i18n/fr.json`. They are read-only: do not edit them. If a page needs a string not covered by the existing keys, call `t("ns.key", "English fallback")` so the text still renders even before a translation is added.
 
