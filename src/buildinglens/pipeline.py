@@ -33,6 +33,12 @@ def run(sample_size: int = 40, seed: int = 0) -> dict[str, int]:
 
     print(f"[2/5] Ingesting up to {sample_size} buildings from EUBUCCO Luxembourg")
     building_ids = ingest_buildings(conn, sample_size=sample_size, seed=seed)
+    total = conn.execute("SELECT COUNT(*) FROM buildings").fetchone()[0]
+    resolved = conn.execute(
+        "SELECT COUNT(*) FROM buildings WHERE commune IS NOT NULL"
+    ).fetchone()[0]
+    pct = (100 * resolved / total) if total else 0.0
+    print(f"      commune resolved for {resolved}/{total} buildings ({pct:.1f}%)")
 
     print("[3/5] Caching STATEC building-permit statistics (sector context)")
     try:

@@ -126,10 +126,10 @@ Official administrative boundaries of the 100 Luxembourg communes, used to recov
 
 - **Publisher:** ACT (Administration du cadastre et de la topographie), via data.public.lu.
 - **License:** CC0 (public domain).
-- **Format:** GeoJSON, EPSG:4326, 100 commune MultiPolygons, property `COMMUNE`. About 1 MB.
+- **Format:** GeoJSON, EPSG:4326, property `COMMUNE`. 100 features = 99 communes plus a "Lac de la Haute-Sûre" lake territory, which we drop on load so it is never assigned to a building. About 1 MB.
 - **Stable URL:** https://data.public.lu/fr/datasets/r/16103fa4-7ff1-486a-88bc-5018353957ea (302s to the dated file).
-- **How we use it:** committed at `data/reference/lu_communes_4326.geojson` (outside the gitignored `data/raw/`) so the build is offline and byte-for-byte reproducible. `src/buildinglens/communes.py` loads it once into a shapely STRtree and maps each building centroid to its commune. If the file is ever missing, a deterministic synthetic grid is used and flagged via `is_synthetic`.
-- **Caveat:** a centroid on a border or river can match no polygon; those buildings keep a synthetic commune. Coverage is reported at build time.
+- **How we use it:** committed at `data/reference/lu_communes_4326.geojson` (outside the gitignored `data/raw/`) so the build is offline and byte-for-byte reproducible. `src/buildinglens/communes.py` loads the 99 communes once into a shapely STRtree and maps each building centroid to its commune. If the file is ever missing, a deterministic synthetic grid is used and flagged via `is_synthetic`.
+- **Caveat:** a centroid on a border, in a water body, or with coordinate noise can match no polygon; those buildings keep a NULL commune and are simply not returned by commune search. A random commune may still appear in the synthetic address string, but that is cosmetic and does not set the commune field. Coverage (resolved/total) is printed at build time.
 
 ---
 

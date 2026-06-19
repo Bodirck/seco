@@ -1,8 +1,9 @@
 """Map a coordinate to its real Luxembourg commune via point-in-polygon.
 
 Source: ACT (Administration du cadastre et de la topographie) commune boundaries,
-published on data.public.lu under CC0, retrieved 2026-06-19 (100 current communes,
-EPSG:4326, property COMMUNE). EUBUCCO provides no commune per building, so the
+published on data.public.lu under CC0, retrieved 2026-06-19 (99 communes; the file
+also carries a Haute-Sûre lake territory we skip; EPSG:4326, property COMMUNE).
+EUBUCCO provides no commune per building, so the
 commune is DERIVED here from each building's real centroid; names and street
 addresses stay synthetic.
 
@@ -67,6 +68,10 @@ def _load_real() -> tuple[list[str], list[Any]] | None:
             name = props.get("COMMUNE")
             geom_json = feat.get("geometry")
             if not name or geom_json is None:
+                continue
+            if str(name) == "Lac de la Haute-Sûre":
+                # A water-body territory in the ACT file, not a commune; skip it so a
+                # centroid over the lake resolves to None rather than to a "lake".
                 continue
             geom = shape(geom_json)
             if not geom.is_valid:

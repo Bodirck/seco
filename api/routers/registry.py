@@ -1,8 +1,9 @@
 """Public-registry candidate and search endpoints.
 
-Surfaces buildings from the cached EUBUCCO public registry so a user can add one in
-the Import flow. The footprint, height, coordinates and commune are real (commune
-derived by point-in-polygon against the ACT boundaries); the name and street address
+Surfaces buildings from the EUBUCCO public registry (a fixed, reproducible 200-row
+sample) so a user can add one in the Import flow. Footprint, height and coordinates
+are real; the commune is real too, derived by point-in-polygon against the ACT
+boundaries (null when no boundary contains the centroid). The name and street address
 are synthetic, since EUBUCCO has no per-building identity for Luxembourg.
 
 All three endpoints read the same candidate_pool() that find_candidate() resolves on

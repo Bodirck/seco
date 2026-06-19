@@ -26,4 +26,6 @@ def test_coordinate_order_is_lat_lon():
 def test_index_loads_real_boundaries():
     idx = commune_index()
     assert idx.is_synthetic is False
-    assert len(idx.names) == 100
+    # 100 features in the file, minus the non-commune "Lac de la Haute-Sûre" territory.
+    assert len(idx.names) == 99
+    assert "Lac de la Haute-Sûre" not in idx.names

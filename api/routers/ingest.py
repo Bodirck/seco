@@ -116,6 +116,16 @@ def ingest(
                 cand = ingest_structured.find_candidate(clean_registry_id)
                 if cand is None:
                     raise HTTPException(status_code=404, detail="Registry building not found.")
+                # Under the ingest lock, so this read-then-insert is atomic and closes
+                # the window for importing the same registry building twice.
+                if conn.execute(
+                    "SELECT 1 FROM buildings WHERE source_id = ?",
+                    (cand.get("source_id"),),
+                ).fetchone() is not None:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="This registry building has already been imported.",
+                    )
                 cur = conn.execute(
                     "INSERT INTO buildings "
                     "(source_id, name, address, year_built, height_m, latitude, longitude, source, commune) "

@@ -11,6 +11,8 @@ const PAGE_SIZE = 20;
 interface Props {
   selectedId: string;
   onSelect: (candidate: RegistryCandidate) => void;
+  /** Called when the commune query changes, so the parent can drop a stale selection. */
+  onQueryChange?: () => void;
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * commune and coordinates. Fetches are race-guarded so a slow earlier response never
  * overwrites a newer one, and the page resets to 1 whenever the query changes.
  */
-export default function RegistrySearch({ selectedId, onSelect }: Props) {
+export default function RegistrySearch({ selectedId, onSelect, onQueryChange }: Props) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -37,6 +39,17 @@ export default function RegistrySearch({ selectedId, onSelect }: Props) {
     }, 300);
     return () => clearTimeout(id);
   }, [query]);
+
+  // Clear the parent selection whenever the commune query changes (not on paging),
+  // so a stale building cannot stay selected and submittable under a new search.
+  const firstDebounce = useRef(true);
+  useEffect(() => {
+    if (firstDebounce.current) {
+      firstDebounce.current = false;
+      return;
+    }
+    onQueryChange?.();
+  }, [debounced, onQueryChange]);
 
   // Fetch when the debounced query (>= MIN_QUERY chars) or the page changes.
   useEffect(() => {

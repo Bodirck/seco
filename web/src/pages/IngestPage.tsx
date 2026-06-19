@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import type {
@@ -76,6 +76,12 @@ export default function IngestPage() {
     return () => {
       active = false;
     };
+  }, []);
+
+  // Stable so RegistrySearch can clear a stale selection when the query changes.
+  const clearRegistrySelection = useCallback(() => {
+    setSelectedRegistryId("");
+    setSelectedCandidate(null);
   }, []);
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -247,6 +253,7 @@ export default function IngestPage() {
                     setResult(null);
                     setError(null);
                   }}
+                  onQueryChange={clearRegistrySelection}
                 />
                 {selectedCandidate && (
                   <div className="rounded-sm border border-signal-400/40 bg-ink-800 px-3 py-2">

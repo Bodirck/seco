@@ -23,8 +23,10 @@ from typing import Any
 # placeholder data for demo purposes.
 # ---------------------------------------------------------------------------
 
+# Names match the official ACT COMMUNE spelling so the synthetic fallback stays
+# consistent with the real commune boundaries.
 _LU_COMMUNES = [
-    "Luxembourg-Ville",
+    "Luxembourg",
     "Esch-sur-Alzette",
     "Differdange",
     "Dudelange",
@@ -37,7 +39,7 @@ _LU_COMMUNES = [
     "Mersch",
     "Bettembourg",
     "Sanem",
-    "Petange",
+    "Pétange",
     "Steinfort",
 ]
 
@@ -275,10 +277,11 @@ def _synthetic_rows(
         lat = rng.uniform(49.44, 50.18)
         lon = rng.uniform(5.73, 6.53)
         height_m = round(rng.uniform(5.0, 30.0), 1)
-        # No boundaries offline: the assigned commune is the synthetic "real" one.
-        commune = rng.choice(_LU_COMMUNES)
         name = _synthetic_name(rng)
-        address = _synthetic_address(rng, commune=commune)
+        # Offline fallback: no boundaries to resolve a real commune, so the commune
+        # field is None (honest). The address still shows a random commune string,
+        # which is cosmetic and does not claim to be the building's real commune.
+        address = _synthetic_address(rng)
         rows.append(
             {
                 "source_id": f"synth-LU-{seed}-{i:04d}",
@@ -289,7 +292,7 @@ def _synthetic_rows(
                 "latitude": round(lat, 6),
                 "longitude": round(lon, 6),
                 "source": "synthetic",
-                "commune": commune,
+                "commune": None,
             }
         )
 
@@ -377,16 +380,15 @@ def candidate_pool(sample_size: int = 200, seed: int = 1) -> list[dict[str, Any]
     return read_candidates(sample_size=sample_size, seed=seed)
 
 
-def find_candidate(
-    source_id: str, sample_size: int = 200, seed: int = 1
-) -> dict[str, Any] | None:
-    """Find a candidate by its source_id within the cached pool."""
+def find_candidate(source_id: str) -> dict[str, Any] | None:
+    """Find a candidate by its source_id within the cached pool.
+
+    Calls candidate_pool() with no arguments so it shares the exact lru_cache entry
+    the registry endpoints use; this guarantees a building shown in search resolves
+    here on ingest (same pool, computed once per process).
+    """
     return next(
-        (
-            c
-            for c in candidate_pool(sample_size, seed)
-            if str(c.get("source_id")) == str(source_id)
-        ),
+        (c for c in candidate_pool() if str(c.get("source_id")) == str(source_id)),
         None,
     )
 
