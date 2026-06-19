@@ -177,7 +177,7 @@
       "downloads": "Generez un rapport pret pour le client avec la synthese et le tableau complet des defauts. Excel garde le tableau interactif ; le PDF est pret a imprimer.",
       "askAbout": "Posez votre question en langage courant. La reponse s'appuie uniquement sur le rapport de ce batiment et cite les passages utilises.",
       "map": "Position approximative du batiment au Luxembourg, d'apres ses coordonnees publiques.",
-      "use": "Usage du bâtiment, estimé par modèle (EUBUCCO). Pas une déclaration cadastrale.",
+      "use": "Usage du bâtiment, issu d'OpenStreetMap ou du modèle EUBUCCO selon le bâtiment. Pas une déclaration cadastrale.",
       "floors": "Nombre d'étages, estimé par modèle (EUBUCCO), affiché arrondi.",
       "footprint": "Surface au sol, calculée depuis l'empreinte réelle du bâtiment (EUBUCCO, EPSG:3035).",
       "height": "Hauteur du bâtiment. Issue du cadastre luxembourgeois pour la plupart, estimée par modèle pour le reste (EUBUCCO)."

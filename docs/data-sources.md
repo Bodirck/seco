@@ -40,7 +40,7 @@ Script-friendly options: direct `curl`/`wget` on that URL, anonymous AWS CLI (`-
 | `id` | 100% | Stable EUBUCCO id |
 | `geometry` (footprint) | 100% | EPSG:3035 polygon; reproject the centroid for lat/lon, compute area in m2 from the polygon |
 | `height` | 100% present | Real (cadastre / LOD1) for ~78%, ML-estimated with confidence bounds for ~22%; `height_source` distinguishes them |
-| `type` / `subtype` | 100% present | ML-estimated (residential ~98,900 / non-residential ~87,200); presence is not accuracy |
+| `type` / `subtype` | 100% present | ~59% ML-estimated, ~41% from OpenStreetMap (`type_source` distinguishes them); residential ~98,900 / non-residential ~87,200 |
 | `floors` | 100% present | ML-estimated (fractional regression); we store it rounded |
 | `city_id` | 100% | Commune-level code (102 values, form `LU0101`), not a city name; we resolve the commune NAME via ACT boundaries instead |
 | `construction_year` | 74 / 186,171 | Essentially absent; any value is an ML estimate |
@@ -56,7 +56,7 @@ Script-friendly options: direct `curl`/`wget` on that URL, anonymous AWS CLI (`-
 | `source` | `geometry_source` | Direct, per building (e.g. gov-luxembourg / osm / msft) |
 | `height_m` | `height` | ~78% real (cadastre); ~22% ML-estimated (`height_source = estimated`) |
 | `footprint_area_m2` | area of `geometry` (EPSG:3035) | Real, computed from the footprint |
-| `use_type` / `use_subtype` | `type` / `subtype` | ML-estimated |
+| `use_type` / `use_subtype` | `type` / `subtype` | ~59% ML-estimated, ~41% from OpenStreetMap (`type_source`) |
 | `floors` | `floors` | ML-estimated, stored rounded |
 | `year_built` | `construction_year` | Essentially absent (74/186,171), treat as unreliable |
 | `commune` | resolved from coordinates (ACT) | Real, point-in-polygon; see source 4 |
