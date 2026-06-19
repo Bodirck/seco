@@ -1,15 +1,9 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import i18n from "../i18n";
 import { api } from "../api/client";
 import { Badge, Tooltip } from "./ui";
 import { useTheme } from "../theme/ThemeProvider";
-
-function setLang(lng: string) {
-  i18n.changeLanguage(lng);
-  localStorage.setItem("lang", lng);
-}
 
 /** Primary navigation, data driven so active state works for nested routes. */
 const NAV_ITEMS: { to: string; key: string }[] = [
@@ -113,45 +107,6 @@ function ThemeToggle() {
   );
 }
 
-function LangSwitcher() {
-  const { t } = useTranslation();
-  const currentLang = i18n.resolvedLanguage ?? i18n.language;
-
-  const langClass = (lng: string) =>
-    "rounded-md px-1.5 py-0.5 font-mono uppercase cursor-pointer transition-colors duration-150 " +
-    "focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70 " +
-    (currentLang === lng
-      ? "font-semibold text-signal-300"
-      : "text-fg-faint hover:text-fg");
-
-  return (
-    <div
-      className="flex items-center gap-1 border-l border-line pl-4 text-xs"
-      aria-label={t("common.language")}
-    >
-      <button
-        type="button"
-        onClick={() => setLang("en")}
-        aria-pressed={currentLang === "en"}
-        className={langClass("en")}
-      >
-        EN
-      </button>
-      <span className="text-line-strong" aria-hidden="true">
-        /
-      </span>
-      <button
-        type="button"
-        onClick={() => setLang("fr")}
-        aria-pressed={currentLang === "fr"}
-        className={langClass("fr")}
-      >
-        FR
-      </button>
-    </div>
-  );
-}
-
 /** Each top-level section maps to a sector number for the header status strip. */
 const SECTOR_BY_PATH: Record<string, string> = {
   "/": "01",
@@ -210,7 +165,6 @@ export default function Layout({ children }: { children: ReactNode }) {
             ))}
             <span aria-hidden="true" className="mx-1 h-4 w-px bg-line-strong" />
             <ThemeToggle />
-            <LangSwitcher />
           </nav>
         </div>
         {/* Faint technical sub-bar: decorative codes, chrome only. */}
