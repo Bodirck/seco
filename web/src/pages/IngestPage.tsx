@@ -1,7 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
-import type { BuildingSummary, IngestResult } from "../api/types";
+import type {
+  BuildingSummary,
+  IngestResult,
+  RegistryCandidate,
+} from "../api/types";
 import {
   Button,
   CodeLabel,
@@ -15,19 +19,19 @@ import {
 import { caseId, CODES, sector } from "../lib/dossier";
 import { riskTone } from "../lib/risk";
 
-type Target = "existing" | "new";
+type Target = "existing" | "registry" | "new";
 
 /**
- * Ingest page: upload an inspection PDF and attach it either to an existing
- * building or to a new one. Mirrors POST /api/ingest: when a building is picked
- * we send its id; otherwise a non-empty name creates a new building. On success
- * we surface the extracted defect count and the recomputed risk score, with a
- * mock-mode note when the active client extracted nothing. Reskinned as the
- * "INTAKE // INGEST" dossier panel; codes are chrome, labels stay in i18n.
+ * Ingest page: upload an inspection PDF and attach it to an existing building, a
+ * building pulled from the EUBUCCO public registry (real footprint/height/coords,
+ * synthetic name/address), or a brand new building. Mirrors POST /api/ingest. On
+ * success we surface the extracted defect count and the recomputed risk score, with
+ * a mock-mode note when the active client extracted nothing.
  */
 export default function IngestPage() {
   const { t } = useTranslation();
   const selectId = useId();
+  const registrySelectId = useId();
   const fileInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,6 +45,11 @@ export default function IngestPage() {
   const [address, setAddress] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
+  // Public-registry candidates, loaded lazily the first time the tab is opened.
+  const [candidates, setCandidates] = useState<RegistryCandidate[] | null>(null);
+  const [candidatesError, setCandidatesError] = useState<string | null>(null);
+  const [selectedRegistryId, setSelectedRegistryId] = useState("");
+
   // Submission state.
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<IngestResult | null>(null);
@@ -53,20 +62,43 @@ export default function IngestPage() {
       .then((list) => {
         if (!active) return;
         setBuildings(list);
-        // Default to the first building when the list is not empty.
+        // Attaching to an existing building is the common path, so it leads.
         if (list.length > 0) {
           setBuildingId(list[0].id);
           setTarget("existing");
+        } else {
+          setTarget("registry");
         }
       })
       .catch(() => {
-        // Treat a failed load as an empty list: "new building" still works.
+        // Treat a failed load as an empty list: registry and new still work.
         if (active) setBuildings([]);
       });
     return () => {
       active = false;
     };
   }, []);
+
+  // Load registry candidates the first time the registry target is selected.
+  useEffect(() => {
+    if (target !== "registry" || candidates !== null) return;
+    let active = true;
+    api
+      .registryCandidates(8)
+      .then((list) => {
+        if (!active) return;
+        setCandidates(list);
+        if (list.length > 0) setSelectedRegistryId(list[0].source_id);
+      })
+      .catch((err) => {
+        if (active) {
+          setCandidatesError(err instanceof Error ? err.message : String(err));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [target, candidates]);
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFile(e.target.files?.[0] ?? null);
@@ -83,8 +115,13 @@ export default function IngestPage() {
   const trimmedName = name.trim();
   const newBuildingInvalid = target === "new" && trimmedName.length === 0;
   const noExistingTarget = target === "existing" && buildingId === null;
+  const noRegistryTarget = target === "registry" && !selectedRegistryId;
   const canSubmit =
-    !submitting && file !== null && !newBuildingInvalid && !noExistingTarget;
+    !submitting &&
+    file !== null &&
+    !newBuildingInvalid &&
+    !noExistingTarget &&
+    !noRegistryTarget;
 
   async function handleSubmit() {
     if (!file || !canSubmit) return;
@@ -95,7 +132,9 @@ export default function IngestPage() {
       const res = await api.ingest(
         target === "existing"
           ? { file, buildingId: buildingId ?? undefined }
-          : { file, name: trimmedName, address: address.trim() || undefined },
+          : target === "registry"
+            ? { file, registrySourceId: selectedRegistryId }
+            : { file, name: trimmedName, address: address.trim() || undefined },
       );
       setResult(res);
     } catch (err) {
@@ -107,6 +146,8 @@ export default function IngestPage() {
 
   const buildingsLoading = buildings === null;
   const hasBuildings = (buildings?.length ?? 0) > 0;
+  const selectedCandidate =
+    candidates?.find((c) => c.source_id === selectedRegistryId) ?? null;
 
   const radioClass = (active: boolean) =>
     "flex-1 cursor-pointer rounded-sm border px-4 py-3 text-left transition duration-150 ease-out " +
@@ -143,7 +184,7 @@ export default function IngestPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            {/* Target choice: existing vs new building. */}
+            {/* Target choice: existing, public registry, or new building. */}
             <div className="flex flex-col gap-2 sm:flex-row">
               {hasBuildings && (
                 <label className={radioClass(target === "existing")}>
@@ -160,6 +201,19 @@ export default function IngestPage() {
                   </span>
                 </label>
               )}
+              <label className={radioClass(target === "registry")}>
+                <input
+                  type="radio"
+                  name="ingest-target"
+                  value="registry"
+                  checked={target === "registry"}
+                  onChange={() => onTargetChange("registry")}
+                  className="sr-only"
+                />
+                <span className="block font-display text-sm font-semibold uppercase tracking-wide">
+                  {t("ingest.targetRegistry")}
+                </span>
+              </label>
               <label className={radioClass(target === "new")}>
                 <input
                   type="radio"
@@ -195,15 +249,73 @@ export default function IngestPage() {
                   className="w-full cursor-pointer rounded-sm border border-line bg-ink-800 px-3 py-2 text-sm text-fg transition duration-150 ease-out focus-visible:border-signal-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
                 >
                   {(buildings ?? []).map((b) => (
-                    <option
-                      key={b.id}
-                      value={b.id}
-                      className="bg-ink-800 text-fg"
-                    >
+                    <option key={b.id} value={b.id} className="bg-ink-800 text-fg">
                       {b.name}
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {/* Public-registry selector. */}
+            {target === "registry" && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs leading-relaxed text-fg-faint">
+                  {t("ingest.registryHint")}
+                </p>
+                {candidatesError ? (
+                  <p role="alert" className="text-sm text-critical">
+                    {candidatesError}
+                  </p>
+                ) : candidates === null ? (
+                  <div className="flex items-center gap-2 py-2 text-sm text-fg-muted">
+                    <Spinner size="sm" />
+                    {t("ingest.registryLoading")}
+                  </div>
+                ) : candidates.length === 0 ? (
+                  <p className="text-sm text-fg-muted">{t("ingest.registryEmpty")}</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    <label
+                      htmlFor={registrySelectId}
+                      className="block font-display text-xs font-medium uppercase tracking-wide text-fg-faint"
+                    >
+                      {t("ingest.selectRegistry")}
+                    </label>
+                    <select
+                      id={registrySelectId}
+                      value={selectedRegistryId}
+                      onChange={(e) => {
+                        setSelectedRegistryId(e.target.value);
+                        setResult(null);
+                        setError(null);
+                      }}
+                      className="w-full cursor-pointer rounded-sm border border-line bg-ink-800 px-3 py-2 text-sm text-fg transition duration-150 ease-out focus-visible:border-signal-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                    >
+                      {candidates.map((c) => (
+                        <option
+                          key={c.source_id}
+                          value={c.source_id}
+                          className="bg-ink-800 text-fg"
+                        >
+                          {c.name} — {c.address}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedCandidate && (
+                      <p className="font-mono text-xs text-fg-faint">
+                        {selectedCandidate.latitude != null &&
+                        selectedCandidate.longitude != null
+                          ? `${selectedCandidate.latitude.toFixed(4)}, ${selectedCandidate.longitude.toFixed(4)}`
+                          : "N/A"}
+                        {selectedCandidate.height_m != null
+                          ? ` · ${selectedCandidate.height_m} m`
+                          : ""}
+                        {` · ${selectedCandidate.source}`}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

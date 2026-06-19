@@ -51,16 +51,18 @@ def ingest(
     building_id: int | None = Form(None),
     name: str | None = Form(None),
     address: str | None = Form(None),
+    registry_source_id: str | None = Form(None),
     conn=Depends(get_conn),
 ):
     """Ingest one uploaded PDF: extract text, defects, rescore, and reindex.
 
-    Attach to an existing building via building_id, or create a new building by
-    passing a non-empty name. Returns a summary of what the pipeline produced.
+    Target one of three ways: an existing building via building_id, a public-registry
+    building via registry_source_id (real footprint/height/coordinates), or a brand
+    new building via a non-empty name. Returns a summary of what the pipeline produced.
     """
     # Lazy imports: keep startup light and avoid loading heavy deps (llama-index,
     # sentence-transformers, pdfplumber) until an ingest actually happens.
-    from buildinglens import extract, ingest_pdf, rag, scoring
+    from buildinglens import extract, ingest_pdf, ingest_structured, rag, scoring
     from buildinglens.llm import get_llm
 
     # --- Validate the request shape ---
@@ -69,10 +71,11 @@ def ingest(
         raise HTTPException(status_code=400, detail="Uploaded file must be a PDF (.pdf).")
 
     clean_name = (name or "").strip()
-    if building_id is None and not clean_name:
+    clean_registry_id = (registry_source_id or "").strip()
+    if building_id is None and not clean_registry_id and not clean_name:
         raise HTTPException(
             status_code=400,
-            detail="Provide building_id to attach the report, or a non-empty name to create a building.",
+            detail="Provide building_id to attach the report, a registry_source_id to add a registry building, or a non-empty name to create one.",
         )
 
     # Reject oversized uploads before reading the whole file into memory.
@@ -107,6 +110,31 @@ def ingest(
                     raise HTTPException(status_code=404, detail="Building not found")
                 target_building_id = int(row["id"])
                 building_name = row["name"] or f"Building {target_building_id}"
+            elif clean_registry_id:
+                # Materialize a public-registry building with its real footprint,
+                # height and coordinates (name/address synthetic).
+                cand = ingest_structured.find_candidate(clean_registry_id)
+                if cand is None:
+                    raise HTTPException(status_code=404, detail="Registry building not found.")
+                cur = conn.execute(
+                    "INSERT INTO buildings "
+                    "(source_id, name, address, year_built, height_m, latitude, longitude, source) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        cand.get("source_id"),
+                        cand.get("name"),
+                        cand.get("address"),
+                        cand.get("year_built"),
+                        cand.get("height_m"),
+                        cand.get("latitude"),
+                        cand.get("longitude"),
+                        cand.get("source"),
+                    ),
+                )
+                conn.commit()
+                target_building_id = int(cur.lastrowid)
+                created_building_id = target_building_id
+                building_name = cand.get("name") or f"Building {target_building_id}"
             else:
                 cur = conn.execute(
                     "INSERT INTO buildings (name, address, source) VALUES (?, ?, ?)",

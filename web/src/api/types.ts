@@ -78,6 +78,22 @@ export interface IngestResult {
   message: string;
 }
 
+/**
+ * One building from the public registry (EUBUCCO Luxembourg), as returned by
+ * GET /api/registry/candidates. Footprint-derived fields (coordinates, height) are
+ * real; name and address are synthetic, since EUBUCCO has no per-building identity.
+ */
+export interface RegistryCandidate {
+  source_id: string;
+  name: string;
+  address: string;
+  year_built: number | null;
+  height_m: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  source: string;
+}
+
 export type SettingsProvider =
   | "anthropic"
   | "openai"

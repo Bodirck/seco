@@ -11,6 +11,7 @@ from __future__ import annotations
 import random
 import sqlite3
 import warnings
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -156,13 +157,12 @@ def _insert_buildings(
     return ids
 
 
-def _ingest_from_parquet(
-    conn: sqlite3.Connection,
+def _parquet_rows(
     parquet_path: Path,
     sample_size: int,
     seed: int,
-) -> list[int]:
-    """Read the cached parquet, sample rows, reproject, and insert into buildings."""
+) -> list[dict[str, Any]]:
+    """Read the cached parquet, sample rows, reproject, and return building dicts."""
     import pyarrow.parquet as pq
     from shapely import wkb as shapely_wkb
 
@@ -240,15 +240,14 @@ def _ingest_from_parquet(
             }
         )
 
-    return _insert_buildings(conn, rows)
+    return rows
 
 
-def _ingest_synthetic(
-    conn: sqlite3.Connection,
+def _synthetic_rows(
     sample_size: int,
     seed: int,
-) -> list[int]:
-    """Generate fully synthetic Luxembourg buildings when the real download fails.
+) -> list[dict[str, Any]]:
+    """Generate fully synthetic Luxembourg building dicts when the real download fails.
 
     Coordinates are uniform-random within the LU bounding box:
       lat: 49.44 to 50.18
@@ -277,7 +276,7 @@ def _ingest_synthetic(
             }
         )
 
-    return _insert_buildings(conn, rows)
+    return rows
 
 
 def ingest_buildings(
@@ -317,18 +316,62 @@ def ingest_buildings(
                 "Falling back to fully synthetic Luxembourg buildings.",
                 stacklevel=2,
             )
-            return _ingest_synthetic(conn, sample_size, seed)
+            return _insert_buildings(conn, _synthetic_rows(sample_size, seed))
 
     # --- Parse parquet and ingest. ---
     try:
-        return _ingest_from_parquet(conn, dest, sample_size, seed)
+        return _insert_buildings(conn, _parquet_rows(dest, sample_size, seed))
     except Exception as exc:
         warnings.warn(
             f"[ingest_structured] Parquet parse failed: {exc}. "
             "Falling back to fully synthetic Luxembourg buildings.",
             stacklevel=2,
         )
-        return _ingest_synthetic(conn, sample_size, seed)
+        return _insert_buildings(conn, _synthetic_rows(sample_size, seed))
+
+
+def read_candidates(
+    sample_size: int = 200,
+    seed: int = 1,
+    cache_dir: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    """Return candidate building dicts from the public registry WITHOUT inserting.
+
+    Uses the cached EUBUCCO parquet if present and never downloads on this path, so
+    it is safe to call from a web request; falls back to synthetic dicts otherwise.
+    A seed distinct from the main parc keeps these candidates disjoint from the
+    buildings the pipeline already loaded.
+    """
+    dest = _cache_path(cache_dir)
+    if dest.exists():
+        try:
+            return _parquet_rows(dest, sample_size, seed)
+        except Exception as exc:
+            warnings.warn(
+                f"[ingest_structured] Parquet read failed: {exc}. Using synthetic candidates.",
+                stacklevel=2,
+            )
+    return _synthetic_rows(sample_size, seed)
+
+
+@lru_cache(maxsize=2)
+def candidate_pool(sample_size: int = 200, seed: int = 1) -> list[dict[str, Any]]:
+    """Cached candidate pool so the parquet is read at most once per process."""
+    return read_candidates(sample_size=sample_size, seed=seed)
+
+
+def find_candidate(
+    source_id: str, sample_size: int = 200, seed: int = 1
+) -> dict[str, Any] | None:
+    """Find a candidate by its source_id within the cached pool."""
+    return next(
+        (
+            c
+            for c in candidate_pool(sample_size, seed)
+            if str(c.get("source_id")) == str(source_id)
+        ),
+        None,
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import type {
   BuildingSummary,
   IngestResult,
   Meta,
+  RegistryCandidate,
   SettingsState,
   SettingsTestResult,
   SettingsUpdate,
@@ -68,16 +69,24 @@ export const api = {
   reportUrl: (id: number, format: "pdf" | "xlsx") =>
     `/api/buildings/${id}/report?format=${format}`,
 
+  registryCandidates: (n = 8) =>
+    getJson<{ candidates: RegistryCandidate[] }>(
+      `/api/registry/candidates?n=${n}`,
+    ).then((r) => r.candidates),
+
   ingest: async (args: {
     file: File;
     buildingId?: number;
     name?: string;
     address?: string;
+    registrySourceId?: string;
   }): Promise<IngestResult> => {
     const form = new FormData();
     form.append("file", args.file);
     if (args.buildingId !== undefined) {
       form.append("building_id", String(args.buildingId));
+    } else if (args.registrySourceId) {
+      form.append("registry_source_id", args.registrySourceId);
     } else {
       if (args.name) form.append("name", args.name);
       if (args.address) form.append("address", args.address);
