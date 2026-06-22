@@ -49,6 +49,24 @@ export default function Building3D({ lat, lon, name, className, fallback = null 
       m.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
       m.on("load", () => {
         m.resize();
+        // The fiord style ships no 3D layer, so extrude the buildings ourselves
+        // from the OpenMapTiles "building" source-layer. A fallback height keeps
+        // low or untagged buildings visibly 3D under the tilt.
+        if (!m.getLayer("bl-buildings-3d")) {
+          m.addLayer({
+            id: "bl-buildings-3d",
+            source: "openmaptiles",
+            "source-layer": "building",
+            type: "fill-extrusion",
+            minzoom: 14,
+            paint: {
+              "fill-extrusion-color": "#4a5d7e",
+              "fill-extrusion-height": ["coalesce", ["get", "render_height"], 8],
+              "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
+              "fill-extrusion-opacity": 0.85,
+            },
+          });
+        }
         new maplibregl.Marker({ color: "#ff8a3d" }).setLngLat([lon, lat]).addTo(m);
       });
       m.on("error", (e) => {
