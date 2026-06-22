@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import type { AskResponse, BuildingDetail, Severity } from "../api/types";
 import AskBar from "../components/building/AskBar";
@@ -86,6 +86,12 @@ export default function BuildingPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const numericId = Number(id);
+
+  // When we arrive from the search console (a source-card deep link sets this
+  // state), offer a way back to the cached search instead of the browser button.
+  const location = useLocation();
+  const fromSearch =
+    (location.state as { fromSearch?: boolean } | null)?.fromSearch ?? false;
 
   // The dossier is fetched once per building id and cached app-wide, so going
   // back to a building you already opened is instant and keeps its data.
@@ -366,6 +372,27 @@ export default function BuildingPage() {
   // -------------------------------------------------------------------------
   return (
     <div className="space-y-6">
+      {fromSearch && (
+        <Link
+          to="/search"
+          className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-line px-3 font-display text-xs font-semibold uppercase tracking-wide text-fg-muted transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3.5 w-3.5"
+            aria-hidden="true"
+          >
+            <path d="M15 19l-7-7 7-7" />
+          </svg>
+          {t("building.backToSearch")}
+        </Link>
+      )}
+
       <AskBar
         caseId={case_}
         question={question}
