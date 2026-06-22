@@ -36,7 +36,7 @@ BuildingLens speaks directly to SECO's value chain:
 - The insurer touchpoint is the natural home for a **machine-readable risk signal** instead of a PDF, which is how a control service turns into a data partnership.
 - SECO's historical corpus (thousands of inspected structures) is a uniquely structurable, proprietary dataset: time-stamped observations tagged by discipline and linked to plans and standards. It is one of construction's cleanest "unstructured to structured" problems.
 
-The severity taxonomy is anchored to public, recognised scales (RICS C1/C2/C3 condition ratings as the canonical three classes, with ASTM E2018 and Eurocode consequence classes CC1/CC2/CC3 cited as additional public vocabulary), so the output is defensible against industry references rather than ad hoc.
+The severity taxonomy is anchored to public, recognised scales (RICS C1/C2/C3 condition ratings as the canonical three classes, with ASTM E2018 and Eurocode consequence classes CC1/CC2/CC3 cited as additional public vocabulary).
 
 ### 3. What data sources, and why?
 
@@ -230,7 +230,7 @@ BuildingLens s'adresse directement à la chaîne de valeur de SECO :
 - Le point de contact assureur est l'endroit naturel pour un **signal de risque exploitable par machine** au lieu d'un PDF, ce qui transforme un service de contrôle en partenariat de données.
 - Le corpus historique de SECO (des milliers d'ouvrages inspectés) est un jeu de données propriétaire uniquement structurable : des observations horodatées, taguées par discipline, liées aux plans et aux normes. C'est l'un des problèmes "non structuré vers structuré" les plus propres de la construction.
 
-La taxonomie de sévérité est ancrée sur des échelles publiques reconnues (les notes de condition RICS C1/C2/C3 comme trois classes canoniques, avec ASTM E2018 et les classes de conséquence Eurocode CC1/CC2/CC3 comme vocabulaire public complémentaire), donc la sortie est défendable au regard de références du secteur, pas arbitraire.
+La taxonomie de sévérité est ancrée sur des échelles publiques reconnues (les notes de condition RICS C1/C2/C3 comme trois classes canoniques, avec ASTM E2018 et les classes de conséquence Eurocode CC1/CC2/CC3 comme vocabulaire public complémentaire).
 
 ### 3. Quelles sources de données, et pourquoi ?
 
