@@ -1,4 +1,4 @@
-# Demo script (2 to 3 minutes)
+# Demo script (about 3 to 4 minutes)
 
 A short, recorded walkthrough of BuildingLens. The demo is a bonus, not a core
 deliverable. It is recorded locally; nothing is deployed online.
@@ -58,19 +58,32 @@ On the building page, point out:
   and filter. Say one line: the building location is real, its condition is
   synthetic for the demo, and a real SECO report would drop in unchanged.
 
-**1:25 to 1:55. Ask a building (grounded Q&A).**
+**1:25 to 1:50. Ask a building (grounded Q&A).**
 In the building's Ask bar, type a question like "what are the most serious
-defects here?". Show the answer streaming in, then point at the citations: the
-answer only uses the report text and cites the passages it came from.
+defects here?". The answer comes back in the same language you asked in, streamed
+live, then point at the citations: it only uses the report text and cites the
+passages it came from. Use Clear query to reset the bar.
 
-**1:55 to 2:35. Search console (portfolio-wide, scoped).**
+**1:50 to 2:20. Search console (portfolio-wide, scoped).**
 Go to Search. Set a scope facet (for example a commune or severity = critical),
 and show the live "N of M buildings" count. Ask a portfolio question like "which
 buildings have critical structural defects?". Show the streaming answer with
-sources, and that the scope narrowed the search. Optional: navigate away to
-another page and back to show the conversation is still there (the page cache).
+sources. Click a source to open that building, then use Back to search to return
+to the conversation, still intact (the page cache).
 
-**2:35 to 3:00. Settings and close.**
+**2:20 to 3:05. Import a report (the live ingestion loop, the heart of the product).**
+This is the step to land hard: every other view reads data, this one creates it.
+Go to Import and upload an inspection PDF (any of the PDFs the generator wrote
+under `data/` works for the demo). Narrate the pipeline as it runs: the text is
+extracted, the LLM pulls out each defect with its severity and a citation, the
+building's risk score is recomputed, and the report is indexed into the RAG.
+When it finishes, open the building it created or refreshed to show the new
+defects and score, then go to Search and ask about it: the answer now cites the
+report you just imported. One line to close the loop: in production this is
+exactly where a real SECO report drops in, with no change to the rest of the
+pipeline.
+
+**3:05 to 3:20. Settings and close.**
 Open Settings. Show the provider switch (Anthropic, OpenAI, Mistral, Ollama,
 mock) and the live connection test. One closing line: the whole thing runs on
 public data, is reproducible from zero with `make data && make run`, and runs
@@ -78,7 +91,12 @@ offline in mock mode with no API key.
 
 ## Notes
 
-- If you recorded in mock mode, say so: answers are deterministic fixtures, not a
-  live model.
-- Keep it moving. If a step is slow (first RAG query warms the embeddings), cut
-  the dead time in editing.
+- The Import step is the core capability, not a footnote: it is the live ingest,
+  extract, score, and index loop. Give it room and narrate it.
+- Importing needs a configured LLM key (or the local Ollama provider) for real
+  defect extraction. In mock mode the upload succeeds but extracts no defects, so
+  record the import step with a real provider.
+- If you recorded in mock mode, say so for the Q&A: answers are deterministic
+  fixtures, not a live model.
+- Keep it moving. If a step is slow (the first RAG query warms the embeddings, and
+  ingestion runs the model over the whole report), cut the dead time in editing.
