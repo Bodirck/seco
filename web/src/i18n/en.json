@@ -187,6 +187,7 @@
     "filter": "Filter",
     "sortFilter": "Sort / filter",
     "askAbout": "Ask about this building",
+    "clearQuery": "Clear query",
     "notFound": "Building not found.",
     "map": "Location in Luxembourg",
     "yearBuilt": "Year built",

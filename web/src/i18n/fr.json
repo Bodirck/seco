@@ -165,6 +165,7 @@
     "filter": "Filtrer",
     "sortFilter": "Trier / filtrer",
     "askAbout": "Interroger ce batiment",
+    "clearQuery": "Effacer la requete",
     "notFound": "Batiment introuvable.",
     "map": "Localisation au Luxembourg",
     "yearBuilt": "Annee de construction",

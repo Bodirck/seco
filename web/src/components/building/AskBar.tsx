@@ -12,6 +12,7 @@ interface Props {
   loading: boolean;
   error: string | null;
   response: AskResponse | null;
+  onClear: () => void;
 }
 
 /**
@@ -31,6 +32,7 @@ export default function AskBar({
   loading,
   error,
   response,
+  onClear,
 }: Props) {
   const { t } = useTranslation();
 
@@ -72,6 +74,17 @@ export default function AskBar({
           >
             {loading ? t("common.loading") : t("search.ask")}
           </Button>
+          {(question.trim() !== "" || response || error) && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClear}
+              disabled={loading}
+              className="h-11 shrink-0 rounded-sm px-4 uppercase tracking-wide"
+            >
+              {t("building.clearQuery")}
+            </Button>
+          )}
         </form>
 
         {error && (

@@ -415,6 +415,11 @@ export default function BuildingPage() {
         loading={asking}
         error={askError}
         response={askResponse}
+        onClear={() => {
+          setQuestion("");
+          setAskResponse(null);
+          setAskError(null);
+        }}
       />
 
       <Tabs
