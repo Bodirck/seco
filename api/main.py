@@ -17,10 +17,12 @@ from .routers import ask, buildings, ingest, registry, reports, search, settings
 
 app = FastAPI(title="BuildingLens API", version="0.1.0")
 
-# Allow the Vite dev server origin.
+# Allow the Vite dev server origin on any localhost port. Vite falls back to
+# 5174, 5175, ... when 5173 is busy, so a fixed port would break CORS after a
+# fallback; a localhost regex keeps the dev front working whatever port it lands on.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_methods=["*"],
     allow_headers=["*"],
 )

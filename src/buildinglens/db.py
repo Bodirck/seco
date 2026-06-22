@@ -81,7 +81,11 @@ def connect(db_path: str | Path) -> sqlite3.Connection:
     """
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
+    # check_same_thread=False: the API opens one connection per request, but
+    # FastAPI may run the dependency setup, the endpoint and conn.close() on
+    # different threadpool threads. The connection is never shared between
+    # concurrent requests, so the use stays serialized and this is safe.
+    conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA busy_timeout = 5000")
