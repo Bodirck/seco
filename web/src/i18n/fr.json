@@ -128,6 +128,7 @@
     "pageOf": "Page {{page}} / {{pages}}",
     "newName": "Nom du batiment",
     "newAddress": "Adresse (optionnel)",
+    "newAddressHint": "Une vraie adresse luxembourgeoise est geocodee pour recuperer la localisation et l'emprise reelle du batiment depuis le registre public EUBUCCO. Sans adresse, le batiment est ajoute au nom seul.",
     "file": "PDF d'inspection",
     "chooseFile": "Choisir un PDF",
     "noFile": "Aucun fichier selectionne",

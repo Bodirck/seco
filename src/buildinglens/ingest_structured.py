@@ -168,6 +168,92 @@ def _insert_buildings(
     return ids
 
 
+def _geom_attrs(record: Any, geom: Any, transformer: Any) -> dict[str, Any]:
+    """Geometry-derived building attributes from one EUBUCCO record and its parsed
+    shapely geometry (EPSG:3035). Shared by the seeded sampler and the address point
+    lookup. Returns everything EXCEPT the synthetic name/address.
+    """
+    from buildinglens import communes
+
+    centroid = geom.centroid
+    # always_xy=True: input (x=easting, y=northing), output (lon, lat).
+    lon, lat = transformer.transform(centroid.x, centroid.y)
+
+    height_raw = record.get("height")
+    height_m = (
+        float(height_raw) if height_raw is not None and str(height_raw) != "nan" else None
+    )
+
+    year_raw = record.get("construction_year")
+    year_built: int | None = None
+    if year_raw is not None:
+        try:
+            year_built = int(year_raw)
+        except (ValueError, TypeError):
+            pass
+
+    geo_src = record.get("geometry_source")
+    source_label = (
+        f"EUBUCCO v0.2 / {geo_src}"
+        if geo_src and str(geo_src) not in ("", "nan", "None")
+        else "EUBUCCO v0.2 / gov-luxembourg"
+    )
+
+    # Real commune from the centroid (point-in-polygon against ACT boundaries).
+    commune = communes.commune_for_point(lat, lon)
+
+    # Real footprint area from the EPSG:3035 polygon (3035 is an equal-area metric
+    # CRS, so .area is already in m2).
+    try:
+        _area = round(float(geom.area), 1)
+    except Exception:
+        _area = None
+    footprint_area_m2 = _area if _area and _area > 0 else None
+
+    type_raw = record.get("type")
+    use_type = str(type_raw) if type_raw is not None and str(type_raw).lower() != "nan" else None
+    subtype_raw = record.get("subtype")
+    use_subtype = (
+        str(subtype_raw) if subtype_raw is not None and str(subtype_raw).lower() != "nan" else None
+    )
+    floors_raw = record.get("floors")
+    try:
+        floors = (
+            int(round(float(floors_raw)))
+            if floors_raw is not None and str(floors_raw).lower() != "nan"
+            else None
+        )
+    except (ValueError, TypeError):
+        floors = None
+    conf_raw = record.get("type_confidence")
+    try:
+        type_confidence = (
+            round(float(conf_raw), 2)
+            if conf_raw is not None and str(conf_raw).lower() != "nan"
+            else None
+        )
+    except (ValueError, TypeError):
+        type_confidence = None
+
+    sid_raw = record.get("id")
+    source_id = str(sid_raw) if sid_raw is not None else None
+
+    return {
+        "source_id": source_id,
+        "year_built": year_built,
+        "height_m": height_m,
+        "latitude": lat,
+        "longitude": lon,
+        "source": source_label,
+        "commune": commune,
+        "use_type": use_type,
+        "use_subtype": use_subtype,
+        "floors": floors,
+        "footprint_area_m2": footprint_area_m2,
+        "type_confidence": type_confidence,
+    }
+
+
 def _parquet_rows(
     parquet_path: Path,
     sample_size: int,
@@ -176,8 +262,6 @@ def _parquet_rows(
     """Read the cached parquet, sample rows, reproject, and return building dicts."""
     import pyarrow.parquet as pq
     from shapely import wkb as shapely_wkb
-
-    from buildinglens import communes
 
     transformer = _build_transformer()
 
@@ -207,95 +291,18 @@ def _parquet_rows(
         except Exception:
             continue
 
-        centroid = geom.centroid
-        # always_xy=True means: input is (x=easting, y=northing), output is (lon, lat).
-        lon, lat = transformer.transform(centroid.x, centroid.y)
-
-        # Height is well-covered for Luxembourg in EUBUCCO.
-        height_raw = record.get("height")
-        height_m = float(height_raw) if height_raw is not None and str(height_raw) != "nan" else None
-
-        # Construction year is nearly always null for LU in EUBUCCO.
-        year_raw = record.get("construction_year")
-        year_built: int | None = None
-        if year_raw is not None:
-            try:
-                year_built = int(year_raw)
-            except (ValueError, TypeError):
-                pass
-
-        # Source provenance: prefer geometry_source column, else default label.
-        geo_src = record.get("geometry_source")
-        source_label = (
-            f"EUBUCCO v0.2 / {geo_src}"
-            if geo_src and str(geo_src) not in ("", "nan", "None")
-            else "EUBUCCO v0.2 / gov-luxembourg"
-        )
-
-        # Real commune from the centroid (point-in-polygon against ACT boundaries).
-        commune = communes.commune_for_point(lat, lon)
-
-        # Real footprint area from the EPSG:3035 polygon (computed BEFORE reprojection,
-        # since 3035 is an equal-area metric CRS, so .area is already in m2).
-        try:
-            _area = round(float(geom.area), 1)
-        except Exception:
-            _area = None
-        footprint_area_m2 = _area if _area and _area > 0 else None
-
-        # EUBUCCO attributes that are ML-estimated (labelled "estimated" in the UI).
-        type_raw = record.get("type")
-        use_type = str(type_raw) if type_raw is not None and str(type_raw).lower() != "nan" else None
-        subtype_raw = record.get("subtype")
-        use_subtype = (
-            str(subtype_raw) if subtype_raw is not None and str(subtype_raw).lower() != "nan" else None
-        )
-        floors_raw = record.get("floors")
-        try:
-            floors = (
-                int(round(float(floors_raw)))
-                if floors_raw is not None and str(floors_raw).lower() != "nan"
-                else None
-            )
-        except (ValueError, TypeError):
-            floors = None
-        conf_raw = record.get("type_confidence")
-        try:
-            type_confidence = (
-                round(float(conf_raw), 2)
-                if conf_raw is not None and str(conf_raw).lower() != "nan"
-                else None
-            )
-        except (ValueError, TypeError):
-            type_confidence = None
+        attrs = _geom_attrs(record, geom, transformer)
 
         # EUBUCCO has no names or addresses for LU: name/street/number/postcode are
         # synthetic placeholders; the commune in the address is the real one above.
         name = _synthetic_name(name_rng)
-        address = _synthetic_address(name_rng, commune=commune)
+        address = _synthetic_address(name_rng, commune=attrs["commune"])
 
-        # source_id: use EUBUCCO's own id column if present, else a positional label.
-        sid_raw = record.get("id")
-        source_id = str(sid_raw) if sid_raw is not None else f"LU00-{idx}"
+        # source_id: use EUBUCCO's own id when present, else a positional label.
+        if attrs["source_id"] is None:
+            attrs["source_id"] = f"LU00-{idx}"
 
-        rows.append(
-            {
-                "source_id": source_id,
-                "name": name,
-                "address": address,
-                "year_built": year_built,
-                "height_m": height_m,
-                "latitude": lat,
-                "longitude": lon,
-                "source": source_label,
-                "commune": commune,
-                "use_type": use_type,
-                "use_subtype": use_subtype,
-                "floors": floors,
-                "footprint_area_m2": footprint_area_m2,
-                "type_confidence": type_confidence,
-            }
-        )
+        rows.append({**attrs, "name": name, "address": address})
 
     return rows
 
@@ -438,6 +445,101 @@ def find_candidate(source_id: str) -> dict[str, Any] | None:
         (c for c in candidate_pool() if str(c.get("source_id")) == str(source_id)),
         None,
     )
+
+
+# ---------------------------------------------------------------------------
+# Address point lookup: which EUBUCCO footprint contains a geocoded point.
+# ---------------------------------------------------------------------------
+
+
+@lru_cache(maxsize=1)
+def _eubucco_arrays(parquet_str: str) -> Any:
+    """Load EUBUCCO bounding boxes (EPSG:3035), the raw WKB column and the attribute
+    columns, once. We index on the precomputed bbox so a point lookup never has to
+    parse all 186k geometries: a vectorised numpy bbox filter narrows to a handful
+    of candidates, and only those are parsed. Cached for the process lifetime.
+    """
+    import numpy as np
+    import pyarrow.compute as pc
+    import pyarrow.parquet as pq
+
+    cols = [
+        "geometry", "bbox", "height", "floors", "type", "subtype",
+        "type_confidence", "construction_year", "geometry_source", "id",
+    ]
+    table = pq.read_table(parquet_str, columns=cols)
+    bbox = table.column("bbox")
+    bounds = {
+        k: pc.struct_field(bbox, k).to_numpy(zero_copy_only=False)
+        for k in ("xmin", "ymin", "xmax", "ymax")
+    }
+    wkb_col = table.column("geometry")  # parsed lazily, candidate by candidate
+    attrs = table.drop(["geometry", "bbox"]).to_pandas()
+    return bounds, wkb_col, attrs, np
+
+
+def find_building_at_point(
+    lat: float,
+    lon: float,
+    cache_dir: str | Path | None = None,
+    max_snap_m: float = 40.0,
+) -> dict[str, Any] | None:
+    """Find the EUBUCCO building footprint at a WGS84 (lat, lon).
+
+    Returns the geometry-derived building dict (no name/address), or None when the
+    parquet is absent, or no footprint covers the point and none is within
+    max_snap_m of it. Read-only and safe to call from a web request (no download).
+    """
+    dest = _cache_path(cache_dir)
+    if not dest.exists():
+        return None
+    try:
+        import shapely
+        from pyproj import Transformer
+
+        bounds, wkb_col, attrs, np = _eubucco_arrays(str(dest))
+        to_3035 = Transformer.from_crs("EPSG:4326", "EPSG:3035", always_xy=True)
+        x, y = to_3035.transform(lon, lat)  # always_xy: (lon, lat) -> (easting, northing)
+        point = shapely.Point(x, y)
+
+        def parse(i: int) -> Any:
+            return shapely.from_wkb(wkb_col[i].as_py())
+
+        # 1) Footprints whose bbox covers the point: parse only those, take the
+        #    first that truly contains it.
+        covering = np.nonzero(
+            (bounds["xmin"] <= x)
+            & (x <= bounds["xmax"])
+            & (bounds["ymin"] <= y)
+            & (y <= bounds["ymax"])
+        )[0]
+        for i in covering:
+            geom = parse(int(i))
+            if geom.covers(point):
+                return _geom_attrs(attrs.iloc[int(i)], geom, _build_transformer())
+
+        # 2) Fallback: the nearest footprint within max_snap_m (search a small bbox
+        #    window so a point that lands just off a building still snaps to it).
+        window = np.nonzero(
+            (bounds["xmin"] <= x + max_snap_m)
+            & (bounds["xmax"] >= x - max_snap_m)
+            & (bounds["ymin"] <= y + max_snap_m)
+            & (bounds["ymax"] >= y - max_snap_m)
+        )[0]
+        best_i: int | None = None
+        best_d = max_snap_m
+        best_geom = None
+        for i in window:
+            geom = parse(int(i))
+            d = geom.distance(point)
+            if d <= best_d:
+                best_d, best_i, best_geom = d, int(i), geom
+        if best_i is not None:
+            return _geom_attrs(attrs.iloc[best_i], best_geom, _build_transformer())
+        return None
+    except Exception as exc:
+        warnings.warn(f"[ingest_structured] point lookup failed: {exc}", stacklevel=2)
+        return None
 
 
 # ---------------------------------------------------------------------------

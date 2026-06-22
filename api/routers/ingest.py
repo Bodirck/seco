@@ -62,7 +62,7 @@ def ingest(
     """
     # Lazy imports: keep startup light and avoid loading heavy deps (llama-index,
     # sentence-transformers, pdfplumber) until an ingest actually happens.
-    from buildinglens import extract, ingest_pdf, ingest_structured, rag, scoring
+    from buildinglens import extract, geocode, ingest_pdf, ingest_structured, rag, scoring
     from buildinglens.llm import get_llm
 
     # --- Validate the request shape ---
@@ -153,10 +153,46 @@ def ingest(
                 created_building_id = target_building_id
                 building_name = cand.get("name") or f"Building {target_building_id}"
             else:
-                cur = conn.execute(
-                    "INSERT INTO buildings (name, address, source) VALUES (?, ?, ?)",
-                    (clean_name, (address or "").strip() or None, "upload"),
+                # New building. If an address is given, geocode it and snap to the
+                # real EUBUCCO footprint at that point, so the dossier gets a real
+                # location, footprint and height. The typed name and address are
+                # kept (they come from the report); only the geometry is EUBUCCO.
+                # Falls back to a name-only record when geocoding or the match fails.
+                addr = (address or "").strip()
+                coords = geocode.geocode_lu(addr) if addr else None
+                matched = (
+                    ingest_structured.find_building_at_point(coords[0], coords[1])
+                    if coords is not None
+                    else None
                 )
+                if matched is not None:
+                    cur = conn.execute(
+                        "INSERT INTO buildings "
+                        "(source_id, name, address, year_built, height_m, latitude, longitude, source, commune, "
+                        "use_type, use_subtype, floors, footprint_area_m2, type_confidence) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            matched.get("source_id"),
+                            clean_name,
+                            addr or None,
+                            matched.get("year_built"),
+                            matched.get("height_m"),
+                            matched.get("latitude"),
+                            matched.get("longitude"),
+                            matched.get("source"),
+                            matched.get("commune"),
+                            matched.get("use_type"),
+                            matched.get("use_subtype"),
+                            matched.get("floors"),
+                            matched.get("footprint_area_m2"),
+                            matched.get("type_confidence"),
+                        ),
+                    )
+                else:
+                    cur = conn.execute(
+                        "INSERT INTO buildings (name, address, source) VALUES (?, ?, ?)",
+                        (clean_name, addr or None, "upload"),
+                    )
                 conn.commit()
                 target_building_id = int(cur.lastrowid)
                 created_building_id = target_building_id

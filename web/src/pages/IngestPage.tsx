@@ -303,6 +303,9 @@ export default function IngestPage() {
                     setError(null);
                   }}
                 />
+                <p className="text-xs leading-relaxed text-fg-faint">
+                  {t("ingest.newAddressHint")}
+                </p>
               </div>
             )}
 

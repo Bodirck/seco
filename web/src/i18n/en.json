@@ -150,6 +150,7 @@
     "pageOf": "Page {{page}} / {{pages}}",
     "newName": "Building name",
     "newAddress": "Address (optional)",
+    "newAddressHint": "A real Luxembourg address is geocoded to pull the building's location and real footprint from the public EUBUCCO registry. Without one, the building is added by name only.",
     "file": "Inspection PDF",
     "chooseFile": "Choose a PDF",
     "noFile": "No file selected",
