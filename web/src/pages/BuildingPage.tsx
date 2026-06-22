@@ -41,6 +41,7 @@ import { useCachedResource } from "../lib/pageCache";
 
 // Lazy so leaflet and its CSS only download when the Case File tab renders the map.
 const LocatorMap = lazy(() => import("../components/ui/LocatorMap"));
+const Building3D = lazy(() => import("../components/building/Building3D"));
 
 function DownloadIcon() {
   return (
@@ -299,12 +300,36 @@ export default function BuildingPage() {
 
       <Reveal index={1}>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Panel code="SCAN // VOLUME" footer={`${case_} // POINT CLOUD`}>
-            <ScanFrame label={case_} className="h-[300px]">
-              <div className="absolute right-3 top-3">
-                <CodeLabel className="text-[10px]">{sector_}</CodeLabel>
-              </div>
-            </ScanFrame>
+          <Panel code="SCAN // VOLUME" footer={`${case_} // 3D VIEW`}>
+            {hasCoordinates ? (
+              <Suspense
+                fallback={
+                  <div className="flex h-[300px] items-center justify-center rounded-sm border border-line bg-ink-800">
+                    <Spinner />
+                  </div>
+                }
+              >
+                <Building3D
+                  lat={building.latitude}
+                  lon={building.longitude}
+                  name={building.name}
+                  className="h-[300px]"
+                  fallback={
+                    <ScanFrame label={case_} className="h-[300px]">
+                      <div className="absolute right-3 top-3">
+                        <CodeLabel className="text-[10px]">{sector_}</CodeLabel>
+                      </div>
+                    </ScanFrame>
+                  }
+                />
+              </Suspense>
+            ) : (
+              <ScanFrame label={case_} className="h-[300px]">
+                <div className="absolute right-3 top-3">
+                  <CodeLabel className="text-[10px]">{sector_}</CodeLabel>
+                </div>
+              </ScanFrame>
+            )}
           </Panel>
 
           <Panel code={CODES.geo} title={t("building.map")} footer={coordinates}>

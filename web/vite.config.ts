@@ -21,6 +21,7 @@ export default defineConfig({
           react: ["react", "react-dom", "react-router-dom"],
           recharts: ["recharts"],
           leaflet: ["leaflet", "react-leaflet"],
+          maplibre: ["maplibre-gl"],
           i18n: ["i18next", "react-i18next"],
         },
       },
