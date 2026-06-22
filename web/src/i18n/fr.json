@@ -142,7 +142,22 @@
     "mockNote": "Aucun defaut n'a ete extrait : l'application tourne en mode mock sans cle API. Configurez une cle dans",
     "emptyTitle": "Aucun batiment pour l'instant",
     "emptyBody": "Importez votre premier rapport d'inspection pour en extraire les defauts, calculer le risque du batiment et le rendre interrogeable.",
-    "cta": "Importer un rapport"
+    "cta": "Importer un rapport",
+    "duplicateTitle": "Deja dans le portefeuille ?",
+    "duplicateBody": "Un batiment avec la meme emprise et le meme nom est deja present. Ouvrez-le pour y ajouter le rapport, ou importez quand meme une copie distincte.",
+    "similarFound": "Batiments similaires deja dans le portefeuille",
+    "viewExisting": "Ouvrir",
+    "importAnyway": "Importer quand meme",
+    "cancelImport": "Annuler",
+    "dupDistance": "a {{m}} m",
+    "reason": {
+      "same_footprint": "Meme emprise",
+      "same_name": "Meme nom",
+      "same_address": "Meme adresse",
+      "same_volume": "Meme volume",
+      "similar_name": "Nom similaire",
+      "nearby": "A proximite"
+    }
   },
   "building": {
     "overview": "Apercu",

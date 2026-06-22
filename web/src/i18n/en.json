@@ -164,7 +164,22 @@
     "mockNote": "No defects were extracted: the app is running in mock mode without an API key. Configure a key in",
     "emptyTitle": "No buildings yet",
     "emptyBody": "Import your first inspection report to extract its defects, score the building and make it searchable.",
-    "cta": "Import a report"
+    "cta": "Import a report",
+    "duplicateTitle": "Already in the portfolio?",
+    "duplicateBody": "A building with the same footprint and name is already here. Open it to add the report there, or import a separate copy anyway.",
+    "similarFound": "Similar buildings already in the portfolio",
+    "viewExisting": "Open",
+    "importAnyway": "Import anyway",
+    "cancelImport": "Cancel",
+    "dupDistance": "{{m}} m away",
+    "reason": {
+      "same_footprint": "Same footprint",
+      "same_name": "Same name",
+      "same_address": "Same address",
+      "same_volume": "Same volume",
+      "similar_name": "Similar name",
+      "nearby": "Nearby"
+    }
   },
   "building": {
     "overview": "Overview",

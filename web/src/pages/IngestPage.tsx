@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api } from "../api/client";
+import { api, ApiError } from "../api/client";
 import type {
   BuildingSummary,
+  DuplicateCandidate,
+  DuplicateDetail,
   IngestResult,
   RegistryCandidate,
 } from "../api/types";
@@ -54,6 +56,8 @@ export default function IngestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<IngestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Set when the import is blocked because the building already looks present.
+  const [duplicate, setDuplicate] = useState<DuplicateDetail | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -89,12 +93,14 @@ export default function IngestPage() {
     setFile(e.target.files?.[0] ?? null);
     setResult(null);
     setError(null);
+    setDuplicate(null);
   }
 
   function onTargetChange(next: Target) {
     setTarget(next);
     setResult(null);
     setError(null);
+    setDuplicate(null);
   }
 
   const trimmedName = name.trim();
@@ -108,25 +114,43 @@ export default function IngestPage() {
     !noExistingTarget &&
     !noRegistryTarget;
 
-  async function handleSubmit() {
+  async function handleSubmit(opts?: { force?: boolean }) {
     if (!file || !canSubmit) return;
     setSubmitting(true);
     setResult(null);
     setError(null);
+    setDuplicate(null);
     try {
       const res = await api.ingest(
         target === "existing"
           ? { file, buildingId: buildingId ?? undefined }
           : target === "registry"
             ? { file, registrySourceId: selectedRegistryId }
-            : { file, name: trimmedName, address: address.trim() || undefined },
+            : {
+                file,
+                name: trimmedName,
+                address: address.trim() || undefined,
+                force: opts?.force,
+              },
       );
       setResult(res);
       // The new or rescored building changed the portfolio list and its own
       // dossier; drop those cached reads so returning to them shows fresh data.
       invalidateResource("portfolio:buildings", `building:${res.building_id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // A 409 with a structured duplicate payload is not a failure to show as a red
+      // error: it means the building already looks present. Surface the matches and
+      // let the user open the existing dossier or import anyway.
+      if (
+        err instanceof ApiError &&
+        err.status === 409 &&
+        err.detail &&
+        (err.detail as DuplicateDetail).code === "duplicate_building"
+      ) {
+        setDuplicate(err.detail as DuplicateDetail);
+      } else {
+        setError(err instanceof Error ? err.message : String(err));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -291,6 +315,7 @@ export default function IngestPage() {
                     setName(e.target.value);
                     setResult(null);
                     setError(null);
+                    setDuplicate(null);
                   }}
                 />
                 <Input
@@ -301,6 +326,7 @@ export default function IngestPage() {
                     setAddress(e.target.value);
                     setResult(null);
                     setError(null);
+                    setDuplicate(null);
                   }}
                 />
                 <p className="text-xs leading-relaxed text-fg-faint">
@@ -351,7 +377,7 @@ export default function IngestPage() {
             {/* Submit. */}
             <div className="flex flex-wrap items-center gap-3">
               <Button
-                onClick={handleSubmit}
+                onClick={() => handleSubmit()}
                 disabled={!canSubmit}
                 className="rounded-sm uppercase tracking-wide"
               >
@@ -376,6 +402,40 @@ export default function IngestPage() {
         >
           {error}
         </div>
+      )}
+
+      {/* Duplicate guardrail: the building already looks present. Not a failure,
+          so it shows the existing dossiers and offers an explicit override. */}
+      {duplicate && (
+        <Panel
+          code={CODES.intake}
+          title={t("ingest.duplicateTitle")}
+          accent="amber"
+          windowButtons
+          className="animate-panel-in"
+        >
+          <p className="mb-4 text-sm leading-relaxed text-fg-muted">
+            {duplicate.message || t("ingest.duplicateBody")}
+          </p>
+          <DuplicateList candidates={duplicate.candidates} />
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Button
+              onClick={() => handleSubmit({ force: true })}
+              disabled={submitting}
+              className="rounded-sm uppercase tracking-wide"
+            >
+              {submitting ? t("ingest.submitting") : t("ingest.importAnyway")}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setDuplicate(null)}
+              disabled={submitting}
+              className="rounded-sm uppercase tracking-wide"
+            >
+              {t("ingest.cancelImport")}
+            </Button>
+          </div>
+        </Panel>
       )}
 
       {/* Success result panel. */}
@@ -430,6 +490,15 @@ export default function IngestPage() {
             </div>
           )}
 
+          {result.possible_duplicates && result.possible_duplicates.length > 0 && (
+            <div className="mt-5">
+              <CodeLabel accent="amber">{t("ingest.similarFound")}</CodeLabel>
+              <div className="mt-2">
+                <DuplicateList candidates={result.possible_duplicates} />
+              </div>
+            </div>
+          )}
+
           <div className="mt-6">
             <Button
               to={`/building/${result.building_id}`}
@@ -441,5 +510,64 @@ export default function IngestPage() {
         </Panel>
       )}
     </div>
+  );
+}
+
+/**
+ * Renders a list of possible-duplicate buildings: name, address, the match reasons
+ * as small chips, distance when known, the risk score, and a link to open the
+ * existing dossier. Shared by the blocking panel and the soft "similar" note.
+ */
+function DuplicateList({ candidates }: { candidates: DuplicateCandidate[] }) {
+  const { t } = useTranslation();
+  return (
+    <ul className="flex flex-col gap-2">
+      {candidates.map((c) => {
+        const score = Math.round(c.risk_score);
+        return (
+          <li
+            key={c.id}
+            className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-line bg-ink-800 px-3 py-2"
+          >
+            <div className="min-w-0">
+              <p className="truncate font-display text-sm font-semibold uppercase tracking-wide text-fg">
+                {c.name}
+              </p>
+              {c.address && (
+                <p className="truncate font-mono text-xs text-fg-faint">
+                  {c.address}
+                </p>
+              )}
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                {c.reasons.map((r) => (
+                  <span
+                    key={r}
+                    className="rounded-sm border border-line bg-ink-850 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-fg-muted"
+                  >
+                    {t(`ingest.reason.${r}`)}
+                  </span>
+                ))}
+                {c.distance_m != null && (
+                  <span className="font-mono text-[10px] text-fg-faint">
+                    {t("ingest.dupDistance", { m: Math.round(c.distance_m) })}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <StatusTag label={score} tone={riskTone(score)} />
+              <Button
+                to={`/building/${c.id}`}
+                variant="ghost"
+                size="sm"
+                className="px-0"
+              >
+                {t("ingest.viewExisting")}
+              </Button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

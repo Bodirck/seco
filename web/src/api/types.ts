@@ -134,6 +134,49 @@ export interface IngestResult {
   chunks_indexed: number;
   mock: boolean;
   message: string;
+  /** Close matches found at import time (new-building path); empty when none. */
+  possible_duplicates?: DuplicateCandidate[];
+}
+
+/** Why a candidate is considered a possible duplicate. Mirrors dedup.py reasons. */
+export type MatchReason =
+  | "same_footprint"
+  | "same_name"
+  | "same_address"
+  | "same_volume"
+  | "similar_name"
+  | "nearby";
+
+/** One existing building surfaced as a possible duplicate of an import. */
+export interface DuplicateCandidate {
+  id: number;
+  name: string;
+  address: string;
+  commune: string | null;
+  source: string;
+  source_id: string | null;
+  risk_score: number;
+  /** Metres between the two footprints; null when either lacks coordinates. */
+  distance_m: number | null;
+  /** difflib name-similarity ratio, 0..1. */
+  name_similarity: number;
+  reasons: MatchReason[];
+  /** "exact" candidates triggered the block; "similar" are informational. */
+  strength: "exact" | "similar";
+}
+
+/**
+ * Structured body of a 409 from POST /api/ingest when a new building looks like
+ * one already in the portfolio. Carried on ApiError.detail so the UI can show the
+ * existing buildings and offer an "import anyway" override.
+ */
+export interface DuplicateDetail {
+  code: "duplicate_building";
+  message: string;
+  /** The form field to set true to override the block (always "force"). */
+  force_param: string;
+  matched_source_id: string | null;
+  candidates: DuplicateCandidate[];
 }
 
 /**

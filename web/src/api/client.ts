@@ -38,10 +38,17 @@ function askBody(question: string, o: AskOptions): Record<string, unknown> {
 /** Error carrying the HTTP status so callers can branch on it (e.g. 404). */
 export class ApiError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  /**
+   * The raw FastAPI `detail` when it is a structured object rather than a string
+   * (e.g. the duplicate-building 409 payload). Callers that understand a specific
+   * shape can read it; everyone else just uses `message`.
+   */
+  readonly detail?: unknown;
+  constructor(status: number, message: string, detail?: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -49,18 +56,26 @@ export class ApiError extends Error {
  * Build an ApiError from a failed response, preferring the FastAPI `detail` body
  * (which carries the precise, user-meaningful message) over the bare status line,
  * and keeping the HTTP status so callers can distinguish e.g. a 404 from a 500.
+ * When `detail` is a structured object (some endpoints return one, like the
+ * duplicate-building 409), we keep the object on the error and use its `message`
+ * field as the human-readable string so plain alerts still render text.
  */
 async function toError(res: Response): Promise<ApiError> {
   let message = `${res.status} ${res.statusText}`;
+  let detail: unknown;
   try {
     const body = await res.json();
     if (body && typeof body.detail === "string" && body.detail.trim()) {
       message = body.detail;
+    } else if (body && body.detail && typeof body.detail === "object") {
+      detail = body.detail;
+      const m = (body.detail as { message?: unknown }).message;
+      if (typeof m === "string" && m.trim()) message = m;
     }
   } catch {
     // No JSON body; keep the status line.
   }
-  return new ApiError(res.status, message);
+  return new ApiError(res.status, message, detail);
 }
 
 async function getJson<T>(url: string): Promise<T> {
@@ -200,6 +215,8 @@ export const api = {
     name?: string;
     address?: string;
     registrySourceId?: string;
+    /** Override the duplicate guardrail and import a new building anyway. */
+    force?: boolean;
   }): Promise<IngestResult> => {
     const form = new FormData();
     form.append("file", args.file);
@@ -211,6 +228,7 @@ export const api = {
       if (args.name) form.append("name", args.name);
       if (args.address) form.append("address", args.address);
     }
+    if (args.force) form.append("force", "true");
     // No Content-Type header: the browser sets the multipart boundary itself.
     const res = await fetch("/api/ingest", { method: "POST", body: form });
     if (!res.ok) {
