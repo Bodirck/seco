@@ -115,6 +115,11 @@
     "criticalDefects": "Critical defects",
     "name": "Name",
     "viewDetail": "View",
+    "filterText": "Contains...",
+    "filterMin": "Min",
+    "filterMax": "Max",
+    "clearFilters": "Clear filters",
+    "matchCount": "{{shown}} of {{total}}",
     "chartNote": "Showing the 12 highest-risk buildings.",
     "tips": {
       "buildings": "Total buildings in the portfolio, ingested from EUBUCCO Luxembourg open data.",

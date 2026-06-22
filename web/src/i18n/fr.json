@@ -93,6 +93,11 @@
     "criticalDefects": "Defauts critiques",
     "name": "Nom",
     "viewDetail": "Voir",
+    "filterText": "Contient...",
+    "filterMin": "Min",
+    "filterMax": "Max",
+    "clearFilters": "Effacer les filtres",
+    "matchCount": "{{shown}} sur {{total}}",
     "chartNote": "Affichage des 12 batiments les plus a risque.",
     "tips": {
       "buildings": "Nombre total de batiments du portefeuille, issus des donnees ouvertes EUBUCCO Luxembourg.",

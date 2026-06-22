@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
@@ -20,7 +20,8 @@ import {
 import { caseId, sector, CODES } from "../lib/dossier";
 import { cn } from "../lib/cn";
 import { riskTone } from "../lib/risk";
-import { useCachedResource } from "../lib/pageCache";
+import { useCachedResource, usePersistentState } from "../lib/pageCache";
+import ColumnFilter from "../components/portfolio/ColumnFilter";
 
 // ---------------------------------------------------------------------------
 // Sequential panel entrance: a thin wrapper that staggers the panel-in
@@ -78,6 +79,27 @@ function KpiPanel({ code, label, value, tip, ref_, accent = "orange", critical }
 // (KPIs + risk chart) and a clean Asset Index tab (the register table).
 // ---------------------------------------------------------------------------
 
+const RISK_TONES = ["critical", "major", "minor"] as const;
+const SEVERITIES = ["critical", "major", "minor"] as const;
+
+interface RegisterFilters {
+  name: string;
+  address: string;
+  riskMin: string;
+  riskMax: string;
+  statuses: string[];
+  severities: string[];
+}
+
+const EMPTY_FILTERS: RegisterFilters = {
+  name: "",
+  address: "",
+  riskMin: "",
+  riskMax: "",
+  statuses: [],
+  severities: [],
+};
+
 export default function PortfolioPage() {
   const { t } = useTranslation();
 
@@ -93,6 +115,52 @@ export default function PortfolioPage() {
       ? error.message
       : String(error)
     : null;
+
+  // Excel-style per-column filters over the loaded register, kept in the page
+  // cache so they survive navigating to a building and back.
+  const [filters, setFilters] = usePersistentState<RegisterFilters>(
+    "portfolio:filters",
+    EMPTY_FILTERS,
+  );
+  const setField = (key: keyof RegisterFilters, value: string) =>
+    setFilters((f) => ({ ...f, [key]: value }));
+  const toggleIn = (key: "statuses" | "severities", value: string) =>
+    setFilters((f) => {
+      const list = f[key];
+      return {
+        ...f,
+        [key]: list.includes(value) ? list.filter((x) => x !== value) : [...list, value],
+      };
+    });
+  const filtersActive =
+    filters.name.trim() !== "" ||
+    filters.address.trim() !== "" ||
+    filters.riskMin !== "" ||
+    filters.riskMax !== "" ||
+    filters.statuses.length > 0 ||
+    filters.severities.length > 0;
+
+  const filtered = useMemo(() => {
+    const name = filters.name.trim().toLowerCase();
+    const address = filters.address.trim().toLowerCase();
+    const min = filters.riskMin === "" ? null : Number(filters.riskMin);
+    const max = filters.riskMax === "" ? null : Number(filters.riskMax);
+    return buildings.filter((b) => {
+      if (name && !b.name.toLowerCase().includes(name)) return false;
+      if (address && !(b.address ?? "").toLowerCase().includes(address)) return false;
+      const score = Math.round(b.risk_score);
+      if (min !== null && !Number.isNaN(min) && score < min) return false;
+      if (max !== null && !Number.isNaN(max) && score > max) return false;
+      if (filters.statuses.length && !filters.statuses.includes(riskTone(score)))
+        return false;
+      if (
+        filters.severities.length &&
+        !filters.severities.some((s) => b[s as "critical" | "major" | "minor"] > 0)
+      )
+        return false;
+      return true;
+    });
+  }, [buildings, filters]);
 
   // Aggregate KPIs
   const totalDefects = buildings.reduce(
@@ -194,25 +262,158 @@ export default function PortfolioPage() {
         <Panel
           code={t("portfolio.codeIndex")}
           title={t("nav.portfolio")}
-          footer={`${buildings.length} ASSETS // VERIFIED`}
+          footer={`${filtered.length} / ${buildings.length} ASSETS // VERIFIED`}
         >
+          {filtersActive && (
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="font-display text-[11px] uppercase tracking-[0.18em] text-fg-faint">
+                {t("portfolio.matchCount", {
+                  shown: filtered.length,
+                  total: buildings.length,
+                })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setFilters(EMPTY_FILTERS)}
+                className="inline-flex h-7 items-center rounded-sm border border-line px-2.5 font-display text-[11px] font-semibold uppercase tracking-wide text-fg-muted transition-colors hover:border-signal-400/60 hover:text-signal-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+              >
+                {t("portfolio.clearFilters")}
+              </button>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-line-strong font-display text-[11px] font-medium uppercase tracking-[0.18em] text-fg-faint">
                   <th className="px-3 py-2.5 font-medium">CASE</th>
-                  <th className="px-3 py-2.5 font-medium">{t("portfolio.name")}</th>
-                  <th className="hidden px-3 py-2.5 font-medium md:table-cell">
-                    {t("common.address")}
+                  <th className="px-3 py-2.5 font-medium">
+                    <span className="inline-flex items-center gap-1.5">
+                      {t("portfolio.name")}
+                      <ColumnFilter
+                        label={`${t("building.filter")}: ${t("portfolio.name")}`}
+                        active={filters.name.trim() !== ""}
+                      >
+                        <input
+                          type="text"
+                          value={filters.name}
+                          onChange={(e) => setField("name", e.target.value)}
+                          placeholder={t("portfolio.filterText")}
+                          className="w-full rounded-sm border border-line bg-ink-900 px-2 py-1.5 text-xs font-normal normal-case tracking-normal text-fg placeholder-fg-faint focus:border-signal-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                        />
+                      </ColumnFilter>
+                    </span>
                   </th>
-                  <th className="px-3 py-2.5 font-medium">{CODES.risk}</th>
-                  <th className="px-3 py-2.5 font-medium">STATUS</th>
-                  <th className="px-3 py-2.5 font-medium">{t("common.defects")}</th>
+                  <th className="hidden px-3 py-2.5 font-medium md:table-cell">
+                    <span className="inline-flex items-center gap-1.5">
+                      {t("common.address")}
+                      <ColumnFilter
+                        label={`${t("building.filter")}: ${t("common.address")}`}
+                        active={filters.address.trim() !== ""}
+                      >
+                        <input
+                          type="text"
+                          value={filters.address}
+                          onChange={(e) => setField("address", e.target.value)}
+                          placeholder={t("portfolio.filterText")}
+                          className="w-full rounded-sm border border-line bg-ink-900 px-2 py-1.5 text-xs font-normal normal-case tracking-normal text-fg placeholder-fg-faint focus:border-signal-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                        />
+                      </ColumnFilter>
+                    </span>
+                  </th>
+                  <th className="px-3 py-2.5 font-medium">
+                    <span className="inline-flex items-center gap-1.5">
+                      {CODES.risk}
+                      <ColumnFilter
+                        label={`${t("building.filter")}: ${CODES.risk}`}
+                        active={filters.riskMin !== "" || filters.riskMax !== ""}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={100}
+                            value={filters.riskMin}
+                            onChange={(e) => setField("riskMin", e.target.value)}
+                            placeholder={t("portfolio.filterMin")}
+                            className="w-1/2 rounded-sm border border-line bg-ink-900 px-2 py-1.5 text-xs font-normal tabular-nums text-fg placeholder-fg-faint focus:border-signal-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                          />
+                          <span className="text-fg-faint">-</span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={100}
+                            value={filters.riskMax}
+                            onChange={(e) => setField("riskMax", e.target.value)}
+                            placeholder={t("portfolio.filterMax")}
+                            className="w-1/2 rounded-sm border border-line bg-ink-900 px-2 py-1.5 text-xs font-normal tabular-nums text-fg placeholder-fg-faint focus:border-signal-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                          />
+                        </div>
+                      </ColumnFilter>
+                    </span>
+                  </th>
+                  <th className="px-3 py-2.5 font-medium">
+                    <span className="inline-flex items-center gap-1.5">
+                      STATUS
+                      <ColumnFilter
+                        label={`${t("building.filter")}: STATUS`}
+                        active={filters.statuses.length > 0}
+                      >
+                        <div className="flex flex-col">
+                          {RISK_TONES.map((tone) => (
+                            <label
+                              key={tone}
+                              className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-xs font-normal text-fg hover:bg-ink-700"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={filters.statuses.includes(tone)}
+                                onChange={() => toggleIn("statuses", tone)}
+                                className="h-3.5 w-3.5 accent-signal-500"
+                              />
+                              <span className="font-mono uppercase tracking-wide">
+                                {t(`common.${tone}`)}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </ColumnFilter>
+                    </span>
+                  </th>
+                  <th className="px-3 py-2.5 font-medium">
+                    <span className="inline-flex items-center gap-1.5">
+                      {t("common.defects")}
+                      <ColumnFilter
+                        label={`${t("building.filter")}: ${t("common.defects")}`}
+                        active={filters.severities.length > 0}
+                      >
+                        <div className="flex flex-col">
+                          {SEVERITIES.map((sev) => (
+                            <label
+                              key={sev}
+                              className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-xs font-normal text-fg hover:bg-ink-700"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={filters.severities.includes(sev)}
+                                onChange={() => toggleIn("severities", sev)}
+                                className="h-3.5 w-3.5 accent-signal-500"
+                              />
+                              <span className="font-mono uppercase tracking-wide">
+                                {t(`common.${sev}`)}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </ColumnFilter>
+                    </span>
+                  </th>
                   <th className="px-3 py-2.5" />
                 </tr>
               </thead>
               <tbody>
-                {buildings.map((b) => {
+                {filtered.map((b) => {
                   const tone = riskTone(Math.round(b.risk_score));
                   const statusLabel = t(`common.${tone}`);
                   return (
@@ -304,6 +505,16 @@ export default function PortfolioPage() {
                     </tr>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-3 py-6 text-center font-mono text-xs uppercase tracking-wide text-fg-muted"
+                    >
+                      {t("portfolio.matchCount", { shown: 0, total: buildings.length })}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
