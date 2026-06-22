@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
@@ -20,6 +20,7 @@ import {
 import { caseId, sector, CODES } from "../lib/dossier";
 import { cn } from "../lib/cn";
 import { riskTone } from "../lib/risk";
+import { useCachedResource } from "../lib/pageCache";
 
 // ---------------------------------------------------------------------------
 // Sequential panel entrance: a thin wrapper that staggers the panel-in
@@ -80,32 +81,18 @@ function KpiPanel({ code, label, value, tip, ref_, accent = "orange", critical }
 export default function PortfolioPage() {
   const { t } = useTranslation();
 
-  const [buildings, setBuildings] = useState<BuildingSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    api
-      .buildings()
-      .then((data) => {
-        if (!cancelled) {
-          setBuildings(data);
-          setLoading(false);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // The register is fetched once and cached app-wide, so returning to this page
+  // is instant and never refetches or loses the loaded list.
+  const { data, loading, error } = useCachedResource<BuildingSummary[]>(
+    "portfolio:buildings",
+    () => api.buildings(),
+  );
+  const buildings = data ?? [];
+  const errorMessage = error
+    ? error instanceof Error
+      ? error.message
+      : String(error)
+    : null;
 
   // Aggregate KPIs
   const totalDefects = buildings.reduce(
@@ -124,10 +111,10 @@ export default function PortfolioPage() {
     );
   }
 
-  if (error) {
+  if (errorMessage) {
     return (
       <Card className="px-5 py-4">
-        <EmptyState title={t("common.error")} description={error} />
+        <EmptyState title={t("common.error")} description={errorMessage} />
       </Card>
     );
   }

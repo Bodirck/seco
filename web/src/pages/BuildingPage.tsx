@@ -1,7 +1,6 @@
 import {
   Suspense,
   lazy,
-  useEffect,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -38,6 +37,7 @@ import {
 import { caseId, sector, CODES } from "../lib/dossier";
 import { cn } from "../lib/cn";
 import { riskHex, riskTone } from "../lib/risk";
+import { useCachedResource } from "../lib/pageCache";
 
 // Lazy so leaflet and its CSS only download when the Case File tab renders the map.
 const LocatorMap = lazy(() => import("../components/ui/LocatorMap"));
@@ -87,10 +87,26 @@ export default function BuildingPage() {
   const { id } = useParams<{ id: string }>();
   const numericId = Number(id);
 
-  const [building, setBuilding] = useState<BuildingDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
+  // The dossier is fetched once per building id and cached app-wide, so going
+  // back to a building you already opened is instant and keeps its data.
+  const {
+    data: building,
+    loading,
+    error,
+  } = useCachedResource<BuildingDetail>(`building:${id ?? "none"}`, () => {
+    if (!id || Number.isNaN(numericId)) {
+      return Promise.reject(new ApiError(404, "invalid building id"));
+    }
+    return api.building(numericId);
+  });
+
+  const notFound = error instanceof ApiError && error.status === 404;
+  const errorMessage =
+    error && !notFound
+      ? error instanceof Error
+        ? error.message
+        : String(error)
+      : null;
 
   // RAG state lives here, above the tabs, so a tab switch never wipes a question
   // or a returned answer.
@@ -105,40 +121,6 @@ export default function BuildingPage() {
   const [defectFilters, setDefectFilters] = useState<Set<Severity>>(
     () => new Set(SEVERITY_KEYS),
   );
-
-  useEffect(() => {
-    if (!id || isNaN(numericId)) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setNotFound(false);
-
-    api
-      .building(numericId)
-      .then((data) => {
-        if (!cancelled) setBuilding(data);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        if (err instanceof ApiError && err.status === 404) {
-          setNotFound(true);
-        } else {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id, numericId]);
 
   async function handleAsk() {
     const q = question.trim();
@@ -170,10 +152,10 @@ export default function BuildingPage() {
     return <EmptyState title={t("building.notFound")} description={t("app.tagline")} />;
   }
 
-  if (error) {
+  if (errorMessage) {
     return (
       <div className="flex min-h-48 items-center justify-center text-critical">
-        {t("common.error")} {error}
+        {t("common.error")} {errorMessage}
       </div>
     );
   }
@@ -257,7 +239,9 @@ export default function BuildingPage() {
               />
               <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-fg-muted">
                 <span>{building.address}</span>
-                {building.source && <StatusTag label={building.source} tone="signal" />}
+                {building.source && (
+                  <StatusTag label={building.source} code={CODES.source} tone="signal" />
+                )}
               </div>
 
               {visibleAttrs.length > 0 && (

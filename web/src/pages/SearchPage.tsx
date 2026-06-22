@@ -22,6 +22,7 @@ import {
   DecodeText,
   Panel,
 } from "../components/ui";
+import { usePersistentState } from "../lib/pageCache";
 
 function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -41,11 +42,21 @@ function scopeArrays(s: ScopeState) {
 export default function SearchPage() {
   const { t } = useTranslation();
 
-  const [question, setQuestion] = useState("");
-  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  // turns/question/scope are kept in the app-level page cache so the
+  // conversation and its scope survive leaving and returning to this page. The
+  // draft question is also mirrored to sessionStorage (cheap, paced by typing)
+  // so a reload keeps it; the transcript stays in memory only, to avoid writing
+  // to storage on every streamed token.
+  const [question, setQuestion] = usePersistentState("search:question", "", {
+    session: true,
+  });
+  const [turns, setTurns] = usePersistentState<ChatTurn[]>("search:turns", []);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [options, setOptions] = useState<SearchOptions | null>(null);
-  const [scope, setScope] = useState<ScopeState>(emptyScope());
+  const [scope, setScope] = usePersistentState<ScopeState>(
+    "search:scope",
+    emptyScope,
+  );
   const [resolved, setResolved] = useState<ResolveScopeResponse | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -62,6 +73,24 @@ export default function SearchPage() {
 
   // Abort any in-flight stream when the page unmounts.
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  // A turn left mid-stream when navigating away (or before a reload) is restored
+  // from the cache as "loading"/"streaming" with no live stream behind it. Heal
+  // those once on mount so the transcript never shows a frozen spinner.
+  useEffect(() => {
+    setTurns((prev) =>
+      prev.some((turn) => turn.status === "loading" || turn.status === "streaming")
+        ? prev.map((turn) =>
+            turn.status === "loading" || turn.status === "streaming"
+              ? turn.answer.trim()
+                ? { ...turn, status: "success" }
+                : { ...turn, status: "error", errorMessage: t("search.stopped") }
+              : turn,
+          )
+        : prev,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Live "N of M" scope summary: resolve facets to a count, debounced and
   // race-guarded so a fast click sequence shows the latest scope only.
