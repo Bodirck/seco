@@ -409,6 +409,7 @@ def _prepare(
 
     system_prompt = (
         "Tu es un assistant specialise dans l'analyse de rapports d'inspection immobiliere. "
+        "Reponds toujours dans la meme langue que la question (francais ou anglais). "
         "Reponds uniquement en te basant sur le contexte fourni. "
         "Si le contexte ne contient pas l'information necessaire, dis que tu ne sais pas. "
         "L'historique de conversation sert uniquement a comprendre la question de suivi: "
@@ -425,7 +426,7 @@ def _prepare(
         f"{history_prefix}"
         f"Contexte extrait des rapports d'inspection:\n\n{context_block}\n\n"
         f"Question: {question}\n\n"
-        "Reponds en francais, de facon concise et factuellement exacte, "
+        "Reponds dans la langue de la question, de facon concise et factuellement exacte, "
         "en citant les numeros de contexte entre crochets quand tu t'appuies dessus."
     )
 
