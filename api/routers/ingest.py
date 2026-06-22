@@ -52,6 +52,7 @@ def ingest(
     name: str | None = Form(None),
     address: str | None = Form(None),
     registry_source_id: str | None = Form(None),
+    force: bool = Form(False),
     conn=Depends(get_conn),
 ):
     """Ingest one uploaded PDF: extract text, defects, rescore, and reindex.
@@ -62,7 +63,7 @@ def ingest(
     """
     # Lazy imports: keep startup light and avoid loading heavy deps (llama-index,
     # sentence-transformers, pdfplumber) until an ingest actually happens.
-    from buildinglens import extract, geocode, ingest_pdf, ingest_structured, rag, scoring
+    from buildinglens import dedup, extract, geocode, ingest_pdf, ingest_structured, rag, scoring
     from buildinglens.llm import get_llm
 
     # --- Validate the request shape ---
@@ -100,6 +101,9 @@ def ingest(
         # behind (no orphan building polluting the portfolio, no stray file/doc).
         created_building_id: int | None = None
         document_id: int | None = None
+        # Close matches surfaced to the caller (new-building path only); stays empty
+        # when attaching to an existing building or importing a registry building.
+        possible_duplicates: list = []
         try:
             # --- Resolve the target building ---
             if building_id is not None:
@@ -165,6 +169,46 @@ def ingest(
                     if coords is not None
                     else None
                 )
+
+                # Guardrail: before creating a building, check whether an equivalent
+                # already exists. Same EUBUCCO footprint + same name + same address is
+                # a near-certain duplicate (this is how ids 43/44 appeared), so we block
+                # it unless the caller forces the import. Softer matches (same footprint
+                # under a different name, a similar name, a nearby footprint) are surfaced
+                # but never block. Running here, before the expensive extraction/reindex,
+                # means a blocked duplicate costs nothing. The SELECT runs under the
+                # ingest lock so a concurrent double-submit cannot slip a second copy in.
+                candidate = {
+                    "name": clean_name,
+                    "address": addr or None,
+                    "source_id": matched.get("source_id") if matched else None,
+                    "latitude": matched.get("latitude") if matched else None,
+                    "longitude": matched.get("longitude") if matched else None,
+                    "height_m": matched.get("height_m") if matched else None,
+                    "footprint_area_m2": matched.get("footprint_area_m2") if matched else None,
+                }
+                existing_rows = conn.execute(
+                    "SELECT id, name, address, commune, source, source_id, risk_score, "
+                    "latitude, longitude, height_m, footprint_area_m2 FROM buildings"
+                ).fetchall()
+                blocked, possible_duplicates = dedup.find_duplicates(
+                    candidate, [dict(r) for r in existing_rows]
+                )
+                if blocked and not force:
+                    raise HTTPException(
+                        status_code=409,
+                        detail={
+                            "code": "duplicate_building",
+                            "message": (
+                                "A building with the same footprint and name is already "
+                                "in the portfolio. Review it, or import anyway."
+                            ),
+                            "force_param": "force",
+                            "matched_source_id": candidate["source_id"],
+                            "candidates": possible_duplicates,
+                        },
+                    )
+
                 if matched is not None:
                     cur = conn.execute(
                         "INSERT INTO buildings "
@@ -274,4 +318,5 @@ def ingest(
         "chunks_indexed": chunks_indexed,
         "mock": is_mock,
         "message": message,
+        "possible_duplicates": possible_duplicates,
     }
