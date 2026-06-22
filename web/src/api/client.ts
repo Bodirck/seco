@@ -79,6 +79,11 @@ export const api = {
 
   building: (id: number) => getJson<BuildingDetail>(`/api/buildings/${id}`),
 
+  deleteBuilding: async (id: number): Promise<void> => {
+    const res = await fetch(`/api/buildings/${id}`, { method: "DELETE" });
+    if (!res.ok) throw await toError(res);
+  },
+
   ask: async (
     question: string,
     opts?: number | AskOptions,

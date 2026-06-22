@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import type { AskResponse, BuildingDetail, Severity } from "../api/types";
 import AskBar from "../components/building/AskBar";
@@ -36,7 +36,7 @@ import {
 import { caseId, sector, CODES } from "../lib/dossier";
 import { cn } from "../lib/cn";
 import { riskHex, riskTone } from "../lib/risk";
-import { useCachedResource } from "../lib/pageCache";
+import { useCachedResource, invalidateResource } from "../lib/pageCache";
 import VolumeScan from "../components/building/BuildingMassing";
 
 // Lazy so leaflet and its CSS only download when the Case File tab renders the map.
@@ -102,6 +102,24 @@ export default function BuildingPage() {
     if (s?.fromSearch) return { to: "/search", labelKey: "building.backToSearch" };
     return null;
   });
+
+  const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api.deleteBuilding(numericId);
+      invalidateResource("portfolio:buildings", `building:${numericId}`);
+      navigate("/portfolio?tab=parc");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : String(err));
+      setDeleting(false);
+    }
+  }
 
   // The dossier is fetched once per building id and cached app-wide, so going
   // back to a building you already opened is instant and keeps its data.
@@ -388,25 +406,80 @@ export default function BuildingPage() {
   // -------------------------------------------------------------------------
   return (
     <div className="space-y-6">
-      {back && (
-        <Link
-          to={back.to}
-          className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-line px-3 font-display text-xs font-semibold uppercase tracking-wide text-fg-muted transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3.5 w-3.5"
-            aria-hidden="true"
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {back ? (
+          <Link
+            to={back.to}
+            className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-line px-3 font-display text-xs font-semibold uppercase tracking-wide text-fg-muted transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
           >
-            <path d="M15 19l-7-7 7-7" />
-          </svg>
-          {t(back.labelKey)}
-        </Link>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3.5 w-3.5"
+              aria-hidden="true"
+            >
+              <path d="M15 19l-7-7 7-7" />
+            </svg>
+            {t(back.labelKey)}
+          </Link>
+        ) : (
+          <span aria-hidden="true" />
+        )}
+
+        <div className="flex items-center gap-2">
+          {confirmDelete ? (
+            <>
+              <span className="font-display text-[11px] uppercase tracking-[0.16em] text-fg-muted">
+                {t("building.deleteConfirm")}
+              </span>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="inline-flex h-8 items-center rounded-sm border border-line px-3 font-display text-xs font-semibold uppercase tracking-wide text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70 disabled:opacity-50"
+              >
+                {t("building.deleteCancel")}
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="inline-flex h-8 items-center rounded-sm border border-critical/60 bg-critical/10 px-3 font-display text-xs font-semibold uppercase tracking-wide text-critical transition-colors hover:bg-critical/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-critical/70 disabled:opacity-50"
+              >
+                {deleting ? t("building.deleting") : t("building.deleteConfirmYes")}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-line px-3 font-display text-xs font-semibold uppercase tracking-wide text-fg-faint transition-colors hover:border-critical/60 hover:text-critical focus:outline-none focus-visible:ring-2 focus-visible:ring-critical/70"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3.5 w-3.5"
+                aria-hidden="true"
+              >
+                <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" />
+              </svg>
+              {t("building.delete")}
+            </button>
+          )}
+        </div>
+      </div>
+      {deleteError && (
+        <p role="alert" className="text-sm text-critical">
+          {deleteError}
+        </p>
       )}
 
       <AskBar

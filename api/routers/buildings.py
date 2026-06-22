@@ -69,3 +69,30 @@ def building_detail(building_id: int, conn=Depends(get_conn)):
     }
     detail["defects"] = defects
     return detail
+
+
+@router.delete("/buildings/{building_id}")
+def delete_building(building_id: int, conn=Depends(get_conn)):
+    """Delete a building and everything attached to it (documents and defects),
+    then rebuild the RAG index so its passages are no longer searchable. Runs under
+    the ingest lock so a concurrent ingest or index rebuild cannot race it.
+    """
+    from buildinglens import rag
+
+    from .ingest import _INGEST_LOCK
+
+    with _INGEST_LOCK:
+        if (
+            conn.execute("SELECT 1 FROM buildings WHERE id = ?", (building_id,)).fetchone()
+            is None
+        ):
+            raise HTTPException(status_code=404, detail="Building not found")
+
+        conn.execute("DELETE FROM defects WHERE building_id = ?", (building_id,))
+        conn.execute("DELETE FROM documents WHERE building_id = ?", (building_id,))
+        conn.execute("DELETE FROM buildings WHERE id = ?", (building_id,))
+        conn.commit()
+
+        chunks_indexed = rag.build_index(conn)
+
+    return {"deleted": building_id, "chunks_indexed": chunks_indexed}
