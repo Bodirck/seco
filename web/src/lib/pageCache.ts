@@ -87,6 +87,18 @@ export function usePersistentState<T>(
 const resourceCache = new Map<string, unknown>();
 const inFlight = new Map<string, Promise<unknown>>();
 
+/**
+ * Drop cached resources by key so the next mount refetches them. Call after a
+ * mutation makes cached reads stale (e.g. an ingest creates a building or
+ * rescores one, so the portfolio list and that building's dossier are outdated).
+ */
+export function invalidateResource(...keys: string[]): void {
+  for (const key of keys) {
+    resourceCache.delete(key);
+    inFlight.delete(key);
+  }
+}
+
 export interface CachedResource<T> {
   data: T | null;
   loading: boolean;

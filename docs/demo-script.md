@@ -73,11 +73,15 @@ to the conversation, still intact (the page cache).
 
 **2:20 to 3:05. Import a report (the live ingestion loop, the heart of the product).**
 This is the step to land hard: every other view reads data, this one creates it.
-Go to Import, choose New building, type a name (for example "Residence Belair"),
-and upload the matching PDF from `demo/import_samples/` (ten fresh reports for
-buildings that are not in the dataset, so the import genuinely adds one;
-regenerate them with `python scripts/make_demo_reports.py`). Narrate the pipeline
-as it runs: the text is
+Go to Import and use the Registry mode: search a commune (for example
+Esch-sur-Alzette), pick a building from the public EUBUCCO registry (this pulls
+its real footprint, height and coordinates), then upload one of the PDFs from
+`demo/import_samples/` (regenerate with `python scripts/make_demo_reports.py`).
+This is the richest path: the new building gets real geometry, so the locator map
+and the 3D massing both populate, plus the defects from the report. The New
+building mode also works for an off-registry building, but it stores only the name
+and address, so it has no coordinates or footprint. Narrate the pipeline as it
+runs: the text is
 extracted, the LLM pulls out each defect with its severity and a citation, the
 building's risk score is recomputed, and the report is indexed into the RAG.
 When it finishes, open the building it created or refreshed to show the new

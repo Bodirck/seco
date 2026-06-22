@@ -19,6 +19,7 @@ import {
 import RegistrySearch from "../components/RegistrySearch";
 import { caseId, CODES, sector } from "../lib/dossier";
 import { riskTone } from "../lib/risk";
+import { invalidateResource } from "../lib/pageCache";
 
 type Target = "existing" | "registry" | "new";
 
@@ -121,6 +122,9 @@ export default function IngestPage() {
             : { file, name: trimmedName, address: address.trim() || undefined },
       );
       setResult(res);
+      // The new or rescored building changed the portfolio list and its own
+      // dossier; drop those cached reads so returning to them shows fresh data.
+      invalidateResource("portfolio:buildings", `building:${res.building_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
