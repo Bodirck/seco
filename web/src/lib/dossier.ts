@@ -30,6 +30,7 @@ export const CODES = {
   ops: "OPS // SETTINGS",
   intake: "INTAKE // IMPORT",
   status: "STATUS:",
+  source: "SOURCE:",
 } as const;
 
 export type CodeKey = keyof typeof CODES;

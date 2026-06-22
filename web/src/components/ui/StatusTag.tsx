@@ -5,8 +5,10 @@ import { CODES } from "../../lib/dossier";
 type Tone = "critical" | "major" | "minor" | "signal" | "neutral";
 
 interface StatusTagProps {
-  /** The status value shown after the fixed "STATUS:" prefix. */
+  /** The value shown after the chrome prefix. */
   label: ReactNode;
+  /** Chrome prefix to show before the value. Defaults to "STATUS:". */
+  code?: string;
   tone?: Tone;
   className?: string;
 }
@@ -25,7 +27,7 @@ const tones: Record<Tone, string> = {
   neutral: "text-fg-muted",
 };
 
-export function StatusTag({ label, tone = "neutral", className }: StatusTagProps) {
+export function StatusTag({ label, code = CODES.status, tone = "neutral", className }: StatusTagProps) {
   return (
     <span
       className={cn(
@@ -34,7 +36,7 @@ export function StatusTag({ label, tone = "neutral", className }: StatusTagProps
       )}
     >
       <span className="font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-fg-faint">
-        {CODES.status}
+        {code}
       </span>
       <span className={cn("font-mono text-xs font-medium uppercase tabular-nums", tones[tone])}>
         {label}

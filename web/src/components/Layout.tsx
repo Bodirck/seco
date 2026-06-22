@@ -1,8 +1,6 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { api } from "../api/client";
-import { Badge, Tooltip } from "./ui";
 import { useTheme } from "../theme/ThemeProvider";
 
 /** Primary navigation, data driven so active state works for nested routes. */
@@ -26,60 +24,6 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   (isActive
     ? "bg-ink-800 text-signal-300 ring-1 ring-inset ring-signal-500/40 border-b-2 border-signal-500"
     : "border-b-2 border-transparent text-fg-muted hover:text-fg");
-
-/**
- * Small header chip showing the effective AI provider. When the backend reports
- * the "mock" provider it carries a major-toned dot to flag that answers are not
- * coming from a real key. Fetched once on mount via the existing api.meta.
- */
-function ProviderChip() {
-  const { t } = useTranslation();
-  const [provider, setProvider] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    api
-      .meta()
-      .then((meta) => {
-        if (active) setProvider(meta.provider);
-      })
-      .catch(() => {
-        // Stay silent: the chip simply does not render if meta is unavailable.
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  if (!provider) return null;
-
-  const isMock = provider === "mock";
-  const tooltip = isMock
-    ? t("provider.mockTooltip")
-    : t("provider.tooltip", { provider });
-
-  return (
-    <Tooltip label={tooltip}>
-      <Link
-        to="/settings"
-        aria-label={`${t("provider.label")}: ${provider}`}
-        className="rounded-full transition-opacity duration-150 hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
-      >
-        <Badge tone={isMock ? "major" : "signal"}>
-          <span className="flex items-center gap-1.5">
-            {isMock ? (
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-major"
-                aria-hidden="true"
-              />
-            ) : null}
-            {provider}
-          </span>
-        </Badge>
-      </Link>
-    </Tooltip>
-  );
-}
 
 /** Light/dark theme toggle. Shows the icon of the theme you would switch TO. */
 function ThemeToggle() {
@@ -155,7 +99,6 @@ export default function Layout({ children }: { children: ReactNode }) {
                 Building<span className="text-signal-500">Lens</span>
               </span>
             </Link>
-            <ProviderChip />
           </div>
           <nav className="flex items-center gap-1.5">
             {NAV_ITEMS.map((item) => (
