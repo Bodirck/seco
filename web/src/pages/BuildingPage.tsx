@@ -29,7 +29,6 @@ import {
   EmptyState,
   InfoTip,
   Panel,
-  ScanFrame,
   Spinner,
   StatusTag,
   Tabs,
@@ -38,10 +37,10 @@ import { caseId, sector, CODES } from "../lib/dossier";
 import { cn } from "../lib/cn";
 import { riskHex, riskTone } from "../lib/risk";
 import { useCachedResource } from "../lib/pageCache";
+import VolumeScan from "../components/building/BuildingMassing";
 
 // Lazy so leaflet and its CSS only download when the Case File tab renders the map.
 const LocatorMap = lazy(() => import("../components/ui/LocatorMap"));
-const Building3D = lazy(() => import("../components/building/Building3D"));
 
 function DownloadIcon() {
   return (
@@ -300,36 +299,14 @@ export default function BuildingPage() {
 
       <Reveal index={1}>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Panel code="SCAN // VOLUME" footer={`${case_} // 3D VIEW`}>
-            {hasCoordinates ? (
-              <Suspense
-                fallback={
-                  <div className="flex h-[300px] items-center justify-center rounded-sm border border-line bg-ink-800">
-                    <Spinner />
-                  </div>
-                }
-              >
-                <Building3D
-                  lat={building.latitude}
-                  lon={building.longitude}
-                  name={building.name}
-                  className="h-[300px]"
-                  fallback={
-                    <ScanFrame label={case_} className="h-[300px]">
-                      <div className="absolute right-3 top-3">
-                        <CodeLabel className="text-[10px]">{sector_}</CodeLabel>
-                      </div>
-                    </ScanFrame>
-                  }
-                />
-              </Suspense>
-            ) : (
-              <ScanFrame label={case_} className="h-[300px]">
-                <div className="absolute right-3 top-3">
-                  <CodeLabel className="text-[10px]">{sector_}</CodeLabel>
-                </div>
-              </ScanFrame>
-            )}
+          <Panel code="SCAN // VOLUME" footer={`${case_} // MASSING`}>
+            <VolumeScan
+              footprintArea={building.footprint_area_m2}
+              heightM={building.height_m}
+              floors={building.floors}
+              score={score}
+              className="h-[300px]"
+            />
           </Panel>
 
           <Panel code={CODES.geo} title={t("building.map")} footer={coordinates}>
