@@ -89,9 +89,14 @@ export default function BuildingPage() {
 
   // When we arrive from the search console (a source-card deep link sets this
   // state), offer a way back to the cached search instead of the browser button.
+  // Snapshot it once at mount: switching tabs rewrites the ?tab= param via
+  // setSearchParams, which drops location.state, so reading it live would make
+  // the button vanish on the KPI and Case File tabs. The page does not unmount
+  // on a tab change, so the snapshot persists across all tabs.
   const location = useLocation();
-  const fromSearch =
-    (location.state as { fromSearch?: boolean } | null)?.fromSearch ?? false;
+  const [fromSearch] = useState(
+    () => (location.state as { fromSearch?: boolean } | null)?.fromSearch ?? false,
+  );
 
   // The dossier is fetched once per building id and cached app-wide, so going
   // back to a building you already opened is instant and keeps its data.
