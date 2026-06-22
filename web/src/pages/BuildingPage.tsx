@@ -87,16 +87,21 @@ export default function BuildingPage() {
   const { id } = useParams<{ id: string }>();
   const numericId = Number(id);
 
-  // When we arrive from the search console (a source-card deep link sets this
-  // state), offer a way back to the cached search instead of the browser button.
+  // When we arrive from another page (a source-card or a register-row deep link
+  // sets a `back` target in location.state), offer a labelled way back there.
   // Snapshot it once at mount: switching tabs rewrites the ?tab= param via
   // setSearchParams, which drops location.state, so reading it live would make
   // the button vanish on the KPI and Case File tabs. The page does not unmount
   // on a tab change, so the snapshot persists across all tabs.
   const location = useLocation();
-  const [fromSearch] = useState(
-    () => (location.state as { fromSearch?: boolean } | null)?.fromSearch ?? false,
-  );
+  const [back] = useState<{ to: string; labelKey: string } | null>(() => {
+    const s = location.state as
+      | { back?: { to: string; labelKey: string }; fromSearch?: boolean }
+      | null;
+    if (s?.back) return s.back;
+    if (s?.fromSearch) return { to: "/search", labelKey: "building.backToSearch" };
+    return null;
+  });
 
   // The dossier is fetched once per building id and cached app-wide, so going
   // back to a building you already opened is instant and keeps its data.
@@ -132,6 +137,8 @@ export default function BuildingPage() {
   const [defectFilters, setDefectFilters] = useState<Set<Severity>>(
     () => new Set(SEVERITY_KEYS),
   );
+  // Discipline filter for the defect log: null means all disciplines are shown.
+  const [defectDisciplines, setDefectDisciplines] = useState<Set<string> | null>(null);
 
   async function handleAsk() {
     const q = question.trim();
@@ -365,8 +372,10 @@ export default function BuildingPage() {
           defects={building.defects}
           sort={defectSort}
           filters={defectFilters}
+          disciplines={defectDisciplines}
           onCycleSort={(key) => setDefectSort((prev) => nextSort(prev, key))}
           onToggleFilter={(s) => setDefectFilters((prev) => nextFilters(prev, s))}
+          onSetDisciplines={setDefectDisciplines}
         />
       </Panel>
     </Reveal>
@@ -377,9 +386,9 @@ export default function BuildingPage() {
   // -------------------------------------------------------------------------
   return (
     <div className="space-y-6">
-      {fromSearch && (
+      {back && (
         <Link
-          to="/search"
+          to={back.to}
           className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-line px-3 font-display text-xs font-semibold uppercase tracking-wide text-fg-muted transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
         >
           <svg
@@ -394,7 +403,7 @@ export default function BuildingPage() {
           >
             <path d="M15 19l-7-7 7-7" />
           </svg>
-          {t("building.backToSearch")}
+          {t(back.labelKey)}
         </Link>
       )}
 

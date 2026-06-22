@@ -59,8 +59,11 @@ interface Props {
   defects: Defect[];
   sort: SortState;
   filters: Set<Severity>;
+  /** Selected disciplines; null means all disciplines are shown. */
+  disciplines: Set<string> | null;
   onCycleSort: (key: ColumnKey) => void;
   onToggleFilter: (s: Severity) => void;
+  onSetDisciplines: (next: Set<string> | null) => void;
 }
 
 function comparator(a: Defect, b: Defect, sort: SortState): number {
@@ -98,30 +101,34 @@ function FilterIcon() {
 }
 
 /**
- * Severity filter popover anchored to the Severity header. Renders through a portal
+ * A column-header filter popover: a checklist of values rendered through a portal
  * (same fixed-position helper as the tooltip) so it escapes the table's
- * overflow-x-auto instead of being clipped. Focus moves into the popover on open, so
- * the next Tab lands on the first checkbox; Escape and outside-click close it. Keeps
- * at least one severity active.
+ * overflow-x-auto instead of being clipped. Focus moves to the first checkbox on
+ * open; Escape and outside-click close it. Shared by the Severity and Discipline
+ * columns. The trigger is highlighted while the column is filtering.
  */
-function SeverityFilter({
-  filters,
+function ChecklistFilter({
+  label,
+  options,
+  isChecked,
   onToggle,
+  active,
 }: {
-  filters: Set<Severity>;
-  onToggle: (s: Severity) => void;
+  label: string;
+  options: { value: string; label: string }[];
+  isChecked: (value: string) => boolean;
+  onToggle: (value: string) => void;
+  active: boolean;
 }) {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
   const popoverId = useId();
   const pos = useAnchoredPosition(open, triggerRef, popRef, "bottom");
-  const isFiltering = filters.size < SEVERITY_KEYS.length;
 
   useEffect(() => {
     if (!open) return;
-    popRef.current?.focus();
+    popRef.current?.querySelector<HTMLInputElement>("input")?.focus();
     function onDocMouseDown(e: MouseEvent) {
       const target = e.target as Node;
       if (popRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
@@ -146,14 +153,14 @@ function SeverityFilter({
       <button
         ref={triggerRef}
         type="button"
-        aria-label={t("building.filter")}
+        aria-label={label}
         aria-haspopup="true"
         aria-expanded={open}
         aria-controls={open ? popoverId : undefined}
         onClick={() => setOpen((o) => !o)}
         className={cn(
           "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70",
-          isFiltering
+          active
             ? "border-signal-400/60 text-signal-300"
             : "border-line text-fg-faint hover:border-signal-400/60 hover:text-signal-300",
         )}
@@ -166,26 +173,26 @@ function SeverityFilter({
             ref={popRef}
             id={popoverId}
             role="group"
-            aria-label={t("building.filter")}
+            aria-label={label}
             tabIndex={-1}
             style={{ position: "fixed", top: pos?.top ?? -9999, left: pos?.left ?? -9999 }}
             className={cn(
-              "z-[60] w-44 -translate-x-1/2 rounded-md border border-line-strong bg-ink-800 p-1.5 shadow-lg shadow-black/40 transition-opacity duration-150 focus:outline-none",
+              "z-[60] max-h-72 w-48 -translate-x-1/2 overflow-y-auto rounded-md border border-line-strong bg-ink-800 p-1.5 shadow-lg shadow-black/40 transition-opacity duration-150 focus:outline-none",
               pos ? "opacity-100" : "opacity-0",
             )}
           >
-            {SEVERITY_KEYS.map((s) => (
+            {options.map((opt) => (
               <label
-                key={s}
+                key={opt.value}
                 className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-fg hover:bg-ink-700"
               >
                 <input
                   type="checkbox"
-                  checked={filters.has(s)}
-                  onChange={() => onToggle(s)}
+                  checked={isChecked(opt.value)}
+                  onChange={() => onToggle(opt.value)}
                   className="h-3.5 w-3.5 accent-signal-500"
                 />
-                <span className="font-mono uppercase tracking-wide">{t(`common.${s}`)}</span>
+                <span className="font-mono uppercase tracking-wide">{opt.label}</span>
               </label>
             ))}
           </div>,
@@ -195,13 +202,44 @@ function SeverityFilter({
   );
 }
 
-export default function DefectTable({ defects, sort, filters, onCycleSort, onToggleFilter }: Props) {
+export default function DefectTable({
+  defects,
+  sort,
+  filters,
+  disciplines,
+  onCycleSort,
+  onToggleFilter,
+  onSetDisciplines,
+}: Props) {
   const { t } = useTranslation();
 
+  const allDisciplines = useMemo(
+    () =>
+      [...new Set(defects.map((d) => d.discipline))].sort((a, b) =>
+        a.localeCompare(b, "fr", { sensitivity: "base" }),
+      ),
+    [defects],
+  );
+
+  function toggleDiscipline(value: string) {
+    const current = disciplines ?? new Set(allDisciplines);
+    const next = new Set(current);
+    if (next.has(value)) {
+      if (next.size > 1) next.delete(value);
+    } else {
+      next.add(value);
+    }
+    // Covering every discipline is the same as no filter: normalize to null.
+    onSetDisciplines(next.size === allDisciplines.length ? null : next);
+  }
+
   const visible = useMemo(() => {
-    const filtered = defects.filter((d) => filters.has(d.severity));
+    const filtered = defects.filter(
+      (d) =>
+        filters.has(d.severity) && (disciplines === null || disciplines.has(d.discipline)),
+    );
     return [...filtered].sort((a, b) => comparator(a, b, sort));
-  }, [defects, filters, sort]);
+  }, [defects, filters, disciplines, sort]);
 
   function ariaSort(key: ColumnKey): "ascending" | "descending" | "none" {
     if (sort.key !== key) return "none";
@@ -230,7 +268,25 @@ export default function DefectTable({ defects, sort, filters, onCycleSort, onTog
                     <SortGlyph state={sort.key === col.key ? sort.dir : "none"} />
                   </button>
                   {col.key === "severity" && (
-                    <SeverityFilter filters={filters} onToggle={onToggleFilter} />
+                    <ChecklistFilter
+                      label={t("building.filter")}
+                      active={filters.size < SEVERITY_KEYS.length}
+                      options={SEVERITY_KEYS.map((s) => ({
+                        value: s,
+                        label: t(`common.${s}`),
+                      }))}
+                      isChecked={(v) => filters.has(v as Severity)}
+                      onToggle={(v) => onToggleFilter(v as Severity)}
+                    />
+                  )}
+                  {col.key === "discipline" && allDisciplines.length > 1 && (
+                    <ChecklistFilter
+                      label={t("building.filter")}
+                      active={disciplines !== null}
+                      options={allDisciplines.map((d) => ({ value: d, label: d }))}
+                      isChecked={(v) => disciplines === null || disciplines.has(v)}
+                      onToggle={toggleDiscipline}
+                    />
                   )}
                 </div>
               </th>

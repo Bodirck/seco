@@ -54,7 +54,7 @@ export default function SourceCard({ source, index }: SourceCardProps) {
         </span>
         <Link
           to={`/building/${source.building_id}?tab=defects`}
-          state={{ fromSearch: true }}
+          state={{ back: { to: "/search", labelKey: "building.backToSearch" } }}
           aria-label={`${t("portfolio.viewDetail")} ${caseId(source.building_id)}`}
           className="ml-auto inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-sm border border-line px-3 font-display text-xs font-semibold uppercase tracking-wide text-fg transition duration-150 ease-out hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
         >

@@ -434,6 +434,12 @@ export default function PortfolioPage() {
                       <td className="px-3 py-3 align-middle font-medium">
                         <Link
                           to={`/building/${b.id}`}
+                          state={{
+                            back: {
+                              to: "/portfolio?tab=parc",
+                              labelKey: "building.backToRegister",
+                            },
+                          }}
                           className="rounded-sm text-fg transition-colors hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
                         >
                           {b.name}
@@ -471,6 +477,12 @@ export default function PortfolioPage() {
                       <td className="px-3 py-3 text-right align-middle">
                         <Link
                           to={`/building/${b.id}`}
+                          state={{
+                            back: {
+                              to: "/portfolio?tab=parc",
+                              labelKey: "building.backToRegister",
+                            },
+                          }}
                           aria-label={`${t("portfolio.viewDetail")} ${caseId(b.id)}`}
                           className="inline-flex items-center gap-1.5 rounded-sm border border-line px-3 py-1 font-display text-xs font-medium uppercase tracking-wide text-fg-muted transition-colors hover:border-signal-400/60 hover:text-signal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
                         >
