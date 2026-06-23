@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: install data extract eval run test fmt clean
+.PHONY: install data extract eval web run test fmt clean
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -15,8 +15,13 @@ data:
 extract:
 	$(PYTHON) -m buildinglens.build_ai
 
-# Launch the Streamlit app. Invoke via `python -m streamlit` so it works even
-# when the streamlit launcher script is not on PATH (common on Windows).
+# Primary UI: launch the FastAPI backend and the React (Vite) dev server together.
+# Open http://localhost:5173. Needs `npm install` in web/ the first time.
+web:
+	$(PYTHON) scripts/dev.py
+
+# Backup UI: launch the Streamlit app. Invoke via `python -m streamlit` so it works
+# even when the streamlit launcher script is not on PATH (common on Windows).
 run:
 	$(PYTHON) -m streamlit run app/streamlit_app.py
 
