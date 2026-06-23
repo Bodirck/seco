@@ -198,7 +198,7 @@ Other limitations:
 
 ## Demo
 
-A short screencast of the product is recorded locally (run the FastAPI backend and the React app, then walk through search, a building dossier and ingest). A step-by-step demo plan is in `docs/demo-script.md`. The demo is a **bonus**, not a core deliverable.
+A short screencast of the product is recorded locally (run the FastAPI backend and the React app, then walk through search, a building dossier and ingest). 
 
 ## Brief coverage
 
@@ -213,4 +213,4 @@ Core MVP is complete.
 - [x] README answering the six questions, with documented limits and owned tradeoffs
 - [x] Clean, atomic git history
 - [x] **Client reports (signature feature), v1 shipped.** Per-building Excel and PDF reports with severity colour coding and an LLM executive summary (a deterministic template in mock mode), exportable from the building dossier. v2, an insurer synthesis table with automatic RICS / ASTM deviation flagging, is a planned extension (see section 6).
-- [ ] Demo screencast (bonus, recorded locally)
+- [x] Demo screencast (bonus, recorded locally)

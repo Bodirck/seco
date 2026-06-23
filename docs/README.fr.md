@@ -194,7 +194,7 @@ Autres limites :
 
 ## Démo
 
-Un court screencast du produit est enregistré en local (lancer le backend FastAPI et l'application React, puis dérouler la recherche, un dossier bâtiment et l'ingestion). Un plan de démo pas à pas est dans `docs/demo-script.md`. La démo est un **bonus**, pas un livrable coeur.
+Un court screencast du produit est enregistré en local (lancer le backend FastAPI et l'application React, puis dérouler la recherche, un dossier bâtiment et l'ingestion). 
 
 ## Couverture du brief
 
@@ -209,4 +209,4 @@ Le MVP coeur est terminé.
 - [x] README répondant aux six questions, avec limites documentées et compromis assumés
 - [x] Historique git propre et atomique
 - [x] **Rapports client (feature signature), v1 livrée.** Rapports Excel et PDF par bâtiment, avec code couleur de sévérité et un résumé exécutif LLM (gabarit déterministe en mode mock), exportables depuis le dossier bâtiment. La v2, un tableau de synthèse assureur avec flag automatique des écarts RICS / ASTM, est une extension prévue (voir la section 6).
-- [ ] Screencast de démo (bonus, enregistré en local)
+- [x] Screencast de démo (bonus, enregistré en local)
