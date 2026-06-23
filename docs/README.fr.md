@@ -11,14 +11,19 @@ BuildingLens transforme des rapports d'inspection technique de bâtiments (PDF n
 ## Démarrage rapide
 
 ```bash
-make install   # pip install -r requirements.txt + pip install -e .
-make data      # télécharge EUBUCCO + STATEC, charge les communes, génère les PDF synthétiques, peuple SQLite
-make extract   # extraction LLM des défauts + scoring du risque + construction de l'index RAG
-make eval      # évalue l'extraction contre le gold set
-make run       # lance l'application Streamlit
+# 1. Installer (deps Python + React)
+make install
+cd web && npm install && cd ..      # deps React, premiere fois seulement
+
+# 2. Construire les donnees de demo et l'index IA
+make data                           # EUBUCCO + STATEC + communes + PDF synthetiques -> SQLite
+make extract                        # extraction LLM des defauts + scoring du risque + index RAG
+
+# 3. Lancer l'app, puis ouvrir http://localhost:5173
+make web                            # FastAPI (:8000) + React (Vite, :5173) ensemble
 ```
 
-Pas de clé API ? Copier `.env.example` vers `.env` et mettre `LLM_PROVIDER=mock`. Tout le pipeline, l'application et l'évaluation tournent hors ligne (le mode mock n'insère aucun défaut ; ajouter une clé pour la vraie extraction). Application React et détails complets dans [Reproductibilité](#reproductibilité).
+Pas de clé API ? Copier `.env.example` vers `.env` et mettre `LLM_PROVIDER=mock` : tout le pipeline, l'application et l'évaluation tournent hors ligne (le mode mock n'insère aucun défaut ; ajouter une clé pour la vraie extraction). Streamlit est une UI de secours légère (`make run`), et `make eval` évalue l'extraction contre le gold set. Détails complets dans [Reproductibilité](#reproductibilité).
 
 ## Ce que ça fait
 
@@ -117,7 +122,16 @@ Plus de détails dans `docs/architecture.md` et `docs/api.md`.
 
 ## 6. Avec 3 mois de plus
 
-BuildingLens passerait d'un outil par bâtiment à un cockpit de risque assureur à l'échelle du portefeuille : une carte géo du parc avec points chauds de risque, un signal de risque exploitable par machine livré aux assureurs via API, une vue temporelle de l'évolution du risque de chaque bâtiment au fil des inspections, un modèle de scoring ajusté sur un historique de sinistres réel, et le durcissement opérationnel pour le faire tourner en production. Le plan complet, en trois horizons, est dans la section **Feuille de route** plus bas. C'est une vision, ce n'est pas codé.
+BuildingLens passerait d'un outil par bâtiment à un cockpit de risque assureur à l'échelle du portefeuille :
+
+- une carte géo du parc avec points chauds de risque et agrégation multi-bâtiments ;
+- un signal de risque exploitable par machine livré aux assureurs via API, transformant un service de contrôle en produit de données ;
+- une vue temporelle de l'évolution du risque de chaque bâtiment au fil des inspections par phase ;
+- un modèle de scoring ajusté sur un historique réel de sinistres et de défauts (en remplacement des poids calibrés à la main) ;
+- de la vision par ordinateur sur les photos de défauts, avec suivi spatial sur un modèle BIM ou un scan 3D ;
+- le durcissement opérationnel pour le faire tourner en production.
+
+C'est une vision, ce n'est pas codé. Les étapes concrètes à court terme sont dans la **Feuille de route** ci-dessous.
 
 ## Architecture en bref
 
@@ -140,19 +154,19 @@ Réglages à l'exécution (fournisseur/clé/modèle) persistés dans SQLite, mod
 
 ## Reproductibilité
 
-Tout tourne depuis zéro. Python 3.11 recommandé. Les cibles `make` du coeur sont dans le [Démarrage rapide](#démarrage-rapide) ci-dessus. Pour aussi lancer l'application React :
+Tout tourne depuis zéro. Python 3.11 recommandé. Les cibles `make` sont dans le [Démarrage rapide](#démarrage-rapide). `make web` démarre le backend FastAPI et le serveur de dev React ensemble (il lance `scripts/dev.py`). Pour les lancer séparément, dans deux terminaux :
 
 ```bash
-# Backend FastAPI (pour l'application React)
+# Terminal 1 : backend FastAPI
 python -m uvicorn api.main:app --port 8000
 
-# Application web React (dans un autre terminal)
+# Terminal 2 : application web React
 cd web
 npm install
 npm run dev        # serveur de dev Vite sur http://localhost:5173, proxy /api vers :8000
 ```
 
-Extras : `make test` (pytest), `make fmt` (ruff format), `make clean` (supprime la base générée, garde les sources brutes téléchargées).
+Extras : `make run` (UI de secours Streamlit), `make test` (pytest), `make fmt` (ruff format), `make clean` (supprime la base générée, garde les sources brutes téléchargées).
 
 **Mode mock (sans clé API).** Copier `.env.example` vers `.env`. Sans clé, mettre `LLM_PROVIDER=mock` (ou passer `--mock`) pour utiliser des fixtures déterministes : tout le pipeline, l'application et l'évaluation tournent hors ligne. `.env` n'est jamais commité ; les clés sont laissées vides dans l'exemple (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `MISTRAL_API_KEY`), le modèle par défaut est `claude-opus-4-8`, et le fournisseur local pointe sur Ollama (`http://localhost:11434`, `llama3.1`). Note : la vraie extraction de défauts demande une clé. En mode mock, `make extract` n'insère aucun défaut, donc `make eval` rapporte alors le gold set avec zéro prédiction et affiche un indice pour configurer une clé.
 
@@ -191,30 +205,12 @@ Le MVP coeur est terminé.
 - [x] **Rapports client (feature signature), v1 livrée.** Rapports Excel et PDF par bâtiment, avec code couleur de sévérité et un résumé exécutif LLM (gabarit déterministe en mode mock), exportables depuis le dossier bâtiment. La v2, un tableau de synthèse assureur avec flag automatique des écarts RICS / ASTM, est dans la feuille de route.
 - [ ] Screencast de démo (bonus, enregistré en local)
 
-## Feuille de route
+## Feuille de route (prochains 3 à 6 mois)
 
-Prospective et pas encore codée. Trois horizons, chacun s'appuyant sur ce que le dépôt a déjà : coordonnées et communes réelles, l'abstraction de fournisseur, le contrat de citation par défaut, et le schéma SQLite.
-
-**Prochainement**
+Étapes concrètes à court terme qui transforment la vision ci-dessus en fonctionnalités livrables. Les remplacements de mise en production sont dans la section 5 ; la vision plus longue est dans la section 6. Pas encore codé. Chaque item s'appuie sur ce que le dépôt a déjà : coordonnées et communes réelles, l'abstraction de fournisseur, le contrat de citation par défaut, et le schéma SQLite.
 
 - **Indexation RAG incrémentale.** Remplacer le réindex complet par upload par une file d'ingestion en arrière-plan et une indexation différentielle, pour qu'ajouter un rapport ne ré-embedde pas tout le corpus.
-- **Étape OCR.** Ajouter Tesseract ou un modèle de mise en page avant l'extraction, pour traiter les rapports scannés et photographiés, sans rien changer au reste du pipeline.
-- **Confiance d'extraction et relecture.** Attacher un score de confiance par défaut et une file de relecture avec humain dans la boucle, pour qu'un opérateur valide ou corrige les constats peu sûrs avant qu'ils n'entrent dans le score.
-- **Jeu d'évaluation annoté à la main.** Remplacer la vérification de mécanique synthétique (1.00) par un gold set annoté sur de vrais rapports hétérogènes, rapporté par discipline.
-- **Durcissement production.** Resserrer la liste d'origines CORS (ou un reverse proxy) à la place du regex localhost de dev, et ajouter un logging structuré, un suivi de coût par appel LLM, et des runs d'éval en CI.
-
-**Dans 3 mois**
-
-- **Carte géo du portefeuille.** Une carte du parc avec points chauds de risque et agrégation multi-bâtiments, croisée avec la classe énergétique (DPE), bâtie sur les coordonnées et communes réelles déjà dans les données. Elle transforme une liste de dossiers en une vue portefeuille qu'un asset manager ou un assureur lit d'un coup d'oeil.
-- **Trajectoire de risque temporelle.** Suivre l'évolution des défauts d'un bâtiment au fil des inspections par phase, pour que le risque soit une tendance dans le temps et non un instantané, ce qui colle à la façon dont SECO inspecte déjà par phases.
+- **Confiance d'extraction et relecture.** Un score de confiance par défaut et une file de relecture avec humain dans la boucle, pour qu'un opérateur valide ou corrige les constats peu sûrs avant qu'ils n'entrent dans le score.
+- **Ingestion taguée par discipline.** Taguer les défauts par discipline et les lier aux plans et normes (références Eurocode), en reflétant les tableaux de synthèse des observations de SECO pour que la sortie s'insère dans le flux de travail existant.
 - **Étalonnage.** Positionner le risque d'un bâtiment face au portefeuille ou à des types de bâtiments et cantons similaires, en utilisant le contexte sectoriel STATEC déjà ingéré.
-- **Signal de risque exploitable par machine pour les assureurs.** Livrer le signal de risque sous forme d'API (un produit de données, pas un PDF) au point de contact assureur déjà existant chez SECO, transformant un service de contrôle en partenariat de données.
-- **Ingestion taguée par discipline.** Refléter les tableaux de synthèse des observations de SECO en taguant les défauts par discipline et en les liant aux plans et normes (références Eurocode), pour que la sortie s'insère dans le flux de travail existant de SECO.
-- **Stockage et accès pour une équipe.** Migrer SQLite vers un Postgres managé avec un vrai magasin de vecteurs (pgvector ou Qdrant) dès qu'il y a de la concurrence, retravailler la re-liaison mono-processus des réglages pour plusieurs workers, et ajouter le SSO Azure Entra ID avec des vues par rôle (inspecteur, asset manager, assureur).
-
-**Vision**
-
-- **Modèle de risque appris.** Remplacer les poids calibrés à la main par un modèle ajusté sur un historique réel de sinistres et de défauts, calibré contre les résultats d'assurance décennale et biennale.
-- **Vision par ordinateur sur les défauts.** Détection de fissures et assistance à la sévérité sur les photos de défauts, avec suivi spatial des observations sur un modèle BIM ou un scan 3D, pour qu'un défaut soit localisé dans le bâtiment, pas seulement dans le texte.
-- **Apprentissage actif.** Réinjecter les corrections des opérateurs dans l'extraction pour que le modèle s'améliore sur les constats qu'il rate.
-- **Traçabilité et conformité.** Lignage et provenance des données de bout en bout, un journal d'audit des actions d'ingestion et d'édition, une posture RGPD (résidence des données, rétention) et une option LLM hébergée en UE via l'abstraction de fournisseur existante (Mistral ou local déjà supportés).
+- **Observabilité et CI.** Logging structuré, suivi de coût par appel LLM, et runs d'évaluation en CI, pour que la qualité et le coût soient visibles à mesure que le corpus grossit.

@@ -14,14 +14,19 @@ BuildingLens turns technical building inspection reports (unstructured PDFs) and
 ## Quickstart
 
 ```bash
-make install   # pip install -r requirements.txt + pip install -e .
-make data      # download EUBUCCO + STATEC, load commune boundaries, generate synthetic PDFs, populate SQLite
-make extract   # LLM defect extraction + risk scoring + build the RAG index
-make eval      # evaluate extraction against the gold set
-make run       # launch the Streamlit app
+# 1. Install (Python backend + React deps)
+make install
+cd web && npm install && cd ..      # React deps, first time only
+
+# 2. Build the demo data and the AI index
+make data                           # EUBUCCO + STATEC + communes + synthetic PDFs -> SQLite
+make extract                        # LLM defect extraction + risk scoring + RAG index
+
+# 3. Run the app, then open http://localhost:5173
+make web                            # FastAPI (:8000) + React (Vite, :5173) together
 ```
 
-No API key? Copy `.env.example` to `.env` and set `LLM_PROVIDER=mock`. The whole pipeline, app and eval run offline (mock mode inserts no defects; add a key for real extraction). The React app and full details are under [Reproducibility](#reproducibility).
+No API key? Copy `.env.example` to `.env` and set `LLM_PROVIDER=mock`: the whole pipeline, the app and the eval run offline (mock mode inserts no defects; add a key for real extraction). Streamlit is a lightweight backup UI (`make run`), and `make eval` scores extraction against the gold set. Full details under [Reproducibility](#reproducibility).
 
 ## What it does
 
@@ -120,7 +125,16 @@ More detail lives in `docs/architecture.md` and `docs/api.md`.
 
 ## 6. With 3 more months
 
-BuildingLens would grow from a per-building tool into a portfolio-scale insurer risk cockpit: a geo-map of the stock with risk hotspots, a machine-readable risk signal delivered to insurers via API, a temporal view of how each building's risk evolves across inspections, a scoring model fitted on real claim history, and the operational hardening to run it in production. The full plan, in three horizons, is in the **Roadmap** section below. It is a vision and is not coded.
+BuildingLens would grow from a per-building tool into a portfolio-scale insurer risk cockpit:
+
+- a geo-map of the stock with risk hotspots and multi-building aggregation;
+- a machine-readable risk signal delivered to insurers via API, turning a control service into a data product;
+- a temporal view of how each building's risk evolves across phased inspections;
+- a scoring model fitted on real claim and defect history (replacing the hand-tuned weights);
+- computer vision on defect photos, with spatial tracking on a BIM model or 3D scan;
+- the operational hardening to run it in production.
+
+This is a vision and is not coded. The concrete near-term steps are in the **Roadmap** below.
 
 ## Architecture at a glance
 
@@ -143,19 +157,19 @@ Runtime settings (provider/key/model) persisted in SQLite, changeable without re
 
 ## Reproducibility
 
-Everything runs from zero. Python 3.11 recommended. The core `make` targets are in the [Quickstart](#quickstart) above. To also run the React app:
+Everything runs from zero. Python 3.11 recommended. The `make` targets are in the [Quickstart](#quickstart). `make web` starts the FastAPI backend and the React dev server together (it runs `scripts/dev.py`). To run them separately, in two terminals:
 
 ```bash
-# FastAPI backend (for the React app)
+# Terminal 1: FastAPI backend
 python -m uvicorn api.main:app --port 8000
 
-# React web app (in another terminal)
+# Terminal 2: React web app
 cd web
 npm install
 npm run dev        # Vite dev server on http://localhost:5173, proxies /api to :8000
 ```
 
-Extras: `make test` (pytest), `make fmt` (ruff format), `make clean` (remove the generated DB, keep downloaded raw sources).
+Extras: `make run` (Streamlit backup UI), `make test` (pytest), `make fmt` (ruff format), `make clean` (remove the generated DB, keep downloaded raw sources).
 
 **Mock mode (no API key).** Copy `.env.example` to `.env`. With no key, set `LLM_PROVIDER=mock` (or pass `--mock`) to use deterministic fixtures: the whole pipeline, the app and the evaluation all run offline. `.env` is never committed; keys are left blank in the example (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `MISTRAL_API_KEY`), the default model is `claude-opus-4-8`, and the local provider points at Ollama (`http://localhost:11434`, `llama3.1`). Note: real defect extraction needs a key. In mock mode `make extract` inserts no defects, so `make eval` then reports the gold set with zero predicted and prints a hint to configure a key.
 
@@ -194,30 +208,12 @@ Core MVP is complete.
 - [x] **Client reports (signature feature), v1 shipped.** Per-building Excel and PDF reports with severity colour coding and an LLM executive summary (a deterministic template in mock mode), exportable from the building dossier. v2, an insurer synthesis table with automatic RICS / ASTM deviation flagging, is on the Roadmap.
 - [ ] Demo screencast (bonus, recorded locally)
 
-## Roadmap
+## Roadmap (next 3 to 6 months)
 
-Forward-looking and not yet coded. Three horizons, each building on what the repo already has: real coordinates and communes, the provider abstraction, the per-defect citation contract, and the SQLite schema.
-
-**Next**
+Concrete near-term steps that turn the vision above into shippable features. Production-readiness swaps are in section 5; the longer vision is in section 6. Not yet coded. Each builds on what the repo already has: real coordinates and communes, the provider abstraction, the per-defect citation contract, and the SQLite schema.
 
 - **Incremental RAG indexing.** Replace the full reindex per upload with a background ingest queue and differential indexing, so adding one report does not re-embed the whole corpus.
-- **OCR stage.** Add Tesseract or a layout model before extraction so scanned and photographed reports work, with no change to the rest of the pipeline.
-- **Extraction confidence and review.** Attach a per-defect confidence score and a human-in-the-loop review queue, so an operator validates or corrects low-confidence findings before they reach the score.
-- **Hand-labelled evaluation set.** Replace the synthetic 1.00 mechanics check with a gold set labelled on real heterogeneous reports, reported per discipline.
-- **Production hardening.** Tighten the CORS origin list (or a reverse proxy) in place of the dev localhost regex, and add structured logging, per-LLM-call cost tracking, and eval runs in CI.
-
-**In 3 months**
-
-- **Portfolio geo-map.** A map of the stock with risk hotspots and multi-building aggregation, cross-referenced with energy class (EPC), built on the real coordinates and communes already in the data. It turns a list of dossiers into a portfolio view an asset manager or insurer reads at a glance.
-- **Temporal risk trajectory.** Track a building's defect evolution across phased inspections, so risk is a trend over time rather than a snapshot, matching how SECO already inspects in phases.
-- **Benchmarking.** Position one building's risk against the portfolio or against similar building types and cantons, using the STATEC sector context already ingested.
-- **Machine-readable risk signal for insurers.** Deliver the risk signal as an API (a data product, not a PDF) at SECO's existing insurer touchpoint, turning a control service into a data partnership.
-- **Discipline-tagged ingestion.** Mirror SECO's observation synthesis tables by tagging defects per discipline and linking them to plans and standards (Eurocode references), so the output drops into SECO's existing workflow.
-- **Storage and access for a team.** Migrate SQLite to managed Postgres with a real vector store (pgvector or Qdrant) once there is concurrency, rework the single-process settings rebinding for multiple workers, and add Azure Entra ID SSO with role-based views (inspector, asset manager, insurer).
-
-**Vision**
-
-- **Learned risk model.** Replace the hand-tuned weights with a model fitted on real claim and defect history, calibrated against decennial and biennial insurance outcomes.
-- **Computer vision on defects.** Crack detection and severity assist on defect photos, with spatial tracking of observations on a BIM model or 3D scan, so a defect is located in the building, not just in text.
-- **Active learning.** Feed operator corrections back into extraction so the model improves on the findings it gets wrong.
-- **Lineage and compliance.** End-to-end data lineage and provenance, an audit log of ingest and edit actions, a GDPR posture (data residency, retention) and an EU-hosted LLM option through the existing provider abstraction (Mistral or local are already supported).
+- **Extraction confidence and review.** A per-defect confidence score and a human-in-the-loop review queue, so an operator validates or corrects low-confidence findings before they reach the score.
+- **Discipline-tagged ingestion.** Tag defects per discipline and link them to plans and standards (Eurocode references), mirroring SECO's observation synthesis tables so the output drops into the existing workflow.
+- **Benchmarking.** Position a building's risk against the portfolio or against similar building types and cantons, using the STATEC sector context already ingested.
+- **Observability and CI.** Structured logging, per-LLM-call cost tracking, and evaluation runs in CI, so quality and spend are visible as the corpus grows.
