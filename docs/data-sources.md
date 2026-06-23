@@ -109,14 +109,12 @@ Sector trends and context, not the core per-building feature. Concrete uses: a s
 
 ## 3. Synthetic inspection reports (Luxembourg)
 
-No public corpus of real technical inspection reports exists at volume (they are commercial deliverables). Our strategy, stated openly:
+No public corpus of real technical inspection reports exists at volume (they are commercial deliverables). Our strategy:
 
 - **Generate one realistic inspection-report PDF per building** with a script, anchored to real Luxembourg buildings from EUBUCCO LU (real footprint, coordinates, commune). The defects themselves are **invented from a hand-written catalogue** (`_VOCABULARY` in `src/buildinglens/synthetic_reports.py`, organized by discipline and rated on the RICS C1/C2/C3 scale), with a seeded per-building "condition" driving how many defects each report carries. So a building's location and footprint are real, but its **condition is fictional**.
 - **Calibrate the format on 1 to 2 real public RICS sample reports** (for structure only), for example the RICS Home Survey Level 3 sample PDF.
 - **Why synthetic:** there is no public per-building inspection data, and EUBUCCO has no names or addresses. Generating the corpus from code is fully reproducible (more robust than scraping) and demonstrates that we understand the target schema. In production, these would be replaced by real SECO reports without changing the pipeline.
 - **Evaluation is a mechanics check, not real accuracy:** `eval/gold.jsonl` is emitted by the same `_report_plan` generator that writes the PDFs, so the perfect `make eval` score (241 defects across 40 buildings, P/R/F1 = 1.00) only shows the LLM re-reading what the generator injected. Expect lower numbers on real, heterogeneous reports.
-
-This choice is documented honestly in the README. It is a defensible engineering decision, not a shortcut.
 
 ### Severity taxonomy
 

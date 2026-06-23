@@ -21,9 +21,6 @@ BuildingLens addresses this with three things working together:
 1. **Defect extraction.** One inspection PDF becomes a structured list of defects, each with `element`, `description`, `location`, `severity` (critical / major / minor) and a `citation` (the verbatim snippet from the report that justifies it).
 2. **Risk scoring.** The defects of a building are aggregated into a single 0 to 100 risk score, plus the count of critical / major / minor findings, so a whole stock can be ranked at a glance.
 3. **RAG Q&A with citations.** You can ask, in French or English, things like "what are the critical defects of building X?" or "which buildings have a fire risk?". Answers are grounded only in the retrieved report text, each answer cites the source blocks it used, and the model is instructed to say it does not know rather than invent.
-
-The framing deliberately starts from the pain (risk invisible inside unstructured documents) and works backward to the technology, not the other way around.
-
 ### 2. Why is this relevant to SECO?
 
 SECO is an independent technical-control and engineering body for construction (founded 1934 in Belgium, SECO Luxembourg since 1987, around 12,500 structures inspected over its history). Its core business, building technical control, is exactly the upstream of the decennial and biennial insurance guarantee: SECO produces the initial report for the insurer plus the inspection notes that form the basis of risk assessment.
@@ -51,13 +48,13 @@ BuildingLens runs on **public, reproducible data only**, combining three real Lu
 
 Why these: EUBUCCO is the best open per-building attribute source for Luxembourg (around 186,000 buildings in the LU subset), giving real geometry and height at country scale with no account. STATEC gives official sector context that is machine-readable and pinnable (dataflows plus `startPeriod`) without claiming per-building precision. The ACT boundaries recover a real administrative attribute (the commune) that EUBUCCO does not name, and they are committed in-repo so the build stays offline and byte-for-byte reproducible.
 
-**Real vs synthetic (stated honestly, and encoded in the schema comments):**
+**Real vs synthetic (encoded in the schema comments):**
 
 - **Real, per building:** footprint geometry and coordinates (100% coverage), footprint area in m² computed from the real outline, and the commune resolved by point-in-polygon. Height is real (cadastre / LOD1) for around 78% of buildings and ML-estimated for around 22%, with the source flagged.
 - **Real but model-estimated (labelled "estimated" in the UI):** use type and subtype (part ML-estimated, part OpenStreetMap), floors (regression, stored rounded). Construction year is effectively absent in the LU subset and treated as unreliable.
 - **Synthetic:** building name, street, number and postcode (EUBUCCO provides none for Luxembourg), and the inspection reports themselves with every defect in them. So a building's **location and footprint are real, but its condition is fictional.**
 
-Why the reports are synthetic, and the production-swap argument: no public corpus of real technical inspection reports exists at volume (they are commercial deliverables), and EUBUCCO has no names or addresses. A seeded generator is the only fully reproducible option, and generating the corpus from code is more robust than scraping while demonstrating that the target schema is understood. In production these PDFs are replaced by **real SECO reports without changing the rest of the pipeline**: extraction, scoring, RAG and the schema all stay the same. This is a deliberate, documented engineering decision, not a shortcut.
+Why the reports are synthetic, and the production-swap argument: no public corpus of real technical inspection reports exists at volume (they are commercial deliverables), and EUBUCCO has no names or addresses. A seeded generator is the only fully reproducible option, and generating the corpus from code is more robust than scraping while demonstrating that the target schema is understood. In production these PDFs are replaced by **real SECO reports without changing the rest of the pipeline**: extraction, scoring, RAG and the schema all stay the same.
 
 More detail lives in `docs/data-sources.md`.
 
@@ -74,15 +71,15 @@ Other decisions and the tradeoffs accepted:
 - **SQLite, not Postgres.** Zero setup, fully reproducible, fast enough for this scale, and it makes `make data && make run` work from zero. WAL journaling and a busy-timeout are enabled so the API can serve reads, settings writes and ingest writes from a threadpool without "database is locked" errors. Tradeoff: it would not survive a real concurrent multi-writer production load; that is a known swap.
 - **pdfplumber for text, not OCR.** The synthetic corpus is born-digital, so plain text extraction is enough and OCR would be dead weight here. Tradeoff: real scanned reports with photos would need an OCR stage (Tesseract or a layout model), which is listed as a production redo.
 - **Local embeddings for RAG.** Retrieval uses LlamaIndex with a local `sentence-transformers` multilingual model (`paraphrase-multilingual-MiniLM-L12-v2`), so no embedding text ever leaves the machine and there is no per-query network cost once the weights are cached. LlamaIndex's own LLM is forced off so it never builds an OpenAI client behind our back; generation always goes through our provider abstraction. Tradeoff: a small model and an in-memory vector store are fine for this corpus size but would move to a real vector store at scale.
-- **Hand-tuned risk score, not a learned model.** The score is `100 * (1 - exp(-raw / K))` with severity weights critical=10, major=4, minor=1 and K=30, which saturates so even very defective buildings stay inside 0 to 100. It is calibrated for a plausible spread, not learned. Tradeoff stated openly: with a real labelled history this should become a fitted model.
+- **Hand-tuned risk score, not a learned model.** The score is `100 * (1 - exp(-raw / K))` with severity weights critical=10, major=4, minor=1 and K=30, which saturates so even very defective buildings stay inside 0 to 100. It is calibrated for a plausible spread, not learned. With a real labelled history this should become a fitted model.
 - **One extraction call per document.** Extraction is a single grounded JSON call per report (no tool-use), with fence-tolerant parsing and a retry on the substring between the first and last brace. Defects with an unrecognised severity are skipped with a warning rather than inserted. This favours robustness and simplicity over squeezing maximum recall.
-- **Streamlit first, then React.** Streamlit proved the three core features fast and stays as the minimal reference UI. The React app was added on top of the same API to make the product demo-grade (dossier views, streaming Q&A, a portfolio chart, a locator map). Keeping both is a deliberate "reference plus polished" split, not duplication of logic.
+- **Streamlit first, then React.** Streamlit proved the three core features fast and stays as the minimal reference UI. The React app was added on top of the same API to make the product demo-grade (dossier views, streaming Q&A, a portfolio chart, a locator map). The Streamlit app is the reference UI and the React app the polished one, both on the same API.
 - **Defensive degradation everywhere.** Every external fetch (EUBUCCO, LUSTAT, commune boundaries) has a deterministic offline fallback, bad rows are warned-and-skipped instead of aborting a batch, and a failed ingest performs a full compensating rollback so it never leaves orphans.
 - **Import guarded against duplicates.** A new building created from an address is snapped to its real EUBUCCO footprint; the same footprint under the same name is then recognised as one already on file, so the import is blocked (the existing dossier is shown, with a one-click override) instead of silently creating a copy. Looser matches (a similar name, a nearby footprint) are surfaced but never block, so a genuinely new building is never wrongly refused. The check runs under the ingest lock and before the expensive extraction, so it also closes the double-submit race and a refused duplicate costs nothing.
 
 The signature feature, in honest status, is described in **Status and roadmap** below.
 
-The web app is styled as a dark "dossier / terminal" interface. It bundles complete English and French translation resources, but it currently initialises in English only and has no active language switcher in the UI (the French bundle stays loaded so the toggle can be re-enabled later). Stated plainly so there is no overclaim.
+The web app is styled as a dark "dossier / terminal" interface. It bundles complete English and French translation resources, but it currently initialises in English only and has no active language switcher in the UI (the French bundle stays loaded so the toggle can be re-enabled later).
 
 More detail lives in `docs/architecture.md` and `docs/api.md`.
 
@@ -90,7 +87,7 @@ More detail lives in `docs/architecture.md` and `docs/api.md`.
 
 **Keep for production (with small changes):**
 
-- The core library boundary (data / LLM / extraction / scoring / RAG kept separate from the API). It is the part worth defending.
+- The core library boundary (data / LLM / extraction / scoring / RAG kept separate from the API).
 - The provider abstraction and the mock fallback. Being able to switch provider or run offline with no key is genuinely useful operationally.
 - The extraction contract: structured defects with a verbatim citation per finding, which is what makes the output auditable.
 - The RAG citation and "I don't know" guardrail, the batched (never N+1) source resolution, and the streaming protocol.
@@ -174,7 +171,7 @@ Evaluation lives in `eval/eval_extraction.py` and compares the **predicted** def
 
 **Honest limitations.** Because the same generator both writes the PDFs and emits the gold set, this is a **mechanics check on extraction fidelity over synthetic text, not real-world accuracy.** With Claude the run reports precision, recall and F1 of 1.00 and severity accuracy 1.00; that is expected and only shows the model re-reading what the generator injected and mapping each RICS rating to the right severity. It should not be read as a real accuracy figure. Real, heterogeneous reports with OCR noise and varied wording would score lower and would need a hand-labelled gold set, which is listed as a redo-before-production item.
 
-Other limitations stated plainly:
+Other limitations:
 
 - **Hallucinations.** The RAG path is constrained to answer only from retrieved text, cite its sources, and say it does not know otherwise, but no LLM guardrail is perfect.
 - **False positives.** Extraction can over-extract or mis-classify on real prose; the citation field exists precisely so a human can check each finding.
@@ -216,9 +213,6 @@ BuildingLens répond avec trois briques qui fonctionnent ensemble :
 1. **Extraction des défauts.** Un PDF d'inspection devient une liste structurée de défauts, chacun avec `element`, `description`, `location`, `severity` (critique / majeur / mineur) et une `citation` (l'extrait textuel du rapport qui le justifie).
 2. **Scoring du risque.** Les défauts d'un bâtiment sont agrégés en un score de risque unique de 0 à 100, plus le décompte critique / majeur / mineur, pour classer tout un parc d'un coup d'oeil.
 3. **Q&A RAG avec citations.** On peut demander, en français ou en anglais, "quels sont les défauts critiques du bâtiment X ?" ou "quels bâtiments présentent un risque incendie ?". Les réponses sont ancrées uniquement dans le texte récupéré, chaque réponse cite les blocs sources utilisés, et le modèle est instruit de dire qu'il ne sait pas plutôt que d'inventer.
-
-Le cadrage part volontairement du problème (un risque invisible dans des documents non structurés) pour remonter vers la technique, et non l'inverse.
-
 ### 2. En quoi est-ce pertinent pour SECO ?
 
 SECO est un organisme indépendant de contrôle technique et d'ingénierie pour la construction (fondé en 1934 en Belgique, SECO Luxembourg depuis 1987, environ 12 500 ouvrages inspectés au fil de son histoire). Son métier coeur, le contrôle technique de construction, est exactement l'amont de la garantie d'assurance décennale et biennale : SECO produit le rapport initial pour l'assureur ainsi que les notes d'inspection qui forment la base de l'évaluation du risque.
@@ -246,13 +240,13 @@ BuildingLens tourne sur des **données publiques et reproductibles uniquement**,
 
 Pourquoi ces sources : EUBUCCO est la meilleure source ouverte d'attributs par bâtiment pour le Luxembourg (environ 186 000 bâtiments dans le sous-ensemble LU), avec géométrie et hauteur réelles à l'échelle du pays, sans compte. STATEC donne un contexte sectoriel officiel, exploitable par machine et épinglable (dataflows plus `startPeriod`), sans prétendre à une précision par bâtiment. Les limites ACT récupèrent un attribut administratif réel (la commune) qu'EUBUCCO ne nomme pas, et elles sont versionnées dans le dépôt pour que le build reste hors ligne et reproductible à l'octet près.
 
-**Réel vs synthétique (dit honnêtement, et encodé dans les commentaires du schéma) :**
+**Réel vs synthétique (encodé dans les commentaires du schéma) :**
 
 - **Réel, par bâtiment :** géométrie d'emprise et coordonnées (couverture 100%), surface d'emprise en m² calculée depuis le contour réel, et la commune résolue par point-dans-polygone. La hauteur est réelle (cadastre / LOD1) pour environ 78% des bâtiments et estimée par ML pour environ 22%, la source étant signalée.
 - **Réel mais estimé par modèle (libellé "estimé" dans l'UI) :** type et sous-type d'usage (en partie estimés par ML, en partie OpenStreetMap), étages (régression, stockés arrondis). L'année de construction est quasi absente dans le sous-ensemble LU et traitée comme non fiable.
 - **Synthétique :** nom du bâtiment, rue, numéro et code postal (EUBUCCO n'en fournit aucun pour le Luxembourg), et les rapports d'inspection eux-mêmes avec chaque défaut qu'ils contiennent. Donc la **localisation et l'emprise d'un bâtiment sont réelles, mais son état est fictif.**
 
-Pourquoi les rapports sont synthétiques, et l'argument du remplacement en production : aucun corpus public de vrais rapports d'inspection technique n'existe en volume (ce sont des livrables commerciaux), et EUBUCCO n'a ni noms ni adresses. Un générateur à graine est la seule option entièrement reproductible, et générer le corpus par code est plus robuste qu'un scraping tout en démontrant la maîtrise du schéma cible. En production, ces PDF sont remplacés par de **vrais rapports SECO sans rien changer au reste du pipeline** : extraction, scoring, RAG et schéma restent identiques. C'est une décision d'ingénierie délibérée et documentée, pas un raccourci.
+Pourquoi les rapports sont synthétiques, et l'argument du remplacement en production : aucun corpus public de vrais rapports d'inspection technique n'existe en volume (ce sont des livrables commerciaux), et EUBUCCO n'a ni noms ni adresses. Un générateur à graine est la seule option entièrement reproductible, et générer le corpus par code est plus robuste qu'un scraping tout en démontrant la maîtrise du schéma cible. En production, ces PDF sont remplacés par de **vrais rapports SECO sans rien changer au reste du pipeline** : extraction, scoring, RAG et schéma restent identiques.
 
 Plus de détails dans `docs/data-sources.md`.
 
@@ -269,15 +263,15 @@ Autres décisions et compromis acceptés :
 - **SQLite, pas Postgres.** Zéro configuration, entièrement reproductible, assez rapide à cette échelle, et cela fait fonctionner `make data && make run` depuis zéro. Le journal WAL et un busy-timeout sont activés pour que l'API serve lectures, écritures de réglages et écritures d'ingestion depuis un pool de threads sans erreur "database is locked". Compromis : cela ne tiendrait pas une vraie charge production multi-écrivains concurrente ; c'est un remplacement connu.
 - **pdfplumber pour le texte, pas d'OCR.** Le corpus synthétique est nativement numérique, donc l'extraction de texte simple suffit et l'OCR serait du poids mort ici. Compromis : de vrais rapports scannés avec photos demanderaient une étape OCR (Tesseract ou un modèle de mise en page), listée comme à refaire pour la production.
 - **Embeddings locaux pour le RAG.** La récupération utilise LlamaIndex avec un modèle `sentence-transformers` multilingue local (`paraphrase-multilingual-MiniLM-L12-v2`), donc aucun texte d'embedding ne quitte la machine et il n'y a pas de coût réseau par requête une fois les poids en cache. Le LLM interne de LlamaIndex est désactivé pour qu'il ne construise jamais un client OpenAI dans notre dos ; la génération passe toujours par notre abstraction de fournisseur. Compromis : un petit modèle et un magasin de vecteurs en mémoire conviennent à ce corpus mais passeraient à un vrai magasin de vecteurs à l'échelle.
-- **Score de risque calibré à la main, pas appris.** Le score vaut `100 * (1 - exp(-raw / K))` avec des poids de sévérité critique=10, majeur=4, mineur=1 et K=30, qui sature pour que même les bâtiments très dégradés restent dans 0 à 100. Il est calibré pour un étalement plausible, pas appris. Compromis énoncé ouvertement : avec un vrai historique labellisé, cela devrait devenir un modèle ajusté.
+- **Score de risque calibré à la main, pas appris.** Le score vaut `100 * (1 - exp(-raw / K))` avec des poids de sévérité critique=10, majeur=4, mineur=1 et K=30, qui sature pour que même les bâtiments très dégradés restent dans 0 à 100. Il est calibré pour un étalement plausible, pas appris. Avec un vrai historique labellisé, cela devrait devenir un modèle ajusté.
 - **Un seul appel d'extraction par document.** L'extraction est un unique appel JSON ancré par rapport (sans tool-use), avec un parsing tolérant aux fences et un nouvel essai sur la sous-chaîne entre la première et la dernière accolade. Les défauts à sévérité non reconnue sont ignorés avec un avertissement plutôt qu'insérés. Cela privilégie la robustesse et la simplicité plutôt que le rappel maximal.
-- **Streamlit d'abord, puis React.** Streamlit a prouvé les trois features coeur rapidement et reste l'UI de référence minimale. L'application React a été ajoutée par-dessus la même API pour rendre le produit présentable en démo (vues dossier, Q&A en streaming, graphique de portefeuille, carte de localisation). Garder les deux est un partage délibéré "référence plus soigné", pas une duplication de logique.
+- **Streamlit d'abord, puis React.** Streamlit a prouvé les trois features coeur rapidement et reste l'UI de référence minimale. L'application React a été ajoutée par-dessus la même API pour rendre le produit présentable en démo (vues dossier, Q&A en streaming, graphique de portefeuille, carte de localisation). L'application Streamlit est l'UI de référence et l'application React la version soignée, toutes deux sur la même API.
 - **Dégradation défensive partout.** Chaque récupération externe (EUBUCCO, LUSTAT, limites communales) a un repli déterministe hors ligne, les lignes invalides sont averties-et-ignorées au lieu d'avorter un lot, et une ingestion échouée effectue un rollback compensatoire complet pour ne jamais laisser d'orphelins.
 - **Import protégé contre les doublons.** Un nouveau bâtiment créé depuis une adresse est rattaché à son emprise réelle EUBUCCO ; la même emprise sous le même nom est alors reconnue comme déjà présente, donc l'import est bloqué (le dossier existant est montré, avec un contournement en un clic) au lieu de créer silencieusement une copie. Les correspondances plus souples (nom similaire, emprise proche) sont signalées mais ne bloquent jamais, donc un bâtiment réellement nouveau n'est jamais refusé à tort. Le contrôle s'exécute sous le verrou d'ingestion et avant l'extraction coûteuse, ce qui ferme aussi la course au double envoi et rend un doublon refusé gratuit.
 
 La feature signature, en statut honnête, est décrite dans **Statut et feuille de route** plus bas.
 
-L'application web est stylée comme une interface sombre "dossier / terminal". Elle embarque des ressources de traduction complètes en anglais et en français, mais elle s'initialise actuellement en anglais uniquement et n'a pas de sélecteur de langue actif dans l'UI (le bundle français reste chargé pour pouvoir réactiver le commutateur plus tard). Dit clairement, sans surpromesse.
+L'application web est stylée comme une interface sombre "dossier / terminal". Elle embarque des ressources de traduction complètes en anglais et en français, mais elle s'initialise actuellement en anglais uniquement et n'a pas de sélecteur de langue actif dans l'UI (le bundle français reste chargé pour pouvoir réactiver le commutateur plus tard).
 
 Plus de détails dans `docs/architecture.md` et `docs/api.md`.
 
@@ -285,7 +279,7 @@ Plus de détails dans `docs/architecture.md` et `docs/api.md`.
 
 **À garder pour la production (avec de petits changements) :**
 
-- La frontière de la bibliothèque coeur (données / LLM / extraction / scoring / RAG séparés de l'API). C'est la partie qui mérite d'être défendue.
+- La frontière de la bibliothèque coeur (données / LLM / extraction / scoring / RAG séparés de l'API).
 - L'abstraction de fournisseur et le repli mock. Pouvoir changer de fournisseur ou tourner hors ligne sans clé est réellement utile en exploitation.
 - Le contrat d'extraction : des défauts structurés avec une citation textuelle par constat, ce qui rend la sortie auditable.
 - Le garde-fou de citation et de "je ne sais pas" du RAG, la résolution des sources par requête groupée (jamais N+1), et le protocole de streaming.
@@ -369,7 +363,7 @@ L'évaluation est dans `eval/eval_extraction.py` et compare les défauts **préd
 
 **Limites honnêtes.** Comme le même générateur écrit les PDF et émet le gold set, c'est une **vérification de mécanique sur la fidélité d'extraction sur texte synthétique, pas une exactitude réelle.** Avec Claude le run rapporte une précision, un rappel et un F1 de 1.00 et une exactitude de sévérité de 1.00 ; c'est attendu et montre seulement que le modèle relit ce que le générateur a injecté et mappe chaque note RICS à la bonne sévérité. Cela ne doit pas se lire comme un vrai chiffre de précision. De vrais rapports hétérogènes, avec du bruit OCR et des formulations variées, obtiendraient un score plus bas et exigeraient un gold set annoté à la main, listé comme à refaire avant la production.
 
-Autres limites énoncées clairement :
+Autres limites :
 
 - **Hallucinations.** Le chemin RAG est contraint de répondre uniquement à partir du texte récupéré, de citer ses sources et de dire qu'il ne sait pas sinon, mais aucun garde-fou LLM n'est parfait.
 - **Faux positifs.** L'extraction peut sur-extraire ou mal classer sur de la vraie prose ; le champ citation existe précisément pour qu'un humain vérifie chaque constat.
