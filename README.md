@@ -104,12 +104,7 @@ More detail lives in `docs/architecture.md` and `docs/api.md`.
 
 ### 6. With 3 more months
 
-This section is a vision only and is intentionally not coded. BuildingLens would grow from a per-building tool into a **portfolio-scale insurer risk cockpit**:
-
-- A **geo-map** of the stock (using the real coordinates and communes already in the data) with risk hotspots and multi-building aggregation, cross-referenced with energy class.
-- A **machine-readable risk signal delivered to insurers via API**, turning the control service into a data product (this is the natural extension of SECO's existing insurer touchpoint).
-- **Computer vision on defect photos** and spatial tracking of observations on a BIM model (the GEOLUX / 3D-scan angle), so a defect is located in space, not just in text.
-- Operational hardening: **Azure Entra ID SSO** (the web app already shows a documentation-only placeholder for it), **incremental RAG indexing** with a background ingest queue instead of a full reindex per upload, and the production data and model swaps listed above.
+BuildingLens would grow from a per-building tool into a portfolio-scale insurer risk cockpit: a geo-map of the stock with risk hotspots, a machine-readable risk signal delivered to insurers via API, a temporal view of how each building's risk evolves across inspections, a scoring model fitted on real claim history, and the operational hardening to run it in production. The full plan, in three horizons, is in the **Roadmap** section below. It is a vision and is not coded.
 
 ### Architecture at a glance
 
@@ -181,7 +176,7 @@ Other limitations:
 
 A short screencast of the product is recorded locally (run the FastAPI backend and the React app, then walk through search, a building dossier and ingest). A step-by-step demo plan is in `docs/demo-script.md`. The demo is a **bonus**, not a core deliverable.
 
-### Status and roadmap
+### Brief coverage
 
 Core MVP is complete.
 
@@ -193,8 +188,36 @@ Core MVP is complete.
 - [x] `--mock` mode to run with no API key
 - [x] README answering the six questions, with documented limits and owned tradeoffs
 - [x] Clean, atomic git history
-- [~] **Signature feature, partial.** Per-building client reports (Excel and PDF, with severity colour coding and an LLM executive summary that falls back to a deterministic template in mock mode) are implemented and exportable from the building dossier. The fuller insurer-style synthesis table with automatic flagging of deviations against public taxonomies (RICS / ASTM) is **not** finished and is honestly carried as roadmap, per the time-box rule (core features first).
+- [x] **Client reports (signature feature), v1 shipped.** Per-building Excel and PDF reports with severity colour coding and an LLM executive summary (a deterministic template in mock mode), exportable from the building dossier. v2, an insurer synthesis table with automatic RICS / ASTM deviation flagging, is on the Roadmap.
 - [ ] Demo screencast (bonus, recorded locally)
+
+### Roadmap
+
+Forward-looking and not yet coded. Three horizons, each building on what the repo already has: real coordinates and communes, the provider abstraction, the per-defect citation contract, and the SQLite schema.
+
+**Next**
+
+- **Incremental RAG indexing.** Replace the full reindex per upload with a background ingest queue and differential indexing, so adding one report does not re-embed the whole corpus.
+- **OCR stage.** Add Tesseract or a layout model before extraction so scanned and photographed reports work, with no change to the rest of the pipeline.
+- **Extraction confidence and review.** Attach a per-defect confidence score and a human-in-the-loop review queue, so an operator validates or corrects low-confidence findings before they reach the score.
+- **Hand-labelled evaluation set.** Replace the synthetic 1.00 mechanics check with a gold set labelled on real heterogeneous reports, reported per discipline.
+- **Production hardening.** Tighten the CORS origin list (or a reverse proxy) in place of the dev localhost regex, and add structured logging, per-LLM-call cost tracking, and eval runs in CI.
+
+**In 3 months**
+
+- **Portfolio geo-map.** A map of the stock with risk hotspots and multi-building aggregation, cross-referenced with energy class (EPC), built on the real coordinates and communes already in the data. It turns a list of dossiers into a portfolio view an asset manager or insurer reads at a glance.
+- **Temporal risk trajectory.** Track a building's defect evolution across phased inspections, so risk is a trend over time rather than a snapshot, matching how SECO already inspects in phases.
+- **Benchmarking.** Position one building's risk against the portfolio or against similar building types and cantons, using the STATEC sector context already ingested.
+- **Machine-readable risk signal for insurers.** Deliver the risk signal as an API (a data product, not a PDF) at SECO's existing insurer touchpoint, turning a control service into a data partnership.
+- **Discipline-tagged ingestion.** Mirror SECO's observation synthesis tables by tagging defects per discipline and linking them to plans and standards (Eurocode references), so the output drops into SECO's existing workflow.
+- **Storage and access for a team.** Migrate SQLite to managed Postgres with a real vector store (pgvector or Qdrant) once there is concurrency, rework the single-process settings rebinding for multiple workers, and add Azure Entra ID SSO with role-based views (inspector, asset manager, insurer).
+
+**Vision**
+
+- **Learned risk model.** Replace the hand-tuned weights with a model fitted on real claim and defect history, calibrated against decennial and biennial insurance outcomes.
+- **Computer vision on defects.** Crack detection and severity assist on defect photos, with spatial tracking of observations on a BIM model or 3D scan, so a defect is located in the building, not just in text.
+- **Active learning.** Feed operator corrections back into extraction so the model improves on the findings it gets wrong.
+- **Lineage and compliance.** End-to-end data lineage and provenance, an audit log of ingest and edit actions, a GDPR posture (data residency, retention) and an EU-hosted LLM option through the existing provider abstraction (Mistral or local are already supported).
 
 ---
 
@@ -296,12 +319,7 @@ Plus de détails dans `docs/architecture.md` et `docs/api.md`.
 
 ### 6. Avec 3 mois de plus
 
-Cette section est une vision uniquement, et n'est volontairement pas codée. BuildingLens passerait d'un outil par bâtiment à un **cockpit de risque assureur à l'échelle du portefeuille** :
-
-- Une **carte géo** du parc (avec les coordonnées et communes réelles déjà présentes dans les données), points chauds de risque et agrégation multi-bâtiments, croisée avec la classe énergétique.
-- Un **signal de risque exploitable par machine livré aux assureurs via API**, transformant le service de contrôle en produit de données (extension naturelle du point de contact assureur déjà existant chez SECO).
-- De la **vision par ordinateur sur les photos de défauts** et un suivi spatial des observations sur un modèle BIM (l'angle GEOLUX / scan 3D), pour qu'un défaut soit localisé dans l'espace, pas seulement dans le texte.
-- Durcissement opérationnel : **SSO Azure Entra ID** (l'application web montre déjà un placeholder documentaire), **indexation RAG incrémentale** avec une file d'ingestion en arrière-plan au lieu d'un réindex complet par upload, et les remplacements de données et de modèle listés plus haut.
+BuildingLens passerait d'un outil par bâtiment à un cockpit de risque assureur à l'échelle du portefeuille : une carte géo du parc avec points chauds de risque, un signal de risque exploitable par machine livré aux assureurs via API, une vue temporelle de l'évolution du risque de chaque bâtiment au fil des inspections, un modèle de scoring ajusté sur un historique de sinistres réel, et le durcissement opérationnel pour le faire tourner en production. Le plan complet, en trois horizons, est dans la section **Feuille de route** plus bas. C'est une vision, ce n'est pas codé.
 
 ### Architecture en bref
 
@@ -373,7 +391,7 @@ Autres limites :
 
 Un court screencast du produit est enregistré en local (lancer le backend FastAPI et l'application React, puis dérouler la recherche, un dossier bâtiment et l'ingestion). Un plan de démo pas à pas est dans `docs/demo-script.md`. La démo est un **bonus**, pas un livrable coeur.
 
-### Statut et feuille de route
+### Couverture du brief
 
 Le MVP coeur est terminé.
 
@@ -385,5 +403,33 @@ Le MVP coeur est terminé.
 - [x] Mode `--mock` pour tourner sans clé API
 - [x] README répondant aux six questions, avec limites documentées et compromis assumés
 - [x] Historique git propre et atomique
-- [~] **Feature signature, partielle.** Les rapports client par bâtiment (Excel et PDF, avec code couleur de sévérité et un résumé exécutif LLM qui retombe sur un gabarit déterministe en mode mock) sont implémentés et exportables depuis le dossier bâtiment. Le tableau de synthèse assureur plus complet, avec flag automatique des écarts par rapport aux taxonomies publiques (RICS / ASTM), n'est **pas** terminé et est honnêtement porté en feuille de route, conformément à la règle de time-box (features coeur d'abord).
+- [x] **Rapports client (feature signature), v1 livrée.** Rapports Excel et PDF par bâtiment, avec code couleur de sévérité et un résumé exécutif LLM (gabarit déterministe en mode mock), exportables depuis le dossier bâtiment. La v2, un tableau de synthèse assureur avec flag automatique des écarts RICS / ASTM, est dans la feuille de route.
 - [ ] Screencast de démo (bonus, enregistré en local)
+
+### Feuille de route
+
+Prospective et pas encore codée. Trois horizons, chacun s'appuyant sur ce que le dépôt a déjà : coordonnées et communes réelles, l'abstraction de fournisseur, le contrat de citation par défaut, et le schéma SQLite.
+
+**Prochainement**
+
+- **Indexation RAG incrémentale.** Remplacer le réindex complet par upload par une file d'ingestion en arrière-plan et une indexation différentielle, pour qu'ajouter un rapport ne ré-embedde pas tout le corpus.
+- **Étape OCR.** Ajouter Tesseract ou un modèle de mise en page avant l'extraction, pour traiter les rapports scannés et photographiés, sans rien changer au reste du pipeline.
+- **Confiance d'extraction et relecture.** Attacher un score de confiance par défaut et une file de relecture avec humain dans la boucle, pour qu'un opérateur valide ou corrige les constats peu sûrs avant qu'ils n'entrent dans le score.
+- **Jeu d'évaluation annoté à la main.** Remplacer la vérification de mécanique synthétique (1.00) par un gold set annoté sur de vrais rapports hétérogènes, rapporté par discipline.
+- **Durcissement production.** Resserrer la liste d'origines CORS (ou un reverse proxy) à la place du regex localhost de dev, et ajouter un logging structuré, un suivi de coût par appel LLM, et des runs d'éval en CI.
+
+**Dans 3 mois**
+
+- **Carte géo du portefeuille.** Une carte du parc avec points chauds de risque et agrégation multi-bâtiments, croisée avec la classe énergétique (DPE), bâtie sur les coordonnées et communes réelles déjà dans les données. Elle transforme une liste de dossiers en une vue portefeuille qu'un asset manager ou un assureur lit d'un coup d'oeil.
+- **Trajectoire de risque temporelle.** Suivre l'évolution des défauts d'un bâtiment au fil des inspections par phase, pour que le risque soit une tendance dans le temps et non un instantané, ce qui colle à la façon dont SECO inspecte déjà par phases.
+- **Étalonnage.** Positionner le risque d'un bâtiment face au portefeuille ou à des types de bâtiments et cantons similaires, en utilisant le contexte sectoriel STATEC déjà ingéré.
+- **Signal de risque exploitable par machine pour les assureurs.** Livrer le signal de risque sous forme d'API (un produit de données, pas un PDF) au point de contact assureur déjà existant chez SECO, transformant un service de contrôle en partenariat de données.
+- **Ingestion taguée par discipline.** Refléter les tableaux de synthèse des observations de SECO en taguant les défauts par discipline et en les liant aux plans et normes (références Eurocode), pour que la sortie s'insère dans le flux de travail existant de SECO.
+- **Stockage et accès pour une équipe.** Migrer SQLite vers un Postgres managé avec un vrai magasin de vecteurs (pgvector ou Qdrant) dès qu'il y a de la concurrence, retravailler la re-liaison mono-processus des réglages pour plusieurs workers, et ajouter le SSO Azure Entra ID avec des vues par rôle (inspecteur, asset manager, assureur).
+
+**Vision**
+
+- **Modèle de risque appris.** Remplacer les poids calibrés à la main par un modèle ajusté sur un historique réel de sinistres et de défauts, calibré contre les résultats d'assurance décennale et biennale.
+- **Vision par ordinateur sur les défauts.** Détection de fissures et assistance à la sévérité sur les photos de défauts, avec suivi spatial des observations sur un modèle BIM ou un scan 3D, pour qu'un défaut soit localisé dans le bâtiment, pas seulement dans le texte.
+- **Apprentissage actif.** Réinjecter les corrections des opérateurs dans l'extraction pour que le modèle s'améliore sur les constats qu'il rate.
+- **Traçabilité et conformité.** Lignage et provenance des données de bout en bout, un journal d'audit des actions d'ingestion et d'édition, une posture RGPD (résidence des données, rétention) et une option LLM hébergée en UE via l'abstraction de fournisseur existante (Mistral ou local déjà supportés).
