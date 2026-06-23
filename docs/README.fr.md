@@ -2,7 +2,7 @@
 
 > Des rapports d'inspection technique non structurés à une vue de risque actionnable à l'échelle du portefeuille, avec des réponses citées.
 
-![Python 3.11](https://img.shields.io/badge/Python-3.11-blue) ![Hors ligne](https://img.shields.io/badge/hors%20ligne-sans%20cl%C3%A9%20API-success) ![UI](https://img.shields.io/badge/UI-Streamlit%20%2B%20React-orange)
+![Python 3.11](https://img.shields.io/badge/Python-3.11-blue) ![Licence : MIT](https://img.shields.io/badge/Licence-MIT-green) ![Hors ligne](https://img.shields.io/badge/hors%20ligne-sans%20cl%C3%A9%20API-success) ![UI](https://img.shields.io/badge/UI-Streamlit%20%2B%20React-orange)
 
 [English](../README.md) | **Français**
 

@@ -2,7 +2,7 @@
 
 > From unstructured building inspection reports to an actionable, portfolio-wide risk view, with cited answers.
 
-![Python 3.11](https://img.shields.io/badge/Python-3.11-blue) ![Runs offline](https://img.shields.io/badge/runs%20offline-no%20API%20key-success) ![UI](https://img.shields.io/badge/UI-Streamlit%20%2B%20React-orange)
+![Python 3.11](https://img.shields.io/badge/Python-3.11-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-green) ![Runs offline](https://img.shields.io/badge/runs%20offline-no%20API%20key-success) ![UI](https://img.shields.io/badge/UI-Streamlit%20%2B%20React-orange)
 
 **English** | [Français](docs/README.fr.md)
 
