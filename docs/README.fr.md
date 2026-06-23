@@ -118,20 +118,26 @@ Plus de détails dans `docs/architecture.md` et `docs/api.md`.
 - Les **poids de scoring calibrés à la main**, remplacés par un modèle ajusté sur un historique réel de sinistres ou de défauts.
 - **SQLite**, échangé contre une base managée dès qu'il y a de la vraie concurrence, et la re-liaison mono-processus de la couche de réglages retravaillée pour plusieurs workers.
 - Le **CORS** accepte n'importe quelle origine localhost en dev (un regex, pour que le port de repli de Vite fonctionne aussi) ; la production demande une liste d'origines resserrée ou un reverse proxy.
-- Une **étape OCR** serait ajoutée pour les rapports scannés.
+- Une **étape OCR** serait ajoutée pour les rapports scannés (Tesseract ou un modèle de mise en page, avant l'extraction).
+- L'**indexation RAG incrémentale** remplacerait le réindex complet par upload par une file d'ingestion en arrière-plan et une indexation différentielle, pour qu'ajouter un rapport ne ré-embedde pas tout le corpus.
+- **Confiance d'extraction et file de relecture** : un score de confiance par défaut et une étape de relecture avec humain dans la boucle, pour que les constats peu sûrs soient validés avant d'entrer dans le score.
+- **Observabilité et CI** : logging structuré, suivi de coût par appel LLM, et runs d'évaluation en CI, pour que la qualité et le coût restent visibles à mesure que le corpus grossit.
 
 ## 6. Avec 3 mois de plus
 
 BuildingLens passerait d'un outil par bâtiment à un cockpit de risque assureur à l'échelle du portefeuille :
 
-- une carte géo du parc avec points chauds de risque et agrégation multi-bâtiments ;
-- un signal de risque exploitable par machine livré aux assureurs via API, transformant un service de contrôle en produit de données ;
-- une vue temporelle de l'évolution du risque de chaque bâtiment au fil des inspections par phase ;
-- un modèle de scoring ajusté sur un historique réel de sinistres et de défauts (en remplacement des poids calibrés à la main) ;
-- de la vision par ordinateur sur les photos de défauts, avec suivi spatial sur un modèle BIM ou un scan 3D ;
-- le durcissement opérationnel pour le faire tourner en production.
+- une carte géo du parc avec points chauds de risque et agrégation multi-bâtiments, croisée avec la classe énergétique (DPE), bâtie sur les coordonnées et communes réelles déjà dans la base ;
+- une vue temporelle de l'évolution du risque de chaque bâtiment au fil de ses inspections par phase, pour voir si un ouvrage s'améliore ou se dégrade plutôt qu'un simple instantané ;
+- l'étalonnage du risque d'un bâtiment face au portefeuille ou à des types de bâtiments et cantons similaires, via le contexte sectoriel STATEC déjà ingéré ;
+- une ingestion taguée par discipline qui lie les défauts aux plans et normes (références Eurocode), en reflétant les tableaux de synthèse des observations de SECO pour que la sortie s'insère dans le flux de travail existant ;
+- un signal de risque exploitable par machine livré aux assureurs via API, pour qu'un service de contrôle technique devienne un produit de données ;
+- un accès d'équipe par rôle derrière le SSO Azure Entra ID, avec des vues distinctes pour inspecteur, asset manager et assureur ;
+- de la vision par ordinateur sur les photos de défauts (détection de fissures, assistance à la sévérité) avec suivi spatial sur un modèle BIM ou un scan 3D, pour qu'un défaut soit localisé dans l'ouvrage, pas seulement décrit en prose ;
+- de l'apprentissage actif qui réinjecte les corrections des opérateurs dans l'extraction et le scoring ;
+- la traçabilité des données et une posture RGPD : provenance de bout en bout, journal d'audit des actions d'ingestion et d'édition, résidence et rétention des données, et une option LLM hébergée en UE via l'abstraction de fournisseur.
 
-C'est une vision, ce n'est pas codé. Les étapes concrètes à court terme sont dans la **Feuille de route** ci-dessous.
+C'est une vision, ce n'est pas codé.
 
 ## Architecture en bref
 
@@ -202,15 +208,5 @@ Le MVP coeur est terminé.
 - [x] Mode `--mock` pour tourner sans clé API
 - [x] README répondant aux six questions, avec limites documentées et compromis assumés
 - [x] Historique git propre et atomique
-- [x] **Rapports client (feature signature), v1 livrée.** Rapports Excel et PDF par bâtiment, avec code couleur de sévérité et un résumé exécutif LLM (gabarit déterministe en mode mock), exportables depuis le dossier bâtiment. La v2, un tableau de synthèse assureur avec flag automatique des écarts RICS / ASTM, est dans la feuille de route.
+- [x] **Rapports client (feature signature), v1 livrée.** Rapports Excel et PDF par bâtiment, avec code couleur de sévérité et un résumé exécutif LLM (gabarit déterministe en mode mock), exportables depuis le dossier bâtiment. La v2, un tableau de synthèse assureur avec flag automatique des écarts RICS / ASTM, est une extension prévue (voir la section 6).
 - [ ] Screencast de démo (bonus, enregistré en local)
-
-## Feuille de route (prochains 3 à 6 mois)
-
-Étapes concrètes à court terme qui transforment la vision ci-dessus en fonctionnalités livrables. Les remplacements de mise en production sont dans la section 5 ; la vision plus longue est dans la section 6. Pas encore codé. Chaque item s'appuie sur ce que le dépôt a déjà : coordonnées et communes réelles, l'abstraction de fournisseur, le contrat de citation par défaut, et le schéma SQLite.
-
-- **Indexation RAG incrémentale.** Remplacer le réindex complet par upload par une file d'ingestion en arrière-plan et une indexation différentielle, pour qu'ajouter un rapport ne ré-embedde pas tout le corpus.
-- **Confiance d'extraction et relecture.** Un score de confiance par défaut et une file de relecture avec humain dans la boucle, pour qu'un opérateur valide ou corrige les constats peu sûrs avant qu'ils n'entrent dans le score.
-- **Ingestion taguée par discipline.** Taguer les défauts par discipline et les lier aux plans et normes (références Eurocode), en reflétant les tableaux de synthèse des observations de SECO pour que la sortie s'insère dans le flux de travail existant.
-- **Étalonnage.** Positionner le risque d'un bâtiment face au portefeuille ou à des types de bâtiments et cantons similaires, en utilisant le contexte sectoriel STATEC déjà ingéré.
-- **Observabilité et CI.** Logging structuré, suivi de coût par appel LLM, et runs d'évaluation en CI, pour que la qualité et le coût soient visibles à mesure que le corpus grossit.

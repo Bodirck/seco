@@ -121,20 +121,26 @@ More detail lives in `docs/architecture.md` and `docs/api.md`.
 - The **hand-tuned scoring weights**, replaced by a model fitted on real claim or defect history.
 - **SQLite**, swapped for a managed database once there is real concurrency, and the runtime overlay's single-process rebinding reworked for multiple workers.
 - **CORS** allows any localhost origin in dev (a regex, so the Vite fallback port still works); production needs a tightened origin list or a reverse proxy.
-- An **OCR stage** would be added for scanned reports.
+- An **OCR stage** would be added for scanned reports (Tesseract or a layout model, ahead of extraction).
+- **Incremental RAG indexing** would replace the full reindex per upload with a background ingest queue and differential indexing, so adding one report does not re-embed the whole corpus.
+- **Extraction confidence and a review queue**: a per-defect confidence score and a human-in-the-loop review step, so low-confidence findings are validated before they reach the score.
+- **Observability and CI**: structured logging, per-LLM-call cost tracking, and evaluation runs in CI, so quality and spend stay visible as the corpus grows.
 
 ## 6. With 3 more months
 
 BuildingLens would grow from a per-building tool into a portfolio-scale insurer risk cockpit:
 
-- a geo-map of the stock with risk hotspots and multi-building aggregation;
-- a machine-readable risk signal delivered to insurers via API, turning a control service into a data product;
-- a temporal view of how each building's risk evolves across phased inspections;
-- a scoring model fitted on real claim and defect history (replacing the hand-tuned weights);
-- computer vision on defect photos, with spatial tracking on a BIM model or 3D scan;
-- the operational hardening to run it in production.
+- a geo-map of the stock with risk hotspots and multi-building aggregation, cross-referenced with EPC data, built on the real coordinates and communes already in the database;
+- a temporal view of how each building's risk evolves across its phased inspections, so a reviewer sees whether a structure is improving or degrading rather than just a snapshot;
+- benchmarking a building's risk against the portfolio or against similar building types and cantons, using the STATEC sector context already ingested;
+- discipline-tagged ingestion that links defects to plans and standards (Eurocode references), mirroring SECO's observation synthesis tables so the output drops into the existing workflow;
+- a machine-readable risk signal delivered to insurers via API, so a technical-control service becomes a data product;
+- role-based team access behind Azure Entra ID single sign-on, with distinct views for inspector, asset manager and insurer;
+- computer vision on defect photos (crack detection, severity assist) with spatial tracking on a BIM model or 3D scan, so a defect is located in the structure, not just described in prose;
+- active learning that feeds operator corrections back into extraction and scoring;
+- data lineage and a GDPR posture: end-to-end provenance, an audit log of ingest and edit actions, data residency and retention, and an EU-hosted LLM option through the provider abstraction.
 
-This is a vision and is not coded. The concrete near-term steps are in the **Roadmap** below.
+This is a vision and is not coded.
 
 ## Architecture at a glance
 
@@ -205,15 +211,5 @@ Core MVP is complete.
 - [x] `--mock` mode to run with no API key
 - [x] README answering the six questions, with documented limits and owned tradeoffs
 - [x] Clean, atomic git history
-- [x] **Client reports (signature feature), v1 shipped.** Per-building Excel and PDF reports with severity colour coding and an LLM executive summary (a deterministic template in mock mode), exportable from the building dossier. v2, an insurer synthesis table with automatic RICS / ASTM deviation flagging, is on the Roadmap.
+- [x] **Client reports (signature feature), v1 shipped.** Per-building Excel and PDF reports with severity colour coding and an LLM executive summary (a deterministic template in mock mode), exportable from the building dossier. v2, an insurer synthesis table with automatic RICS / ASTM deviation flagging, is a planned extension (see section 6).
 - [ ] Demo screencast (bonus, recorded locally)
-
-## Roadmap (next 3 to 6 months)
-
-Concrete near-term steps that turn the vision above into shippable features. Production-readiness swaps are in section 5; the longer vision is in section 6. Not yet coded. Each builds on what the repo already has: real coordinates and communes, the provider abstraction, the per-defect citation contract, and the SQLite schema.
-
-- **Incremental RAG indexing.** Replace the full reindex per upload with a background ingest queue and differential indexing, so adding one report does not re-embed the whole corpus.
-- **Extraction confidence and review.** A per-defect confidence score and a human-in-the-loop review queue, so an operator validates or corrects low-confidence findings before they reach the score.
-- **Discipline-tagged ingestion.** Tag defects per discipline and link them to plans and standards (Eurocode references), mirroring SECO's observation synthesis tables so the output drops into the existing workflow.
-- **Benchmarking.** Position a building's risk against the portfolio or against similar building types and cantons, using the STATEC sector context already ingested.
-- **Observability and CI.** Structured logging, per-LLM-call cost tracking, and evaluation runs in CI, so quality and spend are visible as the corpus grows.
