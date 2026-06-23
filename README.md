@@ -6,8 +6,9 @@
 
 **English** | [Français](docs/README.fr.md)
 
-<!-- TODO: drop a short screen capture at docs/demo.gif (see docs/demo-script.md) -->
-![demo](docs/demo.gif)
+<!-- Demo video: on github.com, edit this README and drag buildinglens-demo-web.mp4 onto the
+     line below. GitHub hosts the file and renders an inline player, keeping it out of the repo. -->
+_A short screen capture walks through the product; a step-by-step plan is in [`docs/demo-script.md`](docs/demo-script.md)._
 
 BuildingLens turns technical building inspection reports (unstructured PDFs) and public building data into an actionable risk view for an asset manager or a building insurer. It extracts defects from reports, scores each building's risk, and lets you query the whole stock in plain language with cited sources, on a reproducible demo corpus of 40 inspected buildings. It is reproducible from zero and runs offline in a mock mode with no API key.
 
