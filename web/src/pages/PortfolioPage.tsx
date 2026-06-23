@@ -162,6 +162,22 @@ export default function PortfolioPage() {
     });
   }, [buildings, filters]);
 
+  // Optional sort by the CASE index column. null keeps the default risk-desc order
+  // the API returns; clicking the header cycles ascending, descending, then off.
+  // Persisted so it survives navigating to a building and back.
+  const [caseSort, setCaseSort] = usePersistentState<"asc" | "desc" | null>(
+    "portfolio:caseSort",
+    null,
+  );
+  const cycleCaseSort = () =>
+    setCaseSort((s) => (s === null ? "asc" : s === "asc" ? "desc" : null));
+
+  const sorted = useMemo(() => {
+    if (caseSort === null) return filtered;
+    const arr = [...filtered].sort((a, b) => a.id - b.id);
+    return caseSort === "desc" ? arr.reverse() : arr;
+  }, [filtered, caseSort]);
+
   // Aggregate KPIs
   const totalDefects = buildings.reduce(
     (sum, b) => sum + b.critical + b.major + b.minor,
@@ -285,7 +301,25 @@ export default function PortfolioPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-line-strong font-display text-[11px] font-medium uppercase tracking-[0.18em] text-fg-faint">
-                  <th className="px-3 py-2.5 font-medium">CASE</th>
+                  <th className="px-3 py-2.5 font-medium">
+                    <button
+                      type="button"
+                      onClick={cycleCaseSort}
+                      aria-label={`${t("building.sort")}: CASE`}
+                      className="inline-flex items-center gap-1.5 font-display text-[11px] font-medium uppercase tracking-[0.18em] text-fg-faint transition-colors hover:text-signal-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-400/70"
+                    >
+                      CASE
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "text-[10px] leading-none",
+                          caseSort ? "text-signal-300" : "text-fg-faint/50",
+                        )}
+                      >
+                        {caseSort === "asc" ? "▲" : caseSort === "desc" ? "▼" : "↕"}
+                      </span>
+                    </button>
+                  </th>
                   <th className="px-3 py-2.5 font-medium">
                     <span className="inline-flex items-center gap-1.5">
                       {t("portfolio.name")}
@@ -413,7 +447,7 @@ export default function PortfolioPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((b) => {
+                {sorted.map((b) => {
                   const tone = riskTone(Math.round(b.risk_score));
                   const statusLabel = t(`common.${tone}`);
                   return (
