@@ -28,12 +28,28 @@ the generation prompt, never retrieval.
 
 from __future__ import annotations
 
+import os
+import threading
 import warnings
 from pathlib import Path
 from typing import Any, Iterator
 
 from .config import settings
 from .llm import LLMClient, get_llm
+
+# Local CPU inference (torch / sentence-transformers) is shared across FastAPI's
+# request threadpool. Keep OpenMP/MKL single-threaded and tolerant of duplicate
+# runtimes so concurrent use does not fault natively (0xC0000005) on Windows.
+# Set before torch is imported (rag is imported before the model loads).
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
+# Serializes every use of the shared local embedding model. FastAPI runs the sync
+# endpoints in a threadpool, and the torch model is not safe to call from several
+# threads at once (it can fault with a native access violation). Reentrant so the
+# lazy build_index() call inside the retrieval path can re-acquire it.
+_EMBED_LOCK = threading.RLock()
 
 # ---------------------------------------------------------------------------
 # Embedding model (LlamaIndex Settings, configured once and lazily)
@@ -56,12 +72,24 @@ def _ensure_llama_settings() -> None:
     global _settings_ready
     if _settings_ready:
         return
-    from llama_index.core import Settings as LISettings  # lazy import
-    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+    with _EMBED_LOCK:
+        if _settings_ready:  # double-checked: another thread may have set it up
+            return
+        from llama_index.core import Settings as LISettings  # lazy import
+        from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-    LISettings.embed_model = HuggingFaceEmbedding(model_name=_EMBED_MODEL_NAME)
-    LISettings.llm = None  # never let LlamaIndex call an online LLM
-    _settings_ready = True
+        # One intra-op thread keeps the model off OpenMP's parallel path, which is
+        # where concurrent CPU inference tends to fault on Windows.
+        try:
+            import torch
+
+            torch.set_num_threads(1)
+        except Exception:
+            pass
+
+        LISettings.embed_model = HuggingFaceEmbedding(model_name=_EMBED_MODEL_NAME)
+        LISettings.llm = None  # never let LlamaIndex call an online LLM
+        _settings_ready = True
 
 
 # ---------------------------------------------------------------------------
@@ -183,8 +211,11 @@ def build_index(conn: Any, index_dir: str | Path | None = None) -> int:
         (idx_dir / _EMPTY_MARKER).write_text("", encoding="utf-8")
         return 0
 
-    index = VectorStoreIndex(nodes)
-    index.storage_context.persist(persist_dir=str(idx_dir))
+    # Embedding all nodes hits the shared torch model; serialize it so a
+    # concurrent RAG query cannot use the model at the same time.
+    with _EMBED_LOCK:
+        index = VectorStoreIndex(nodes)
+        index.storage_context.persist(persist_dir=str(idx_dir))
     return len(nodes)
 
 
@@ -377,18 +408,24 @@ def _prepare(
         return {"early": {"answer": _EMPTY_SCOPE_MSG, "sources": []}}
 
     idx_dir = _resolve_index_dir(index_dir)
-    _ensure_llama_settings()
 
-    # Build the index lazily if nothing is persisted yet (matches old behaviour).
-    if not _is_persisted(idx_dir):
-        build_index(conn, idx_dir)
+    # Hold the embedding lock across the model-touching work (lazy build, load and
+    # the query embedding in _retrieve) so only one thread uses the torch model at
+    # a time. Reentrant, so the nested build_index() does not deadlock. Generation
+    # happens after this block, with the lock released, so streams are not blocked.
+    with _EMBED_LOCK:
+        _ensure_llama_settings()
 
-    # Empty corpus: a marker is present but no real index.
-    if (idx_dir / _EMPTY_MARKER).exists():
-        return {"early": {"answer": _EMPTY_CORPUS_MSG, "sources": []}}
+        # Build the index lazily if nothing is persisted yet (matches old behaviour).
+        if not _is_persisted(idx_dir):
+            build_index(conn, idx_dir)
 
-    index = _load_index(idx_dir)
-    retrieved = _retrieve(index, question, building_id, building_ids, k)
+        # Empty corpus: a marker is present but no real index.
+        if (idx_dir / _EMPTY_MARKER).exists():
+            return {"early": {"answer": _EMPTY_CORPUS_MSG, "sources": []}}
+
+        index = _load_index(idx_dir)
+        retrieved = _retrieve(index, question, building_id, building_ids, k)
 
     if not retrieved:
         return {"early": {"answer": _NO_RESULT_MSG, "sources": []}}
