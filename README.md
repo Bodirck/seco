@@ -113,22 +113,26 @@ This section is a vision only and is intentionally not coded. BuildingLens would
 
 ### Architecture at a glance
 
+```mermaid
+flowchart LR
+    EUBUCCO["EUBUCCO parquet"] --> ING["ingest"]
+    COMMUNES["ACT communes"] --> ING
+    STATEC["STATEC permits"] --> ING
+    PDFS["Synthetic PDFs"] --> PDFING["ingest_pdf"]
+    ING --> DB[("SQLite: buildings, documents, defects, app_settings")]
+    PDFING --> DB
+    DB --> EXTRACT["extract (LLM, JSON + citation)"]
+    DB --> SCORING["scoring (0 to 100 risk)"]
+    DB --> RAG["rag (LlamaIndex + local embeddings)"]
+    EXTRACT --> DB
+    SCORING --> DB
+    DB --> API["FastAPI (api/)"]
+    RAG --> API
+    API --> REACT["React + Vite (web/)"]
+    API --> STREAMLIT["Streamlit (app/)"]
 ```
-Public sources                Core (src/buildinglens/)              Interfaces
---------------                ------------------------              ----------
-EUBUCCO parquet  ─┐
-ACT communes     ─┼─ ingest ─▶ SQLite (buildings/documents/        FastAPI (api/)  ─┬─▶ React + Vite (web/)
-STATEC permits   ─┘            defects/app_settings)                                 └─▶ (same API)
-                                      │                             Streamlit (app/)
-Synthetic PDFs  ── ingest_pdf ────────┤
-                                      ├─ extract  (LLM, JSON + citation)
-                                      ├─ scoring  (0..100 risk)
-                                      └─ rag      (LlamaIndex + local embeddings,
-                                                   generation via provider abstraction)
 
-LLM provider abstraction: anthropic | openai | mistral | local (Ollama) | mock
-Runtime settings (provider/key/model) persisted in SQLite, changeable without restart.
-```
+LLM provider abstraction: `anthropic` | `openai` | `mistral` | `local` (Ollama) | `mock`. Runtime settings (provider, key, model) are persisted in SQLite and changeable without a restart.
 
 ### Reproducibility
 
@@ -305,22 +309,26 @@ Cette section est une vision uniquement, et n'est volontairement pas codée. Bui
 
 ### Architecture en bref
 
+```mermaid
+flowchart LR
+    EUBUCCO["EUBUCCO parquet"] --> ING["ingest"]
+    COMMUNES["Communes ACT"] --> ING
+    STATEC["Permis STATEC"] --> ING
+    PDFS["PDF synthétiques"] --> PDFING["ingest_pdf"]
+    ING --> DB[("SQLite: buildings, documents, defects, app_settings")]
+    PDFING --> DB
+    DB --> EXTRACT["extract (LLM, JSON + citation)"]
+    DB --> SCORING["scoring (risque 0 à 100)"]
+    DB --> RAG["rag (LlamaIndex + embeddings locaux)"]
+    EXTRACT --> DB
+    SCORING --> DB
+    DB --> API["FastAPI (api/)"]
+    RAG --> API
+    API --> REACT["React + Vite (web/)"]
+    API --> STREAMLIT["Streamlit (app/)"]
 ```
-Sources publiques            Coeur (src/buildinglens/)             Interfaces
------------------            -------------------------             ----------
-EUBUCCO parquet  ─┐
-Communes ACT     ─┼─ ingest ─▶ SQLite (buildings/documents/        FastAPI (api/)  ─┬─▶ React + Vite (web/)
-Permis STATEC    ─┘            defects/app_settings)                                 └─▶ (même API)
-                                      │                             Streamlit (app/)
-PDF synthétiques ─ ingest_pdf ────────┤
-                                      ├─ extract  (LLM, JSON + citation)
-                                      ├─ scoring  (risque 0..100)
-                                      └─ rag      (LlamaIndex + embeddings locaux,
-                                                   génération via abstraction de fournisseur)
 
-Abstraction de fournisseur LLM : anthropic | openai | mistral | local (Ollama) | mock
-Réglages à l'exécution (fournisseur/clé/modèle) persistés dans SQLite, modifiables sans redémarrage.
-```
+Abstraction de fournisseur LLM : `anthropic` | `openai` | `mistral` | `local` (Ollama) | `mock`. Les réglages à l'exécution (fournisseur, clé, modèle) sont persistés dans SQLite et modifiables sans redémarrage.
 
 ### Reproductibilité
 
