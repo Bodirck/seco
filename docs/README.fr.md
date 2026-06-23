@@ -6,7 +6,9 @@
 
 [English](../README.md) | **Français**
 
-BuildingLens transforme des rapports d'inspection technique de bâtiments (PDF non structurés) et des données publiques de bâtiments en une vue de risque actionnable pour un asset manager ou un assureur construction. Il extrait les défauts des rapports, score le risque de chaque bâtiment, et permet d'interroger tout le parc en langage naturel avec des sources citées, sur un corpus de démonstration reproductible de 40 bâtiments inspectés. Il se reproduit depuis zéro et fonctionne hors ligne en mode mock sans clé API.
+[**Voir la démo**](../buildinglens-demo-web.mp4) (présentation de 9 min : recherche, dossier bâtiment, import, et Q&A sourcée). Plan détaillé dans [`demo-script.md`](demo-script.md).
+
+BuildingLens transforme des rapports d'inspection technique de bâtiments (PDF non structurés) et des données publiques de bâtiments en une vue de risque actionnable pour un asset manager ou un assureur construction. Il extrait les défauts des rapports, score le risque de chaque bâtiment, et permet d'interroger tout le parc en langage naturel avec des sources citées, sur un corpus de démonstration reproductible de 40 bâtiments inspectés. Il se reproduit depuis zéro et fonctionne hors ligne en mode mock sans clé API LLM.
 
 ## Démarrage rapide
 
@@ -205,7 +207,7 @@ Le MVP coeur est terminé.
 - [x] Extraction IA des défauts et classification de sévérité, évaluées (vérification de mécanique sur synthétique, P/R/F1 = 1.00 ; voir Évaluation pour pourquoi ce n'est pas une exactitude réelle)
 - [x] RAG avec citations et garde-fou anti-hallucination "je ne sais pas"
 - [x] UI utilisable (UI de référence Streamlit plus application compagnon React)
-- [x] Mode `--mock` pour tourner sans clé API
+- [x] Mode `--mock` pour tourner sans clé API LLM
 - [x] README répondant aux six questions, avec limites documentées et compromis assumés
 - [x] Historique git propre et atomique
 - [x] **Rapports client (feature signature), v1 livrée.** Rapports Excel et PDF par bâtiment, avec code couleur de sévérité et un résumé exécutif LLM (gabarit déterministe en mode mock), exportables depuis le dossier bâtiment. La v2, un tableau de synthèse assureur avec flag automatique des écarts RICS / ASTM, est une extension prévue (voir la section 6).

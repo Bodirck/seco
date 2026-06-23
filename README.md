@@ -6,11 +6,9 @@
 
 **English** | [Français](docs/README.fr.md)
 
-<!-- Demo video: on github.com, edit this README and drag buildinglens-demo-web.mp4 onto the
-     line below. GitHub hosts the file and renders an inline player, keeping it out of the repo. -->
-_A short screen capture walks through the product; a step-by-step plan is in [`docs/demo-script.md`](docs/demo-script.md)._
+[**Watch the demo**](buildinglens-demo-web.mp4) (9-minute walkthrough: search, a building dossier, an import, and grounded Q&A). Step-by-step plan in [`docs/demo-script.md`](docs/demo-script.md).
 
-BuildingLens turns technical building inspection reports (unstructured PDFs) and public building data into an actionable risk view for an asset manager or a building insurer. It extracts defects from reports, scores each building's risk, and lets you query the whole stock in plain language with cited sources, on a reproducible demo corpus of 40 inspected buildings. It is reproducible from zero and runs offline in a mock mode with no API key.
+BuildingLens turns technical building inspection reports (unstructured PDFs) and public building data into an actionable risk view for an asset manager or a building insurer. It extracts defects from reports, scores each building's risk, and lets you query the whole stock in plain language with cited sources, on a reproducible demo corpus of 40 inspected buildings. It is reproducible from zero and runs offline in a mock mode with no LLM API key.
 
 ## Quickstart
 
@@ -209,7 +207,7 @@ Core MVP is complete.
 - [x] AI defect extraction and severity classification, evaluated (synthetic mechanics check, P/R/F1 = 1.00; see Evaluation for why this is not a real-world accuracy figure)
 - [x] RAG with citations and an anti-hallucination "I don't know" guardrail
 - [x] Usable UI (Streamlit reference UI plus a React companion app)
-- [x] `--mock` mode to run with no API key
+- [x] `--mock` mode to run with no LLM API key
 - [x] README answering the six questions, with documented limits and owned tradeoffs
 - [x] Clean, atomic git history
 - [x] **Client reports (signature feature), v1 shipped.** Per-building Excel and PDF reports with severity colour coding and an LLM executive summary (a deterministic template in mock mode), exportable from the building dossier. v2, an insurer synthesis table with automatic RICS / ASTM deviation flagging, is a planned extension (see section 6).
