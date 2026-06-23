@@ -6,7 +6,7 @@
 
 **English** | [Français](docs/README.fr.md)
 
-[**Watch the demo**](buildinglens-demo-web.mp4) (9-minute walkthrough: search, a building dossier, an import, and grounded Q&A). Step-by-step plan in [`docs/demo-script.md`](docs/demo-script.md).
+[**Watch the demo**](buildinglens-demo-web.mp4) (9-minute walkthrough: search, a building dossier, an import, and grounded Q&A). 
 
 BuildingLens turns technical building inspection reports (unstructured PDFs) and public building data into an actionable risk view for an asset manager or a building insurer. It extracts defects from reports, scores each building's risk, and lets you query the whole stock in plain language with cited sources, on a reproducible demo corpus of 40 inspected buildings. It is reproducible from zero and runs offline in a mock mode with no LLM API key.
 
